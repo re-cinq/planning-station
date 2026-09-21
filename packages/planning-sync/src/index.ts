@@ -3,6 +3,7 @@ export {
   type ApprovalRequest,
   type CreatedPlan,
   type DocumentWrite,
+  type PlanLifecycleHooks,
   type PlanningService,
 } from "./core/planning-service.js";
 export {

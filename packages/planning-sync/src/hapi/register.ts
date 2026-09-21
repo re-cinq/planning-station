@@ -4,6 +4,7 @@ import type { Server } from "@hapi/hapi";
 import { createCollabServer } from "../core/collab-server.js";
 import {
   createPlanningService,
+  type PlanLifecycleHooks,
   type PlanningService,
 } from "../core/planning-service.js";
 import type { CollabAuthenticator } from "../ports/authenticator.js";
@@ -16,7 +17,7 @@ import {
 } from "./routes.js";
 import { mountCollab } from "./upgrade.js";
 
-export interface PlanningSyncOptions {
+export interface PlanningSyncOptions extends PlanLifecycleHooks {
   store: PlanStore;
   authenticator: CollabAuthenticator;
   prefix?: string;
@@ -39,7 +40,7 @@ export function registerPlanningSync(
   options: PlanningSyncOptions,
 ): PlanningSync {
   const prefix = options.prefix ?? DEFAULT_PREFIX;
-  const service = createPlanningService(options.store);
+  const service = createPlanningService(options.store, options);
   const collab = createCollabServer({ ...options, service });
   const writer = createAgentWriter({ service, collab });
   server.route(routesFor({ service, writer }, prefix, options.serviceAuth));

@@ -322,6 +322,18 @@ An approved plan connects read-only until someone reopens it. That is where
 this library stops: your agent reads the approved plan with `GET /api/plans/:id`
 and creates tickets in your own tracker, where the work and its failures live.
 
+To start that work the moment a plan is approved, over the route or through the
+service, pass `onApproved`. It runs after the store has the approval, and a
+refused approval never reaches it:
+
+```ts
+registerPlanningSync(server, {
+  store,
+  authenticator,
+  onApproved: async (meta) => startDelivery(meta.id), // yours
+});
+```
+
 ## Scenario: testing your integration
 
 ```ts
