@@ -1,0 +1,95 @@
+layers:
+  packages/planning-document:
+    ".":
+      [
+        blocks,
+        plan,
+        template,
+        projection,
+        ops,
+        versions,
+        validation,
+        refine,
+        naming,
+        lib,
+      ]
+    lib: []
+    blocks: [lib]
+    plan: [blocks, lib]
+    template: [blocks, plan, lib]
+    ops:
+      imports: [blocks, plan, projection, lib]
+      tests: [projection, testing]
+    versions:
+      imports: [blocks, plan, lib]
+      tests: [projection, testing]
+    refine:
+      imports: [blocks, plan, template, projection, ops, versions, lib]
+      tests: [testing]
+    projection:
+      imports: [blocks, plan, template, lib]
+      tests: [testing]
+    validation:
+      imports: [blocks, plan, template, lib]
+      tests: [projection, testing]
+    naming: [lib]
+    testing: [blocks, plan, template, projection, lib]
+  packages/planning-editor:
+    ".":
+      imports:
+        [
+          schema,
+          template,
+          blocks,
+          menu,
+          outline,
+          diff,
+          presence,
+          session,
+          transports,
+          styles,
+          "@re-cinq/planning-document",
+          "@re-cinq/planning-yjs",
+        ]
+      tests: [testing]
+    styles: []
+    template:
+      imports: ["@re-cinq/planning-document"]
+      tests: [schema, testing]
+    blocks:
+      imports: [template, session, "@re-cinq/planning-document"]
+      tests: [".", session, testing]
+    menu:
+      imports: [schema, template, blocks, "@re-cinq/planning-document"]
+    outline: ["@re-cinq/planning-document"]
+    diff: ["@re-cinq/planning-document"]
+    presence: [menu, schema, "@re-cinq/planning-document"]
+    session:
+      imports: ["@re-cinq/planning-document", "@re-cinq/planning-yjs"]
+      tests: [testing]
+    transports:
+      imports: [session, "@re-cinq/planning-document", "@re-cinq/planning-yjs"]
+    schema:
+      imports: [blocks, "@re-cinq/planning-document", "@re-cinq/planning-yjs"]
+      tests: [testing]
+    testing: [".", session, "@re-cinq/planning-document"]
+  packages/planning-sync:
+    ".": [core, ports, memory]
+    ports: ["@re-cinq/planning-document"]
+    core:
+      imports: [ports, "@re-cinq/planning-document", "@re-cinq/planning-yjs"]
+      tests: [memory, testing, "@re-cinq/planning-yjs"]
+    memory:
+      imports: [ports, "@re-cinq/planning-document"]
+      tests: [testing]
+    hapi:
+      imports: [core, ports, "@re-cinq/planning-document"]
+      tests: [testing, "@re-cinq/planning-yjs"]
+    testing:
+      imports: [core, hapi, memory, ports, "@re-cinq/planning-document"]
+  packages/planning-yjs:
+    ".": [schema, convert, refine, wire]
+    schema: ["@re-cinq/planning-document"]
+    convert: [schema, "@re-cinq/planning-document"]
+    refine: [convert, "@re-cinq/planning-document"]
+    wire: []

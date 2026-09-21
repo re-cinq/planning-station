@@ -1,0 +1,35 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - "planning-document-v*"
+      - "planning-yjs-v*"
+      - "planning-editor-v*"
+      - "planning-sync-v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - name: Name the package this tag releases
+        id: package
+        run: |
+          name="${GITHUB_REF_NAME%-v*}"
+          echo "dir=packages/$name" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_REF_NAME##*-v}" >> "$GITHUB_OUTPUT"
+      - run: ./scripts/check-version.sh "${{ steps.package.outputs.dir }}" "${{ steps.package.outputs.version }}"
+      - run: npm run build
+      - run: npm publish --provenance --access public
+        working-directory: ${{ steps.package.outputs.dir }}

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Test and tool caches
+coverage/
+.vitest/
+.vite/
+test-results/
+playwright-report/
+blob-report/
+.eslintcache
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Private meeting notes and source documents: kept locally, never published
+discussion.md
+discussion.html
+/docs/discussion-*.md
+/pillar-*.pdf
