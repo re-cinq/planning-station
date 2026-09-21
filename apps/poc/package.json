@@ -1,0 +1,30 @@
+{
+  "name": "planning-poc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "tsx watch server/main.ts",
+    "dev:web": "vite",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hapi/hapi": "^21.4.10",
+    "@re-cinq/planning-document": "^0.1.0",
+    "@re-cinq/planning-editor": "^0.1.0",
+    "@re-cinq/planning-sync": "^0.1.0",
+    "@re-cinq/planning-yjs": "^0.1.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6",
+    "sass": "^1.104.0",
+    "vite": "^8.3.0"
+  }
+}

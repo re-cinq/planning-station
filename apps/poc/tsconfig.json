@@ -1,0 +1,35 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "@re-cinq/planning-document": [
+        "../../packages/planning-document/src/index.ts"
+      ],
+      "@re-cinq/planning-document/testing": [
+        "../../packages/planning-document/src/testing/index.ts"
+      ],
+      "@re-cinq/planning-yjs": ["../../packages/planning-yjs/src/index.ts"],
+      "@re-cinq/planning-editor": [
+        "../../packages/planning-editor/src/index.ts"
+      ],
+      "@re-cinq/planning-editor/transports/hocuspocus": [
+        "../../packages/planning-editor/src/transports/hocuspocus.ts"
+      ],
+      "@re-cinq/planning-sync": ["../../packages/planning-sync/src/index.ts"],
+      "@re-cinq/planning-sync/hapi": [
+        "../../packages/planning-sync/src/hapi/index.ts"
+      ],
+      "@re-cinq/planning-sync/memory": [
+        "../../packages/planning-sync/src/memory/index.ts"
+      ]
+    }
+  },
+  "include": ["src", "server", "vite.config.ts"]
+}
