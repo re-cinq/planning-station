@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import { BlockNoteView } from "@blocknote/ariakit";
 import {
   templateFor,
@@ -36,6 +36,8 @@ export interface PlanEditorProps {
   template?: PlanTemplate;
   readOnly?: boolean;
   showOutline?: boolean;
+  /** Drawn inside the sticky outline under its sections — the host's place for an action the outline gates, like approval. */
+  outlineFooter?: ReactNode;
   showPresence?: boolean;
   validationPhase?: ValidationPhase;
   onValidation?: (report: ValidationReport) => void;
@@ -57,7 +59,7 @@ type WorkspaceProps = Omit<SessionProps, "template"> & {
 
 type LayoutProps = Pick<
   WorkspaceProps,
-  "template" | "readOnly" | "showOutline" | "showPresence"
+  "template" | "readOnly" | "showOutline" | "outlineFooter" | "showPresence"
 > & {
   editor: PlanBlockNoteEditor;
   awareness: PlanSession["awareness"];
@@ -140,16 +142,18 @@ function WorkspaceLayout({
   showPresence = true,
   ...view
 }: LayoutProps) {
-  const { template } = view;
+  const { template, awareness, report, outlineFooter } = view;
 
   return (
     <>
       {showPresence && (
-        <PresenceBar awareness={view.awareness} template={template} />
+        <PresenceBar awareness={awareness} template={template} />
       )}
       <EditorSurface {...view} />
       {showOutline && (
-        <TemplateOutline template={template} report={view.report} />
+        <TemplateOutline template={template} report={report}>
+          {outlineFooter}
+        </TemplateOutline>
       )}
     </>
   );
