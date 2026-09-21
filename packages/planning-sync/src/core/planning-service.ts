@@ -39,6 +39,11 @@ export interface ApprovalRequest {
   approvedBy: string;
 }
 
+/** What the host hears about a plan's workflow, after the store has it. */
+export interface PlanLifecycleHooks {
+  onApproved?(meta: PlanMeta): Promise<void>;
+}
+
 export interface PlanningService {
   createPlan(input: NewPlan): Promise<CreatedPlan>;
   readPlan(planId: string): Promise<StoredProjection>;
@@ -50,13 +55,16 @@ export interface PlanningService {
   getVersion(planId: string, number: number): Promise<PlanVersion>;
 }
 
-export function createPlanningService(store: PlanStore): PlanningService {
+export function createPlanningService(
+  store: PlanStore,
+  hooks: PlanLifecycleHooks = {},
+): PlanningService {
   const service: PlanningService = {
     createPlan: (input) => createPlan(store, service, input),
     readPlan: (planId) => readPlan(store, planId),
     loadState: (planId) => store.loadState(planId),
     storeDocument: (write) => storeDocument(store, write),
-    approvePlan: (request) => approvePlan(store, request),
+    approvePlan: (request) => approvePlan(store, hooks, request),
     reopenPlan: (planId) =>
       store.updateMeta(planId, { status: "draft", approval: null }),
     listVersions: (planId) => store.listVersions(planId),
@@ -119,6 +127,7 @@ async function storeDocument(
 
 async function approvePlan(
   store: PlanStore,
+  hooks: PlanLifecycleHooks,
   { planId, approvedBy }: ApprovalRequest,
 ): Promise<PlanMeta> {
   const { json, version } = await readPlan(store, planId);
@@ -129,10 +138,13 @@ async function approvePlan(
     `plan ${planId} is not ready for approval`,
   );
 
-  return store.updateMeta(planId, {
+  const approved = await store.updateMeta(planId, {
     status: "approved",
     approval: approvalOf(approvedBy, version),
   });
+  await hooks.onApproved?.(approved);
+
+  return approved;
 }
 
 function approvalOf(approvedBy: string, version: number): Approval {

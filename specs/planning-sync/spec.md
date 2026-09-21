@@ -11,18 +11,19 @@ The sync library is the plan's server side, registered inside the host's own hap
 
 ## Plans
 
-- A new plan starts as a draft at version 1, seeded with its template's sections, and is addressed by the document name plan:owner/repo:uuid ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L46), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L55), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L60)).
-- Reading a plan answers the stored JSON projection without loading the document, and an unknown plan throws PlanNotFoundError ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L80), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L76)).
+- A new plan starts as a draft at version 1, seeded with its template's sections, and is addressed by the document name plan:owner/repo:uuid ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L48), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L57), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L62)).
+- Reading a plan answers the stored JSON projection without loading the document, and an unknown plan throws PlanNotFoundError ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L82), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L78)).
 
 ## Versions
 
-- Every write whose content changed becomes the plan's next version; a write that changed nothing cuts none ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L80), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L86)).
-- Each version keeps the plan as it was, so an older version still reads as the plan of its day ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L93)).
+- Every write whose content changed becomes the plan's next version; a write that changed nothing cuts none ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L82), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L88)).
+- Each version keeps the plan as it was, so an older version still reads as the plan of its day ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L95)).
 
 ## Approval
 
-- A plan is approved only when it passes validation at the approval phase; otherwise the caller is told what is still missing ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L99), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L107)).
-- Approval records who approved which version, and reopening a plan takes it back to a draft with no approval ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L107), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L116)).
+- A plan is approved only when it passes validation at the approval phase; otherwise the caller is told what is still missing ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L101), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L109)).
+- Approval records who approved which version, and reopening a plan takes it back to a draft with no approval ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L109), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L118)).
+- The host hears of every approval through `onApproved`, after the store has it, and hears nothing of a refused one, so it can start its own work from the approved plan ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L127), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L138), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L157)).
 
 ## Collaboration
 

@@ -1,7 +1,10 @@
 import Hapi from "@hapi/hapi";
 
 import type { AgentWriter } from "../core/agent-writer.js";
-import type { PlanningService } from "../core/planning-service.js";
+import type {
+  PlanLifecycleHooks,
+  PlanningService,
+} from "../core/planning-service.js";
 import { registerPlanningSync } from "../hapi/register.js";
 import type { ServiceAuth } from "../hapi/routes.js";
 import { createMemoryPlanStore } from "../memory/memory-plan-store.js";
@@ -17,7 +20,7 @@ export interface TestServer {
   close(): Promise<void>;
 }
 
-export interface TestServerOptions {
+export interface TestServerOptions extends PlanLifecycleHooks {
   store?: PlanStore;
   authenticator?: CollabAuthenticator;
   serviceAuth?: ServiceAuth;

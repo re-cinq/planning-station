@@ -11,7 +11,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @re-cinq/planning-document -w @re-cinq/planning-yjs -w @re-cinq/planning-editor -w @re-cinq/planning-sync",
     "poc": "npm run dev --workspace planning-poc",
     "test": "vitest run",
     "test:watch": "vitest",

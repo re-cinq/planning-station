@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { PlanMeta } from "@re-cinq/planning-document";
 import { readyFeature } from "@re-cinq/planning-document/testing";
 import { docFromBlocks } from "@re-cinq/planning-yjs";
 import { applyUpdate, Doc } from "yjs";
@@ -9,6 +10,7 @@ import { PlanNotApprovableError } from "./approval-error.js";
 import { PlanNotFoundError } from "./errors.js";
 import {
   createPlanningService,
+  type PlanLifecycleHooks,
   type PlanningService,
 } from "./planning-service.js";
 
@@ -19,7 +21,8 @@ const NEW_PLAN: NewPlan = {
   createdBy: "octocat",
 };
 
-const service = () => createPlanningService(createMemoryPlanStore());
+const service = (hooks?: PlanLifecycleHooks) =>
+  createPlanningService(createMemoryPlanStore(), hooks);
 
 const liveDoc = async (plans: PlanningService, planId: string) => {
   const doc = new Doc();
@@ -29,8 +32,7 @@ const liveDoc = async (plans: PlanningService, planId: string) => {
   return doc;
 };
 
-const readyPlan = async () => {
-  const plans = service();
+const readyPlan = async (plans = service()) => {
   const { meta } = await plans.createPlan(NEW_PLAN);
   await plans.storeDocument({
     planId: meta.id,
@@ -120,5 +122,28 @@ describe("createPlanningService", () => {
       status: "draft",
       approval: null,
     });
+  });
+
+  it("hands onApproved the meta of the plan ana approved", async () => {
+    const approved: PlanMeta[] = [];
+    const { plans, planId } = await readyPlan(
+      service({ onApproved: async (meta) => void approved.push(meta) }),
+    );
+    await plans.approvePlan({ planId, approvedBy: "ana" });
+    expect(approved).toMatchObject([
+      { id: planId, status: "approved", approval: { approvedBy: "ana" } },
+    ]);
+  });
+
+  it("calls onApproved for no plan when approval is refused", async () => {
+    const approved: PlanMeta[] = [];
+    const plans = service({
+      onApproved: async (meta) => void approved.push(meta),
+    });
+    const { meta } = await plans.createPlan(NEW_PLAN);
+    await Promise.allSettled([
+      plans.approvePlan({ planId: meta.id, approvedBy: "ana" }),
+    ]);
+    expect(approved).toEqual([]);
   });
 });

@@ -153,4 +153,14 @@ describe("planningRoutes", () => {
       ],
     });
   });
+
+  it("tells the host's onApproved which plan the route approved", async () => {
+    const approved: string[] = [];
+    running = await startTestServer({
+      onApproved: async (meta) => void approved.push(meta.id),
+    });
+    const planId = await readyPlan(running);
+    await call(running, `/${planId}/approve`, { approvedBy: "ana" });
+    expect(approved).toEqual([planId]);
+  });
 });
