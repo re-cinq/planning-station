@@ -1,0 +1,111 @@
+@use "tokens";
+
+// The editor and the standalone diff each carry the whole token set, because a
+// host may render the diff on a page without an editor on it.
+.ps-editor,
+.ps-diff {
+  @include tokens.plan-tokens;
+
+  font-family: var(--ps-font);
+  color: var(--ps-fg);
+}
+
+// BlockNote draws itself from --bn-*; every one of them comes from a token, so
+// the editor changes with the host's theme and scheme and never fights it.
+.ps-editor .bn-container[data-color-scheme] {
+  --bn-colors-editor-text: var(--ps-fg);
+  --bn-colors-editor-background: var(--ps-bg);
+  --bn-colors-menu-text: var(--ps-fg);
+  --bn-colors-menu-background: var(--ps-bg-elevated);
+  --bn-colors-tooltip-text: var(--ps-fg);
+  --bn-colors-tooltip-background: var(--ps-bg-elevated);
+  --bn-colors-hovered-text: var(--ps-fg);
+  --bn-colors-hovered-background: var(--ps-bg-hover);
+  --bn-colors-selected-text: var(--ps-fg-on-accent);
+  --bn-colors-selected-background: var(--ps-accent);
+  --bn-colors-disabled-text: var(--ps-fg-muted);
+  --bn-colors-disabled-background: var(--ps-bg-hover);
+  --bn-colors-shadow: transparent;
+  --bn-colors-border: var(--ps-border);
+  --bn-colors-side-menu: var(--ps-border-hover);
+  --bn-font-family: var(--ps-font);
+  --bn-border-radius: var(--ps-radius);
+}
+
+// A host that marks its dark scheme gets dark form controls and scrollbars too.
+:where([data-color-scheme="dark"]) .ps-editor,
+:where([data-color-scheme="dark"]) .ps-diff {
+  color-scheme: dark;
+}
+
+// BlockNote sizes every block's content itself, so the title's size is set on
+// the content element BlockNote owns rather than inside the block's view.
+.ps-editor .bn-block-content[data-content-type="plan-title"] {
+  font-size: var(--ps-fs-title);
+  font-weight: var(--ps-fw-title);
+  line-height: var(--ps-lh-heading);
+  letter-spacing: -0.02em;
+}
+
+.ps-editor .bn-editor {
+  padding: var(--ps-space-page);
+  font-size: var(--ps-fs-body);
+  box-shadow: var(--ps-shadow);
+}
+
+.ps-editor .bn-block-outer {
+  line-height: var(--ps-lh-body);
+}
+
+.ps-editor .bn-block-content[data-content-type="paragraph"] {
+  padding-block: var(--ps-space-paragraph);
+}
+
+// Comments and a section's panel lead the section, so on a page wide enough
+// they float into a margin beside it rather than interrupting its text.
+.ps-editor .bn-container {
+  container: plan-page / inline-size;
+}
+
+@container plan-page (width >= 52rem) {
+  .ps-editor .bn-editor {
+    padding-right: calc(1.5 * var(--ps-space-page) + var(--ps-margin-notes));
+  }
+
+  .ps-editor
+    .bn-block-outer:has(
+      > .bn-block
+        > .react-renderer
+        > .bn-block-content:is(
+          [data-content-type="comment"],
+          [data-content-type="section-panel"]
+        )
+    ) {
+    float: right;
+    clear: right;
+    width: var(--ps-margin-notes);
+    margin-right: calc(-0.5 * var(--ps-space-page) - var(--ps-margin-notes));
+  }
+
+  .ps-editor
+    .bn-block-outer:has(
+      > .bn-block
+        > .react-renderer
+        > .bn-block-content[data-content-type="section-heading"]
+    ) {
+    clear: right;
+  }
+}
+
+.ps-editor
+  .bn-block-content:is(
+    [data-content-type="section-panel"],
+    [data-content-type="section-actions"]
+  ) {
+  width: 100%;
+}
+
+.ps-editor :focus-visible {
+  outline: 2px solid var(--ps-accent);
+  outline-offset: 1px;
+}

@@ -1,0 +1,63 @@
+// Every value the editor draws with, in one place. Each token reads a host
+// design token first and falls back to a neutral default, so the editor follows
+// the host's theme and colour scheme without being told which one is on.
+//
+// Host tokens consumed (all optional):
+//   colour  --text --text-muted --text-on-accent --bg --bg-surface
+//           --bg-elevated --bg-hover --border --border-hover --rule
+//           --focus-ring --accent --accent-hover --success --warning --danger
+//   type    --font-sans --font-mono --fs-xs --fs-sm --fs-base --fs-md --fs-lg --fs-xl
+//           --lh-body --lh-heading --lh-note --fw-medium --fw-semibold --fw-bold
+//   layout  --space-2 --space-3 --space-5 --space-6 --space-7 --space-page
+//           --space-paragraph
+//           --radius-sm --shadow --transition
+
+@mixin plan-tokens {
+  --ps-fg: var(--text, #1d1d1f);
+  --ps-fg-muted: var(--text-muted, #6e6e73);
+  --ps-fg-on-accent: var(--text-on-accent, #ffffff);
+  --ps-bg: var(--bg-surface, #ffffff);
+  --ps-bg-page: var(--bg, #f5f5f7);
+  --ps-bg-elevated: var(--bg-elevated, var(--ps-bg));
+  --ps-bg-hover: var(--bg-hover, #ececee);
+  --ps-border: var(--border, #d2d2d7);
+  --ps-border-hover: var(--border-hover, #b8b8c0);
+  --ps-rule: var(--rule, var(--ps-border));
+  --ps-accent: var(--accent, #0071e3);
+  --ps-accent-hover: var(--accent-hover, var(--ps-accent));
+  --ps-focus-ring: var(--focus-ring, rgba(0, 113, 227, 0.4));
+  --ps-success: var(--success, #1a7f37);
+  --ps-warning: var(--warning, #9a6700);
+  --ps-danger: var(--danger, #d70015);
+
+  --ps-font: var(--font-sans, system-ui, sans-serif);
+  --ps-font-mono: var(--font-mono, ui-monospace, monospace);
+  --ps-fs-label: var(--fs-xs, 0.75em);
+  --ps-fs-hint: var(--fs-sm, 0.875em);
+  --ps-fs-outline: var(--fs-sm, 0.875em);
+  --ps-fs-code: var(--fs-xs, 0.8em);
+  --ps-fs-body: var(--fs-base, 1rem);
+  --ps-fs-metric: var(--fs-md, 1.25rem);
+  --ps-fs-section: var(--fs-lg, 1.875rem);
+  --ps-fs-title: var(--fs-xl, 2.5rem);
+  --ps-lh-body: var(--lh-body, 1.7);
+  --ps-lh-heading: var(--lh-heading, 1.25);
+  --ps-lh-note: var(--lh-note, 1.5);
+  --ps-fw-label: var(--fw-semibold, 600);
+  --ps-fw-section: var(--fw-semibold, 600);
+  --ps-fw-title: var(--fw-bold, 700);
+
+  --ps-space-hint: var(--space-2, 0.25em);
+  --ps-space-block: var(--space-2, 0.25em);
+  --ps-space-inline: var(--space-3, 0.5em);
+  --ps-space-paragraph: var(--space-paragraph, 0.4em);
+  --ps-space-list: var(--space-5, 1.25em);
+  --ps-space-section: var(--space-7, 2.5rem);
+  --ps-space-layout: var(--space-6, 1.5rem);
+  --ps-space-page: var(--space-page, 4rem);
+  --ps-margin-notes: 17rem;
+
+  --ps-radius: var(--radius-sm, 6px);
+  --ps-shadow: var(--shadow, 0 1px 3px rgb(0 0 0 / 8%));
+  --ps-transition: var(--transition, 150ms ease);
+}

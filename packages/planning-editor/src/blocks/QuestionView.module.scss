@@ -1,0 +1,100 @@
+.question {
+  width: 100%;
+  padding: var(--ps-space-inline);
+  border: 1px dashed var(--ps-border-hover);
+  border-radius: var(--ps-radius);
+}
+
+.question .asked {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-inline);
+  align-items: baseline;
+  margin: 0 0 var(--ps-space-hint);
+  font-size: var(--ps-fs-label);
+}
+
+.label {
+  font-weight: var(--ps-fw-label);
+}
+
+.why {
+  color: var(--ps-fg-muted);
+}
+
+.how {
+  margin-left: auto;
+  color: var(--ps-accent);
+  font-weight: var(--ps-fw-label);
+}
+
+.text {
+  min-height: 1.2em;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-hint);
+  margin: var(--ps-space-inline) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestion {
+  padding: var(--ps-space-hint) var(--ps-space-inline);
+  color: var(--ps-accent);
+  background: var(--ps-bg);
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-label);
+  cursor: pointer;
+  transition: border-color var(--ps-transition);
+}
+
+.suggestion:hover {
+  border-color: var(--ps-accent);
+  background: var(--ps-bg-hover);
+}
+
+.answerBox {
+  display: flex;
+  gap: var(--ps-space-inline);
+  margin-top: var(--ps-space-inline);
+}
+
+.answerInput {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  padding: var(--ps-space-hint) var(--ps-space-inline);
+  color: var(--ps-fg);
+  background: var(--ps-bg);
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-hint);
+  transition: border-color var(--ps-transition);
+}
+
+.answerInput:focus {
+  border-color: var(--ps-accent);
+  outline: none;
+}
+
+.answerButton {
+  padding: var(--ps-space-hint) var(--ps-space-list);
+  color: var(--ps-fg-on-accent);
+  background: var(--ps-accent);
+  border: 1px solid var(--ps-accent);
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-label);
+  font-weight: var(--ps-fw-label);
+  cursor: pointer;
+  transition: background var(--ps-transition);
+}
+
+.answerButton:hover {
+  background: var(--ps-accent-hover);
+}

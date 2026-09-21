@@ -1,0 +1,93 @@
+.comment {
+  width: 100%;
+  margin-bottom: var(--ps-space-inline);
+  padding: var(--ps-space-inline) calc(1.5 * var(--ps-space-inline));
+  background: var(--ps-bg-page);
+  border-radius: var(--ps-radius);
+  line-height: var(--ps-lh-note);
+}
+
+.comment[data-reply] {
+  width: auto;
+  margin: calc(-1 * var(--ps-space-inline)) 0 var(--ps-space-inline)
+    var(--ps-space-list);
+  border-left: 2px solid var(--ps-rule);
+  border-radius: 0 var(--ps-radius) var(--ps-radius) 0;
+}
+
+.comment[data-resolved] {
+  color: var(--ps-fg-muted);
+  background: transparent;
+  border: 1px dashed var(--ps-rule);
+}
+
+.comment[data-resolved] .text {
+  display: none;
+}
+
+// Nested to outrank BlockNote's `.bn-default-styles p` reset.
+.comment .who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ps-space-inline);
+  align-items: baseline;
+  margin: 0 0 var(--ps-space-hint);
+  font-size: var(--ps-fs-label);
+}
+
+.author {
+  font-weight: var(--ps-fw-label);
+}
+
+.when {
+  color: var(--ps-fg-muted);
+}
+
+.badge {
+  color: var(--ps-success);
+  font-weight: var(--ps-fw-label);
+}
+
+.text {
+  min-height: 1.5em;
+  font-size: var(--ps-fs-hint);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-list);
+  align-items: center;
+  margin-top: var(--ps-space-hint);
+}
+
+.actions button {
+  padding: 0;
+  color: var(--ps-accent);
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--ps-fs-label);
+  font-weight: var(--ps-fw-label);
+  cursor: pointer;
+}
+
+.actions button:hover {
+  color: var(--ps-accent-hover);
+  text-decoration: underline;
+}
+
+.reply {
+  flex: 1 1 100%;
+}
+
+.input {
+  width: 100%;
+  padding: var(--ps-space-hint) var(--ps-space-inline);
+  color: var(--ps-fg);
+  background: var(--ps-bg);
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-hint);
+}

@@ -1,0 +1,44 @@
+.diff {
+  font-size: var(--ps-fs-outline);
+  font-family: var(--ps-font);
+  color: var(--ps-fg);
+}
+
+.same {
+  color: var(--ps-fg-muted);
+}
+
+.meta {
+  margin: 0 0 var(--ps-space-inline);
+  padding-left: var(--ps-space-list);
+  color: var(--ps-fg-muted);
+}
+
+.title {
+  margin: var(--ps-space-inline) 0 0;
+  font-size: var(--ps-fs-hint);
+  font-weight: var(--ps-fw-label);
+}
+
+.lines {
+  margin: 0;
+  padding-left: var(--ps-space-list);
+  list-style: none;
+  font-family: var(--ps-font-mono);
+}
+
+.kept {
+  color: var(--ps-fg-muted);
+}
+
+.added {
+  color: var(--ps-success);
+}
+
+.removed {
+  color: var(--ps-danger);
+}
+
+.changed {
+  color: var(--ps-accent);
+}

@@ -1,0 +1,11 @@
+.title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.title:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ps-fg-muted);
+}

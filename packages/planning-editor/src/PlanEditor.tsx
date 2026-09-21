@@ -1,0 +1,184 @@
+import { useEffect, useMemo } from "react";
+import { BlockNoteView } from "@blocknote/ariakit";
+import {
+  templateFor,
+  validatePlan,
+  type PlanDocument,
+  type PlanMeta,
+  type PlanTemplate,
+  type ValidationPhase,
+  type ValidationReport,
+} from "@re-cinq/planning-document";
+
+import { AdaptersContext, type PlanEditorAdapters } from "./blocks/adapters.js";
+import {
+  PlanActionsContext,
+  type RefineRequest,
+} from "./blocks/plan-actions.js";
+import { PlanSideMenu } from "./menu/PlanSideMenu.js";
+import { PlanSlashMenu } from "./menu/PlanSlashMenu.js";
+import { TemplateOutline } from "./outline/TemplateOutline.js";
+import styles from "./PlanEditor.module.scss";
+import type { PlanBlockNoteEditor } from "./schema/block-bridge.js";
+import { PresenceBar } from "./presence/PresenceBar.js";
+import { useTrackEditing } from "./presence/use-presence.js";
+import type { PlanTransport, PlanUser } from "./session/plan-events.js";
+import type { PlanSession } from "./session/plan-session.js";
+import { SessionNotice } from "./session/SessionNotice.js";
+import { usePlanSession, useSessionState } from "./session/use-plan-session.js";
+import { TemplateContext } from "./template/template-context.js";
+import { usePlanEditor } from "./use-plan-editor.js";
+
+export interface PlanEditorProps {
+  transport: PlanTransport;
+  user: PlanUser;
+  onChange?: (plan: PlanDocument) => void;
+  template?: PlanTemplate;
+  readOnly?: boolean;
+  showOutline?: boolean;
+  showPresence?: boolean;
+  validationPhase?: ValidationPhase;
+  onValidation?: (report: ValidationReport) => void;
+  /** A section's Refine button: hand it to the planning agent, which answers with a proposal; a rejection withdraws the ask. */
+  onRefine?: (request: RefineRequest) => Promise<void>;
+  adapters?: PlanEditorAdapters;
+  className?: string;
+}
+
+type SessionProps = Omit<
+  PlanEditorProps,
+  "transport" | "adapters" | "className"
+> & { session: PlanSession };
+
+type WorkspaceProps = Omit<SessionProps, "template"> & {
+  meta: PlanMeta;
+  template: PlanTemplate;
+};
+
+type LayoutProps = Pick<
+  WorkspaceProps,
+  "template" | "readOnly" | "showOutline" | "showPresence"
+> & {
+  editor: PlanBlockNoteEditor;
+  awareness: PlanSession["awareness"];
+  report: ValidationReport;
+};
+
+const NO_ADAPTERS: PlanEditorAdapters = {};
+
+export function PlanEditor({
+  transport,
+  adapters = NO_ADAPTERS,
+  className,
+  ...props
+}: PlanEditorProps) {
+  const session = usePlanSession(transport);
+
+  return (
+    <AdaptersContext value={adapters}>
+      <div className={editorClasses({ ...props, className })}>
+        {session ? (
+          <SessionEditor {...props} session={session} />
+        ) : (
+          <SessionNotice status="connecting" />
+        )}
+      </div>
+    </AdaptersContext>
+  );
+}
+
+function editorClasses({
+  showOutline,
+  className,
+}: Pick<PlanEditorProps, "showOutline" | "className">): string {
+  const layout = showOutline === false ? styles.single : styles.withOutline;
+
+  return [styles.editor, layout, "ps-editor", className]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function SessionEditor({ template, ...props }: SessionProps) {
+  const { status, meta, reason } = useSessionState(props.session);
+
+  if (!meta) {
+    return <SessionNotice status={status} reason={reason} />;
+  }
+
+  const active = template ?? templateFor(meta.type);
+
+  return (
+    <TemplateContext value={active}>
+      {status !== "ready" && <SessionNotice status={status} reason={reason} />}
+      <PlanWorkspace {...props} meta={meta} template={active} />
+    </TemplateContext>
+  );
+}
+
+function PlanWorkspace({
+  validationPhase = "approval",
+  onValidation,
+  onRefine,
+  ...props
+}: WorkspaceProps) {
+  const { session, user } = props;
+  const { editor, plan } = usePlanEditor(props);
+  const report = usePlanValidation(plan, validationPhase, onValidation);
+  const { awareness } = session;
+  useTrackEditing(editor, awareness);
+  const view = { ...props, editor, awareness, report };
+
+  return (
+    <PlanActionsContext value={{ user, onRefine, doc: session.doc }}>
+      <WorkspaceLayout {...view} />
+    </PlanActionsContext>
+  );
+}
+
+function WorkspaceLayout({
+  showOutline = true,
+  showPresence = true,
+  ...view
+}: LayoutProps) {
+  const { template } = view;
+
+  return (
+    <>
+      {showPresence && (
+        <PresenceBar awareness={view.awareness} template={template} />
+      )}
+      <EditorSurface {...view} />
+      {showOutline && (
+        <TemplateOutline template={template} report={view.report} />
+      )}
+    </>
+  );
+}
+
+function EditorSurface({
+  editor,
+  readOnly,
+}: Pick<LayoutProps, "editor" | "readOnly">) {
+  return (
+    <BlockNoteView
+      editor={editor}
+      editable={!readOnly}
+      slashMenu={false}
+      sideMenu={false}
+    >
+      <PlanSlashMenu />
+      <PlanSideMenu />
+    </BlockNoteView>
+  );
+}
+
+function usePlanValidation(
+  plan: PlanDocument,
+  phase: ValidationPhase,
+  onValidation?: (report: ValidationReport) => void,
+): ValidationReport {
+  const report = useMemo(() => validatePlan(plan, phase), [plan, phase]);
+  useEffect(() => onValidation?.(report), [report, onValidation]);
+
+  return report;
+}

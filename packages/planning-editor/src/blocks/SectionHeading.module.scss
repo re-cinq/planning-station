@@ -1,0 +1,23 @@
+.heading {
+  width: 100%;
+  margin-top: var(--ps-space-section);
+  padding-top: var(--ps-space-section);
+  border-top: 1px solid var(--ps-rule);
+  user-select: none;
+}
+
+// Nested to outrank BlockNote's `.bn-default-styles h2, p` reset.
+.heading .title {
+  margin: 0;
+  font-size: var(--ps-fs-section);
+  font-weight: var(--ps-fw-section);
+  line-height: var(--ps-lh-heading);
+  letter-spacing: -0.01em;
+}
+
+.heading .hint {
+  margin: var(--ps-space-inline) 0 var(--ps-space-list);
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-hint);
+  line-height: var(--ps-lh-heading);
+}

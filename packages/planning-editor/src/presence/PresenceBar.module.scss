@@ -1,0 +1,23 @@
+.bar {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-inline);
+  min-height: 1.5em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-hint);
+}
+
+.user {
+  display: inline-flex;
+  gap: var(--ps-space-hint);
+  align-items: center;
+}
+
+.dot {
+  width: 0.6em;
+  height: 0.6em;
+}

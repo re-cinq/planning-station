@@ -1,0 +1,41 @@
+.field {
+  display: inline-flex;
+  gap: var(--ps-space-hint);
+  align-items: baseline;
+}
+
+.label {
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-label);
+}
+
+.input,
+.field select {
+  min-width: 6ch;
+  padding: var(--ps-space-hint) var(--ps-space-inline);
+  color: var(--ps-fg);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ps-radius);
+  font: inherit;
+  transition:
+    border-color var(--ps-transition),
+    background var(--ps-transition);
+}
+
+.input:hover:not(:disabled, [readonly]),
+.field select:hover:not(:disabled) {
+  background: var(--ps-bg-hover);
+}
+
+.input:focus,
+.field select:focus {
+  background: var(--ps-bg);
+  border-color: var(--ps-accent);
+  outline: none;
+}
+
+.input:disabled,
+.field select:disabled {
+  color: var(--ps-fg-muted);
+}

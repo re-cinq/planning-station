@@ -1,0 +1,34 @@
+.outline {
+  position: sticky;
+  top: var(--ps-space-layout);
+  font-size: var(--ps-fs-outline);
+  line-height: var(--ps-lh-heading);
+}
+
+.phase {
+  margin: 0 0 var(--ps-space-list);
+  padding-bottom: var(--ps-space-inline);
+  border-bottom: 1px solid var(--ps-rule);
+  font-weight: var(--ps-fw-label);
+}
+
+.slots {
+  display: grid;
+  gap: var(--ps-space-inline);
+  margin: 0;
+  padding-left: var(--ps-space-list);
+}
+
+.title {
+  font-weight: var(--ps-fw-label);
+}
+
+.required {
+  color: var(--ps-fg-muted);
+}
+
+.problems {
+  margin: 0;
+  padding-left: var(--ps-space-list);
+  color: var(--ps-danger);
+}

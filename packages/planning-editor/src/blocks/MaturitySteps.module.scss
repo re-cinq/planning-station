@@ -1,0 +1,64 @@
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-column: 1 / -1;
+  gap: var(--ps-space-hint);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--ps-space-hint);
+  padding: 0;
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-label);
+  font-weight: var(--ps-fw-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.step {
+  position: relative;
+  padding: var(--ps-space-inline) var(--ps-space-hint);
+  color: var(--ps-fg-muted);
+  text-align: center;
+  font-size: var(--ps-fs-hint);
+  background: var(--ps-bg-hover);
+  border-radius: var(--ps-radius);
+  cursor: pointer;
+  transition:
+    color var(--ps-transition),
+    background var(--ps-transition);
+}
+
+.step input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.step[data-reached] {
+  color: var(--ps-accent);
+  background: color-mix(in srgb, var(--ps-accent) 12%, transparent);
+}
+
+.step:has(input:checked) {
+  color: var(--ps-fg-on-accent);
+  background: var(--ps-accent);
+}
+
+.step:has(input:focus-visible) {
+  outline: 2px solid var(--ps-focus-ring);
+  outline-offset: 2px;
+}
+
+.steps:disabled .step {
+  cursor: default;
+}
+
+.steps:not(:disabled) .step:not(:has(input:checked)):hover {
+  color: var(--ps-fg);
+}

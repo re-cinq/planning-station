@@ -1,0 +1,144 @@
+.block {
+  width: 100%;
+  padding: var(--ps-space-block) 0 var(--ps-space-block) var(--ps-space-inline);
+  border-left: 2px solid var(--ps-accent);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-inline);
+  align-items: baseline;
+  user-select: none;
+}
+
+.block .head {
+  display: flex;
+  gap: var(--ps-space-inline);
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.label {
+  font-weight: var(--ps-fw-label);
+  font-size: var(--ps-fs-label);
+}
+
+.link {
+  color: var(--ps-accent);
+  font-size: var(--ps-fs-hint);
+  font-weight: var(--ps-fw-label);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.content {
+  min-height: 1.5em;
+}
+
+.block[data-kind="answer"] {
+  border-left-color: var(--ps-success);
+}
+
+.block[data-kind="answer"] .label {
+  color: var(--ps-success);
+}
+
+// A KPI and a prototype read as cards: a headline, then the fields that pin it down.
+.block:is([data-kind="kpi"], [data-kind="prototype"]) {
+  margin-block: var(--ps-space-inline);
+  padding: var(--ps-space-list) calc(1.25 * var(--ps-space-list));
+  border: 1px solid var(--ps-rule);
+  border-radius: calc(2 * var(--ps-radius));
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) .meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--ps-space-inline) var(--ps-space-list);
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) .head {
+  grid-column: 1 / -1;
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) .label,
+.block:is([data-kind="kpi"], [data-kind="prototype"]) [data-field] label {
+  font-size: var(--ps-fs-label);
+  font-weight: var(--ps-fw-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) .label {
+  color: var(--ps-accent);
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) [data-field] {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"])
+  [data-field]
+  :is(input, select) {
+  margin-inline: calc(-1 * var(--ps-space-inline));
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) [data-field] select {
+  align-self: flex-start;
+}
+
+.block:is([data-kind="kpi"], [data-kind="prototype"]) .content {
+  margin-top: var(--ps-space-list);
+  padding-top: var(--ps-space-inline);
+  color: var(--ps-fg-muted);
+  border-top: 1px solid var(--ps-rule);
+}
+
+.block[data-kind="kpi"] [data-field="metric"] {
+  grid-column: 1 / -1;
+}
+
+.block[data-kind="kpi"] [data-field="metric"] label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.block[data-kind="kpi"] [data-field="metric"] input {
+  font-size: var(--ps-fs-metric);
+  font-weight: var(--ps-fw-section);
+  line-height: var(--ps-lh-heading);
+}
+
+// The steps and the link need the whole width; the name beside it does not.
+.block[data-kind="prototype"] [data-field="maturity"] {
+  display: grid;
+  grid-column: 1 / -1;
+}
+
+// The steps are choices, not field names, so they skip the card's label style.
+.block[data-kind="prototype"] [data-field="maturity"] label {
+  font-size: var(--ps-fs-hint);
+  font-weight: normal;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.block[data-kind="prototype"] [data-field="url"] {
+  grid-column: 1 / -1;
+}
+
+.block[data-kind="prototype"] [data-field="url"] input {
+  font-family: var(--ps-font-mono);
+  font-size: var(--ps-fs-code);
+  text-overflow: ellipsis;
+}
