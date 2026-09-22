@@ -11,7 +11,9 @@ import {
 import {
   applyOpsToDoc,
   enforceSectionUnchanged,
+  proposePass,
   proposeRefine,
+  type PassOutcome,
   type SectionBase,
 } from "@re-cinq/planning-yjs";
 
@@ -36,11 +38,22 @@ export interface ProposalRequest {
   uses: RefineUses;
 }
 
+/** One pass's whole answer: the Refine a person asked, and the sections the settled answers forced it to change as well. */
+export interface PassRequest {
+  planId: string;
+  actor: string;
+  asked?: { slot: string; baseHash: string };
+  ops: readonly AgentOp[];
+  uses: RefineUses;
+}
+
 /** The planning agent's writes, into the live document. */
 export interface AgentWriter {
   applyOps(request: OpsRequest): Promise<PlanDocument>;
   /** An answer to a person's Refine, kept aside until someone accepts it. */
   propose(request: ProposalRequest): Promise<ProposedRefine>;
+  /** A pass's proposals, one per section it touched, each against that section as it stands. */
+  proposePass(request: PassRequest): Promise<PassOutcome>;
 }
 
 export interface AgentWriterOptions {
@@ -52,6 +65,7 @@ export function createAgentWriter(options: AgentWriterOptions): AgentWriter {
   return {
     applyOps: (request) => write(options, request),
     propose: (request) => propose(options, request),
+    proposePass: (request) => pass(options, request),
   };
 }
 
@@ -77,6 +91,17 @@ async function propose(
 
   return inDocument(options, json, (document) =>
     proposeRefine(document, { ...offer, proposedBy: actor }, AGENT_ORIGIN),
+  );
+}
+
+async function pass(
+  options: AgentWriterOptions,
+  { planId, actor, ...offer }: PassRequest,
+): Promise<PassOutcome> {
+  const { json } = await options.service.readPlan(planId);
+
+  return inDocument(options, json, (document) =>
+    proposePass(document, { ...offer, proposedBy: actor }, AGENT_ORIGIN),
   );
 }
 

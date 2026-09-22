@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ProposalScopeError,
+  sectionHash,
   SectionChangedError,
   type AgentOp,
 } from "@re-cinq/planning-document";
@@ -20,6 +21,7 @@ import {
   discardRefine,
   NoProposalError,
   proposalsIn,
+  proposePass,
   proposeRefine,
 } from "./proposals.js";
 
@@ -152,5 +154,56 @@ describe("refine proposals", () => {
   it("throws NoProposalError when scope is accepted before the agent answered", () => {
     const { doc } = askedByAna();
     expect(() => acceptRefine(doc, "scope")).toThrow(NoProposalError);
+  });
+});
+
+describe("proposePass", () => {
+  const ripple: AgentOp = {
+    op: "append-to-section",
+    slot: "intent",
+    paragraphs: ["Only the EU, so the plan is EU-only."],
+  };
+
+  it("proposes the asked section and every other section an answer forced, each against itself", () => {
+    const { doc, baseHash } = askedByAna();
+    const outcome = proposePass(
+      doc,
+      {
+        asked: { slot: "scope", baseHash },
+        ops: [OUT_OF_SCOPE, ripple],
+        uses: { questions: ["q-tax"], comments: [] },
+        proposedBy: "planning-agent",
+      },
+      "agent",
+    );
+
+    expect({
+      outcome,
+      proposals: proposalsIn(doc)
+        .map((proposal) => `${proposal.slot}:${proposal.status}`)
+        .sort(),
+    }).toEqual({
+      outcome: { proposed: ["scope", "intent"], skipped: [] },
+      proposals: ["intent:proposed", "scope:proposed"],
+    });
+  });
+
+  it("leaves a section whose proposal someone is already reviewing, rather than replacing it", () => {
+    const doc = proposed();
+    const outcome = proposePass(
+      doc,
+      {
+        asked: {
+          slot: "intent",
+          baseHash: sectionHash(readBlocks(doc), "intent"),
+        },
+        ops: [ripple, OUT_OF_SCOPE],
+        uses: { questions: [], comments: [] },
+        proposedBy: "planning-agent",
+      },
+      "agent",
+    );
+
+    expect(outcome).toEqual({ proposed: ["intent"], skipped: ["scope"] });
   });
 });
