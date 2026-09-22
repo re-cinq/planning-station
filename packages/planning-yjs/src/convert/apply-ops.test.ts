@@ -14,7 +14,7 @@ import {
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 
 import { docFromBlocks, readBlocks } from "./plan-doc.js";
-import { applyOpsToDoc, UnseededDocError } from "./apply-ops.js";
+import { applyOpsToDoc, rewriteDoc, UnseededDocError } from "./apply-ops.js";
 
 const latency = (target: string): AgentOp => ({
   op: "upsert-kpi",
@@ -105,6 +105,31 @@ describe("applyOpsToDoc", () => {
     const { ops } = markdownToOps(markdown, readBlocks(doc), feature);
     applyOpsToDoc(doc, ops);
     expect(planToMarkdown(readBlocks(doc), feature)).toEqual(markdown);
+  });
+
+  it(
+    "writes a 40 000-paragraph intent in one pass within 4 seconds, where one insert per block took 19",
+    { timeout: 4_000 },
+    () => {
+      const doc = seeded();
+      const paragraphs = [...Array(40_000).keys()].map(
+        (index) => `Finding ${index}.`,
+      );
+      applyOpsToDoc(doc, [
+        { op: "set-section-text", slot: "intent", paragraphs },
+      ]);
+      expect(texts(doc).at(-1)).toEqual("Finding 39999.");
+    },
+  );
+
+  it("moves the first section's heading to the end once, leaving no copy where it was", () => {
+    const doc = seeded();
+    const [first, ...rest] = readBlocks(doc);
+    const moved = first ? [...rest, first] : rest;
+    rewriteDoc(doc, () => moved);
+    expect(readBlocks(doc).map((block) => block.id)).toEqual(
+      moved.map((block) => block.id),
+    );
   });
 
   it("throws UnseededDocError when the document holds no plan yet", () => {
