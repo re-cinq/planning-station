@@ -49,7 +49,8 @@ export function enforceInSection(slot: string, ops: readonly AgentOp[]): void {
   );
 }
 
-function slotOf(op: AgentOp): string {
+/** The section an op writes into — how a host keeps only the ops a Refine may carry. */
+export function slotOf(op: AgentOp): string {
   if (op.op === "upsert-kpi") {
     return KPIS_SLOT;
   }
