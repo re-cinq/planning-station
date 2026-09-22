@@ -1,5 +1,13 @@
 import { offset, type ReferenceElement } from "@floating-ui/react";
-import { SideMenuController, type FloatingUIOptions } from "@blocknote/react";
+import { SideMenuExtension } from "@blocknote/core/extensions";
+import {
+  SideMenu,
+  SideMenuController,
+  useExtensionState,
+  type FloatingUIOptions,
+} from "@blocknote/react";
+
+import { STRUCTURAL } from "../template/template-guard.js";
 
 // BlockNote pins the menu to a block's top edge; plan blocks open with rules and spacing.
 const OPTIONS: Partial<FloatingUIOptions> = {
@@ -16,7 +24,18 @@ const OPTIONS: Partial<FloatingUIOptions> = {
 };
 
 export function PlanSideMenu() {
-  return <SideMenuController floatingUIOptions={OPTIONS} />;
+  return (
+    <SideMenuController floatingUIOptions={OPTIONS} sideMenu={BlockHandles} />
+  );
+}
+
+/** People write inside the plan's skeleton, never move or delete it, so its blocks get no add or drag handle. */
+function BlockHandles() {
+  const type = useExtensionState(SideMenuExtension, {
+    selector: (state) => state?.block.type,
+  });
+
+  return type === undefined || STRUCTURAL.includes(type) ? null : <SideMenu />;
 }
 
 function lineCentreOf(reference: ReferenceElement): number | null {

@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-import { presenceUsers, type AwarenessState } from "./presence-users.js";
+import { templateFor } from "@re-cinq/planning-document";
+
+import {
+  presenceLabel,
+  presenceUsers,
+  type AwarenessState,
+} from "./presence-users.js";
 
 const ANA_STATE: AwarenessState = {
   user: { name: "Ana", color: "#d33682" },
@@ -30,5 +36,22 @@ describe("presenceUsers", () => {
     expect(presenceUsers(withoutCursor, 1)).toMatchObject([
       { name: "Ana", slot: null },
     ]);
+  });
+});
+
+describe("presenceLabel", () => {
+  const template = templateFor("feature");
+  const ana = { clientId: 2, name: "Ana", color: "#d33682", slot: "kpis" };
+
+  it("names the template section and the section the agent added that Ana is editing", () => {
+    expect([
+      presenceLabel(ana, template, new Map()),
+      presenceLabel(
+        { ...ana, slot: "custom-rollout" },
+        template,
+        new Map([["custom-rollout", "Rollout waves"]]),
+      ),
+      presenceLabel({ ...ana, slot: null }, template, new Map()),
+    ]).toEqual(["Ana in Success criteria", "Ana in Rollout waves", "Ana"]);
   });
 });

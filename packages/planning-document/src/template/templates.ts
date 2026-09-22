@@ -1,6 +1,8 @@
+import { PROSE_BLOCK_KINDS } from "../blocks/prose-blocks.js";
 import { enforceTrue } from "../lib/enforce.js";
+import { newId } from "../lib/ids.js";
 import type { PlanKind } from "../plan/plan-meta.js";
-import { SLOTS } from "./slots.js";
+import { ALWAYS_ALLOWED, SLOTS } from "./slots.js";
 import type { PlanTemplate, SectionSlot } from "./template.js";
 
 export class UnknownSlotError extends Error {}
@@ -90,4 +92,48 @@ export function slotFor(template: PlanTemplate, slot: string): SectionSlot {
   enforceTrue(found, UnknownSlotError, `${template.type} has no slot ${slot}`);
 
   return found;
+}
+
+/** The slot prefix of a section the planning agent added to one plan. */
+export const CUSTOM_SLOT_PREFIX = "custom-";
+
+export function isCustomSlot(slot: string): boolean {
+  return slot.startsWith(CUSTOM_SLOT_PREFIX);
+}
+
+export function newCustomSlot(): string {
+  return `${CUSTOM_SLOT_PREFIX}${newId("section")}`;
+}
+
+/** A section of the template, or one the agent added, under the title its heading carries. */
+export function sectionSlotFor(
+  template: PlanTemplate,
+  slot: string,
+  title?: string,
+): SectionSlot {
+  const found = findSectionSlot(template, slot, title);
+  enforceTrue(found, UnknownSlotError, `${template.type} has no slot ${slot}`);
+
+  return found;
+}
+
+export function findSectionSlot(
+  template: PlanTemplate,
+  slot: string,
+  title = "",
+): SectionSlot | undefined {
+  const known = template.slots.find((candidate) => candidate.slot === slot);
+
+  return known ?? (isCustomSlot(slot) ? customSlot(slot, title) : undefined);
+}
+
+function customSlot(slot: string, title: string): SectionSlot {
+  return {
+    slot,
+    title,
+    required: "optional",
+    allows: [...PROSE_BLOCK_KINDS, ...ALWAYS_ALLOWED],
+    requires: [],
+    hint: "Added by the planning agent for this plan.",
+  };
 }

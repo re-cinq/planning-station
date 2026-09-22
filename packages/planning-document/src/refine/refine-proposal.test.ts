@@ -47,6 +47,41 @@ describe("enforceInSection", () => {
     expect(() => enforceInSection("scope", [APPEND_SCOPE])).not.toThrow();
   });
 
+  it("lets a refine of scope ask a question in scope", () => {
+    expect(() =>
+      enforceInSection("scope", [
+        {
+          op: "add-question",
+          slot: "scope",
+          questionId: "q-flag",
+          question: "Which flag?",
+          why: "",
+          kind: "text",
+          options: [],
+        },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("throws ProposalScopeError when a refine of scope adds the custom-rollout section", () => {
+    expect(() =>
+      enforceInSection("scope", [
+        {
+          op: "add-section",
+          slot: "custom-rollout",
+          title: "Rollout",
+          after: "scope",
+          paragraphs: [],
+        },
+        { op: "set-section-title", slot: "custom-rollout", title: "Rollout" },
+      ]),
+    ).toThrow(
+      new ProposalScopeError(
+        "a refine of scope may not change custom-rollout, custom-rollout",
+      ),
+    );
+  });
+
   it("throws ProposalScopeError when a refine of scope changes a KPI", () => {
     expect(() =>
       enforceInSection("scope", [{ op: "upsert-kpi", kpi: agentKpi() }]),

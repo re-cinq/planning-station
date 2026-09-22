@@ -8,7 +8,7 @@ const SECTION_HEADING = "section-heading";
 const BLOCK_CONTENT_GROUP = "blockContent";
 
 /** The plan's skeleton: its title, its section headings and each section's panel and actions. */
-const STRUCTURAL: readonly string[] = [
+export const STRUCTURAL: readonly string[] = [
   "plan-title",
   SECTION_HEADING,
   "section-panel",

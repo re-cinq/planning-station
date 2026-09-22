@@ -2,7 +2,12 @@ import { isPlanBlock, type BlockJson } from "../blocks/block-json.js";
 import { plainText } from "../blocks/inline-text.js";
 import type { Section } from "../plan/plan-document.js";
 import { ALWAYS_ALLOWED, NOT_CONTENT } from "../template/slots.js";
-import type { BlockRequirement, SectionSlot } from "../template/template.js";
+import type {
+  BlockRequirement,
+  PlanTemplate,
+  SectionSlot,
+} from "../template/template.js";
+import { findSectionSlot, isCustomSlot } from "../template/templates.js";
 import {
   isAtLeast,
   isRequiredAt,
@@ -33,7 +38,9 @@ export const unknownSections: Check = ({ plan: { sections }, template }) => {
   const known = new Set(template.slots.map((slot) => slot.slot));
 
   return sections
-    .filter((section) => !known.has(section.slot))
+    .filter(
+      (section) => !known.has(section.slot) && !isCustomSlot(section.slot),
+    )
     .map((section) => ({
       code: "unknown-section",
       slot: section.slot,
@@ -58,7 +65,7 @@ export const sectionOrder: Check = ({ plan: { sections }, template }) => {
 };
 
 export const disallowedBlocks: Check = ({ plan: { sections }, template }) =>
-  sectionsWithSlots(sections, template.slots).flatMap(
+  sectionsWithSlots(sections, template).flatMap(
     ({ section: { blocks }, slot }) =>
       blocks
         .filter((block) => !allowedIn(slot, block))
@@ -72,11 +79,11 @@ export const disallowedBlocks: Check = ({ plan: { sections }, template }) =>
 
 export const emptyRequiredSections: Check = ({
   plan: { sections },
-  template: { slots },
+  template,
   phase,
 }) =>
   isAtLeast(phase, "approval")
-    ? requiredSections(sections, slots, phase)
+    ? requiredSections(sections, template, phase)
         .filter(({ section }) => !section.blocks.some(isMeaningful))
         .map(({ slot }) => ({
           code: "empty-required-section",
@@ -87,11 +94,11 @@ export const emptyRequiredSections: Check = ({
 
 export const blockRequirements: Check = ({
   plan: { sections },
-  template: { slots },
+  template,
   phase,
 }) =>
   isAtLeast(phase, "approval")
-    ? requiredSections(sections, slots, phase).flatMap(({ section, slot }) =>
+    ? requiredSections(sections, template, phase).flatMap(({ section, slot }) =>
         slot.requires.flatMap((requirement) =>
           countProblems(section.blocks, slot, requirement),
         ),
@@ -153,10 +160,10 @@ interface SectionWithSlot {
 
 function sectionsWithSlots(
   sections: readonly Section[],
-  slots: readonly SectionSlot[],
+  template: PlanTemplate,
 ): SectionWithSlot[] {
   return sections.flatMap((section) => {
-    const slot = slots.find((candidate) => candidate.slot === section.slot);
+    const slot = findSectionSlot(template, section.slot, section.title);
 
     return slot ? [{ section, slot }] : [];
   });
@@ -164,10 +171,10 @@ function sectionsWithSlots(
 
 function requiredSections(
   sections: readonly Section[],
-  slots: readonly SectionSlot[],
+  template: PlanTemplate,
   phase: ValidationPhase,
 ): SectionWithSlot[] {
-  return sectionsWithSlots(sections, slots).filter(({ slot }) =>
+  return sectionsWithSlots(sections, template).filter(({ slot }) =>
     isRequiredAt(slot.required, phase),
   );
 }

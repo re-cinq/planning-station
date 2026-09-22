@@ -23,6 +23,14 @@ export * from "./refine/section-hash.js";
 export * from "./refine/refine-proposal.js";
 export * from "./refine/proposal-preview.js";
 export * from "./refine/refine-inputs.js";
+export { planToMarkdown } from "./markdown/plan-to-markdown.js";
+export { markdownToOps } from "./markdown/markdown-to-ops.js";
+export {
+  MARKDOWN_PROBLEM_CODES,
+  type MarkdownOps,
+  type MarkdownProblem,
+  type MarkdownProblemCode,
+} from "./markdown/markdown-outcome.js";
 export * from "./naming/doc-name.js";
 export { enforceTrue, type ErrorFactory } from "./lib/enforce.js";
 export { newId } from "./lib/ids.js";

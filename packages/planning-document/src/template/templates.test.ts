@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 
 import {
   TEMPLATES,
+  isCustomSlot,
+  newCustomSlot,
+  sectionSlotFor,
   templateFor,
   slotFor,
   UnknownSlotError,
@@ -69,5 +72,58 @@ describe("slotFor", () => {
     expect(() => slotFor(templateFor("feature"), "risk")).toThrow(
       new UnknownSlotError("feature has no slot risk"),
     );
+  });
+
+  it("throws UnknownSlotError for a custom section, which no template holds", () => {
+    expect(() => slotFor(templateFor("feature"), "custom-rollout")).toThrow(
+      new UnknownSlotError("feature has no slot custom-rollout"),
+    );
+  });
+});
+
+describe("sectionSlotFor", () => {
+  it("returns the refactor template's own kpis slot, whatever title the caller passes", () => {
+    expect(sectionSlotFor(templateFor("refactor"), "kpis", "Ignored")).toEqual(
+      slotFor(templateFor("refactor"), "kpis"),
+    );
+  });
+
+  it("gives custom-rollout an optional slot titled Rollout that takes prose and questions", () => {
+    const slot = sectionSlotFor(
+      templateFor("feature"),
+      "custom-rollout",
+      "Rollout",
+    );
+    expect({
+      slot,
+      takesQuestions: slot.allows.includes("question"),
+      takesKpis: slot.allows.includes("kpi"),
+    }).toMatchObject({
+      slot: {
+        slot: "custom-rollout",
+        title: "Rollout",
+        required: "optional",
+        requires: [],
+      },
+      takesQuestions: true,
+      takesKpis: false,
+    });
+  });
+
+  it("throws UnknownSlotError for risk on a feature plan", () => {
+    expect(() => sectionSlotFor(templateFor("feature"), "risk")).toThrow(
+      new UnknownSlotError("feature has no slot risk"),
+    );
+  });
+});
+
+describe("newCustomSlot", () => {
+  it("mints a fresh slot that starts with custom-", () => {
+    const [first, second] = [newCustomSlot(), newCustomSlot()];
+    expect({
+      custom: isCustomSlot(first),
+      fresh: first !== second,
+      intent: isCustomSlot("intent"),
+    }).toEqual({ custom: true, fresh: true, intent: false });
   });
 });

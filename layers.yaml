@@ -10,6 +10,7 @@ layers:
         versions,
         validation,
         refine,
+        markdown,
         naming,
         lib,
       ]
@@ -18,8 +19,11 @@ layers:
     plan: [blocks, lib]
     template: [blocks, plan, lib]
     ops:
-      imports: [blocks, plan, projection, lib]
+      imports: [blocks, plan, template, projection, lib]
       tests: [projection, testing]
+    markdown:
+      imports: [blocks, plan, template, projection, ops, lib]
+      tests: [testing]
     versions:
       imports: [blocks, plan, lib]
       tests: [projection, testing]
