@@ -12,6 +12,7 @@ import {
 } from "@re-cinq/planning-document";
 import {
   acceptRefine,
+  applyRefineAnyway,
   askRefine,
   discardRefine,
   proposalsIn,
@@ -33,6 +34,8 @@ export interface SectionRefine {
   preview?: ProposalPreview;
   ask(askedBy: string): RefineAsked;
   accept(): void;
+  /** Writes the proposal over the section as it stands, for a person who would rather have the answer than the words it was written against. */
+  applyAnyway(): void;
   discard(): void;
 }
 
@@ -68,6 +71,7 @@ function actionsFor(doc: Doc, slot: string, inputs: RefineInputs) {
       baseHash: askRefine(doc, { slot, askedBy }).baseHash,
     }),
     accept: () => void acceptRefine(doc, slot),
+    applyAnyway: () => void applyRefineAnyway(doc, slot),
     discard: () => discardRefine(doc, slot),
   };
 }

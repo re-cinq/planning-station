@@ -1,3 +1,4 @@
+import { optionsOf } from "@re-cinq/planning-document";
 import { useState, type FormEvent } from "react";
 import { useBlockNoteEditor, useEditorChange } from "@blocknote/react";
 
@@ -22,7 +23,7 @@ type AnswerProps = Omit<QuestionViewProps, "contentRef">;
 
 /** What the agent asked, answered by picking a suggestion or by writing one. */
 export function QuestionView({ block, editor, contentRef }: QuestionViewProps) {
-  const options = suggestionsOf(block.props["options"]);
+  const options = optionsOf(block.props["options"]);
 
   return (
     <div className={styles.question} data-kind="question">
@@ -156,13 +157,6 @@ function AnswerInput({
       onChange={(event) => onDraft(event.target.value)}
     />
   );
-}
-
-function suggestionsOf(options: unknown): string[] {
-  return String(options ?? "")
-    .split(",")
-    .map((option) => option.trim())
-    .filter(Boolean);
 }
 
 /** The answer goes right under the question it answers; an empty one is no answer. */

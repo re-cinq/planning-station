@@ -14,6 +14,7 @@ export {
 } from "./convert/apply-ops.js";
 export {
   acceptRefine,
+  applyRefineAnyway,
   askRefine,
   discardRefine,
   enforceSectionUnchanged,
