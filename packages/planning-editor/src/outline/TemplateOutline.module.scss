@@ -32,3 +32,11 @@
   padding-left: var(--ps-space-list);
   color: var(--ps-danger);
 }
+
+.footer {
+  display: grid;
+  gap: var(--ps-space-inline);
+  margin-top: var(--ps-space-list);
+  padding-top: var(--ps-space-inline);
+  border-top: 1px solid var(--ps-rule);
+}

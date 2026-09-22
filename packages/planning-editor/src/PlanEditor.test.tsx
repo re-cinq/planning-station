@@ -95,6 +95,19 @@ describe("PlanEditor", () => {
     expect(lastPlan()?.kpis).toHaveLength(1);
   });
 
+  it("draws the 'Approve plan' footer inside the plan outline", async () => {
+    const { screen } = await renderPlan({
+      outlineFooter: <button type="button">Approve plan</button>,
+    });
+    await expect
+      .element(
+        screen
+          .getByRole("navigation", { name: "Plan outline" })
+          .getByRole("button", { name: "Approve plan" }),
+      )
+      .toBeVisible();
+  });
+
   it("reports the missing KPI to onValidation at approval", async () => {
     const onValidation = vi.fn<(report: ValidationReport) => void>();
     await renderPlan({ onValidation });
