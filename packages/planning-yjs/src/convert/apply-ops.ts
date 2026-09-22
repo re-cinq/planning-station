@@ -13,9 +13,11 @@ import { headlessConverter, readBlocks } from "./plan-doc.js";
 
 export class UnseededDocError extends Error {}
 
-interface Target {
-  group: XmlElement;
-  before: Map<string, string>;
+/** Blocks written as one insert where the old ones at that position were deleted: a run between two unchanged blocks. */
+interface Run {
+  at: number;
+  replaced: number;
+  blocks: BlockJson[];
 }
 
 export type BlocksChange = (blocks: BlockJson[]) => BlockJson[];
@@ -41,31 +43,84 @@ export function rewriteDoc(
   return next;
 }
 
+// One walk over the children, writing each run of changed blocks with one conversion and one insert: an insert per block walks the list each time, which made a plan of 40 000 paragraphs take 19 s.
 function reconcile(
   doc: Doc,
   current: readonly BlockJson[],
   next: readonly BlockJson[],
 ): void {
   const group = blockGroup(doc);
-  const target: Target = { group, before: fingerprints(current) };
   dropRemoved(group, new Set(next.map((block) => block.id)));
-  next.forEach((block, index) => place(target, block, index));
+  runsOf(childIds(group), fingerprints(current), next).forEach((run) =>
+    write(group, run),
+  );
 }
 
-function place(target: Target, block: BlockJson, index: number): void {
-  const { group } = target;
-  const existing = index < group.length ? childAt(group, index) : undefined;
-  const sameBlock = existing && idOf(existing) === block.id;
+/** Where the walk over the children stands: the runs so far, the one being gathered, and the next child not yet passed. */
+interface Walk {
+  existing: readonly string[];
+  before: ReadonlyMap<string, string>;
+  runs: Run[];
+  run: Run;
+  cursor: number;
+}
 
-  if (sameBlock && target.before.get(block.id) === fingerprint(block)) {
+/** The runs that turn the children, in order, into `next`, each between two blocks that stay as they are. */
+function runsOf(
+  existing: readonly string[],
+  before: ReadonlyMap<string, string>,
+  next: readonly BlockJson[],
+): Run[] {
+  const walk: Walk = { existing, before, runs: [], run: runAt(0), cursor: 0 };
+  next.forEach((block, index) => pass(walk, block, index));
+  const { runs, run, cursor } = walk;
+
+  // What the walk never reached is a block the new plan holds elsewhere; left in place it would be there twice.
+  return [
+    ...runs,
+    { ...run, replaced: run.replaced + existing.length - cursor },
+  ];
+}
+
+function pass(walk: Walk, block: BlockJson, index: number): void {
+  const replaced = walk.existing[walk.cursor] === block.id ? 1 : 0;
+  const kept =
+    replaced === 1 && walk.before.get(block.id) === fingerprint(block);
+  walk.cursor += replaced;
+
+  if (kept) {
+    closeRun(walk, index + 1);
+
     return;
   }
 
-  if (sameBlock) {
-    group.delete(index, 1);
+  gather(walk.run, block, replaced);
+}
+
+/** An unchanged block ends the run before it; the next one starts after it. */
+function closeRun(walk: Walk, nextAt: number): void {
+  walk.runs.push(walk.run);
+  walk.run = runAt(nextAt);
+}
+
+/** A changed block joins the run, taking with it the child it replaces, if any. */
+function gather(run: Run, block: BlockJson, replaced: number): void {
+  run.blocks.push(block);
+  run.replaced += replaced;
+}
+
+function runAt(at: number): Run {
+  return { at, replaced: 0, blocks: [] };
+}
+
+function write(group: XmlElement, { at, replaced, blocks }: Run): void {
+  if (replaced > 0) {
+    group.delete(at, replaced);
   }
 
-  group.insert(index, [containerFor(block)]);
+  if (blocks.length > 0) {
+    group.insert(at, containersFor(blocks));
+  }
 }
 
 function dropRemoved(group: XmlElement, keep: ReadonlySet<string>): void {
@@ -76,16 +131,16 @@ function dropRemoved(group: XmlElement, keep: ReadonlySet<string>): void {
     .forEach((child) => group.delete(child.index, 1));
 }
 
-function containerFor(block: BlockJson): XmlElement {
+function containersFor(blocks: readonly BlockJson[]): XmlElement[] {
   const fragment = new Doc().getXmlFragment(PLAN_FRAGMENT);
   blocksToYXmlFragment(
     headlessConverter(),
-    [block] as unknown as Block[],
+    blocks as unknown as Block[],
     fragment,
   );
-  const group = fragment.get(0) as XmlElement;
+  const converted = fragment.get(0) as XmlElement;
 
-  return childAt(group, 0).clone();
+  return converted.toArray().map((child) => (child as XmlElement).clone());
 }
 
 function blockGroup(doc: Doc): XmlElement {
@@ -101,10 +156,6 @@ function blockGroup(doc: Doc): XmlElement {
 
 function childIds(group: XmlElement): string[] {
   return group.toArray().map((child) => idOf(child as XmlElement));
-}
-
-function childAt(group: XmlElement, index: number): XmlElement {
-  return group.get(index) as XmlElement;
 }
 
 function idOf(child: XmlElement): string {

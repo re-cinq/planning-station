@@ -25,7 +25,9 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 - The whole write travels to everyone else as Yjs updates, like any other edit ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L68)).
 - Only the blocks that changed are rewritten, so the rest of the document, including what a person is writing elsewhere, is left alone ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L76), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L87)).
 - A KPI the agent writes again is revised in place instead of added twice ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L94)).
-- Writing to a document that holds no plan throws UnseededDocError ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L110)).
+- A write costs time in proportion to the plan: each run of changed blocks between two unchanged ones is converted and inserted at once, so a section of 40 000 paragraphs is written in well under 4 seconds ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L110)).
+- A block that moves ends up once, where the new plan holds it ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L125)).
+- Writing to a document that holds no plan throws UnseededDocError ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L135)).
 
 ## Refine proposals
 

@@ -17,13 +17,14 @@ The sync library is the plan's server side, registered inside the host's own hap
 ## Versions
 
 - Every write whose content changed becomes the plan's next version; a write that changed nothing cuts none ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L82), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L88)).
-- Each version keeps the plan as it was, so an older version still reads as the plan of its day ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L95)).
+- A write that changed only what lives beside the content — a Refine asked, proposed or discarded — is still stored, under the current version, so it survives the document unloading ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L95)).
+- Each version keeps the plan as it was, so an older version still reads as the plan of its day ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L107)).
 
 ## Approval
 
-- A plan is approved only when it passes validation at the approval phase; otherwise the caller is told what is still missing ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L101), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L109)).
-- Approval records who approved which version, and reopening a plan takes it back to a draft with no approval ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L109), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L118)).
-- The host hears of every approval through `onApproved`, after the store has it, and hears nothing of a refused one, so it can start its own work from the approved plan ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L127), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L138), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L157)).
+- A plan is approved only when it passes validation at the approval phase; otherwise the caller is told what is still missing ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L113), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L121)).
+- Approval records who approved which version, and reopening a plan takes it back to a draft with no approval ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L121), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L130)).
+- The host hears of every approval through `onApproved`, after the store has it, and hears nothing of a refused one, so it can start its own work from the approved plan ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L139), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L150), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L157)).
 
 ## Collaboration
 

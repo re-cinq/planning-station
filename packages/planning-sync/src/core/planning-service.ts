@@ -117,6 +117,13 @@ async function storeDocument(
   const previous = await store.loadProjection(meta.id);
 
   if (previous?.contentHash === version.contentHash) {
+    // A Refine asked, proposed or discarded lives beside the content: keep it, mint no version.
+    await store.storeState({
+      ...previous,
+      planId: meta.id,
+      state: version.state,
+    });
+
     return;
   }
 

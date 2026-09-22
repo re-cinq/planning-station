@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { PlanMeta } from "@re-cinq/planning-document";
 import { readyFeature } from "@re-cinq/planning-document/testing";
-import { docFromBlocks } from "@re-cinq/planning-yjs";
+import { askRefine, docFromBlocks, proposalsIn } from "@re-cinq/planning-yjs";
 import { applyUpdate, Doc } from "yjs";
 
 import { createMemoryPlanStore } from "../memory/memory-plan-store.js";
@@ -90,6 +90,18 @@ describe("createPlanningService", () => {
     const doc = await liveDoc(plans, planId);
     await plans.storeDocument({ planId, doc, actor: "ana", reason: "auto" });
     expect(await plans.listVersions(planId)).toHaveLength(2);
+  });
+
+  it("keeps a Refine ana asked, though it changed no content and cut no version", async () => {
+    const { plans, planId } = await readyPlan();
+    const doc = await liveDoc(plans, planId);
+    askRefine(doc, { slot: "intent", askedBy: "ana" });
+    await plans.storeDocument({ planId, doc, actor: "ana", reason: "auto" });
+    const reloaded = await liveDoc(plans, planId);
+    expect({
+      versions: (await plans.listVersions(planId)).length,
+      refines: proposalsIn(reloaded).map((refine) => refine.status),
+    }).toEqual({ versions: 2, refines: ["asked"] });
   });
 
   it("keeps each version's own content, so version 1 stays the seeded plan", async () => {
