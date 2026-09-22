@@ -6,6 +6,7 @@ import {
   refineProposalSchema,
   SectionChangedError,
   sectionHash,
+  slotOf,
   type AgentOp,
   type BlockJson,
   type ProposedRefine,
@@ -33,6 +34,20 @@ export interface RefineOffer {
   ops: readonly AgentOp[];
   uses: RefineUses;
   proposedBy: string;
+}
+
+/** What one pass answers with: the ask it answers, if a person asked, and every op it wrote. */
+export interface PassOffer {
+  asked?: { slot: string; baseHash: string };
+  ops: readonly AgentOp[];
+  uses: RefineUses;
+  proposedBy: string;
+}
+
+/** Which sections the pass now proposes for, and which it left to the person already reviewing them. */
+export interface PassOutcome {
+  proposed: string[];
+  skipped: string[];
 }
 
 export interface SectionBase {
@@ -80,6 +95,86 @@ export function proposeRefine(
   doc.transact(() => proposalMap(doc).set(offer.slot, proposed), origin);
 
   return proposed;
+}
+
+/** One pass's answer: the section a person asked about, and every other section the settled answers forced the agent to change. Each is proposed against ITSELF as it stands, so a person reviewing one section is never told about another's drift; a section whose proposal someone is already reviewing is left alone rather than replaced. */
+export function proposePass(
+  doc: Doc,
+  pass: PassOffer,
+  origin?: unknown,
+): PassOutcome {
+  const context: PassContext = {
+    pass,
+    bySlot: groupBySlot(pass.ops),
+    outcome: { proposed: [], skipped: [] },
+    origin,
+  };
+  doc.transact(() => writePass(doc, context), origin);
+
+  return context.outcome;
+}
+
+function writePass(doc: Doc, context: PassContext): void {
+  const { pass, bySlot, outcome } = context;
+  const pending = new Set(proposalsIn(doc).map((proposal) => proposal.slot));
+
+  if (pass.asked) {
+    offer(doc, context, pass.asked);
+  }
+
+  rippledSlots(bySlot, pass.asked?.slot).forEach((slot) =>
+    pending.has(slot)
+      ? outcome.skipped.push(slot)
+      : offer(doc, context, { slot }),
+  );
+}
+
+/** One section's proposal: the ask's own base and uses when a person asked for it, the section as it stands and nothing used when the answers forced it. */
+function offer(
+  doc: Doc,
+  { pass, bySlot, outcome, origin }: PassContext,
+  { slot, baseHash }: { slot: string; baseHash?: string },
+): void {
+  proposeRefine(
+    doc,
+    {
+      slot,
+      baseHash: baseHash ?? sectionHash(readBlocks(doc), slot),
+      ops: bySlot.get(slot) ?? [],
+      uses: baseHash ? pass.uses : NOTHING_USED,
+      proposedBy: pass.proposedBy,
+    },
+    origin,
+  );
+  outcome.proposed.push(slot);
+}
+
+interface PassContext {
+  pass: PassOffer;
+  bySlot: ReadonlyMap<string, AgentOp[]>;
+  outcome: PassOutcome;
+  origin?: unknown;
+}
+
+const NOTHING_USED: RefineUses = { questions: [], comments: [] };
+
+/** The sections the pass changed besides the one it was asked about. */
+function rippledSlots(
+  bySlot: ReadonlyMap<string, AgentOp[]>,
+  asked: string | undefined,
+): string[] {
+  return [...bySlot.keys()].filter((slot) => slot !== asked);
+}
+
+function groupBySlot(ops: readonly AgentOp[]): Map<string, AgentOp[]> {
+  const bySlot = new Map<string, AgentOp[]>();
+
+  ops.forEach((op) => {
+    const slot = slotOf(op);
+    bySlot.set(slot, [...(bySlot.get(slot) ?? []), op]);
+  });
+
+  return bySlot;
 }
 
 export function discardRefine(doc: Doc, slot: string, origin?: unknown): void {

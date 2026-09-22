@@ -31,11 +31,13 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 
 ## Refine proposals
 
-- A person's ask and the agent's proposal live in the document beside the plan's blocks, so every client sees them and the plan itself stays unchanged until someone accepts ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L69), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L76)).
-- A proposal that reaches outside its section is refused with ProposalScopeError ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L89)).
-- Accepting writes the proposal into its section, marks the inputs it used, and clears it; discarding clears it and leaves the section alone ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L102), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L111), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L143)).
-- A proposal can be applied anyway, running its ops onto the section as it stands, so what was written meanwhile survives beside it ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L127)).
-- A proposal whose section changed after the ask is refused with SectionChangedError, and one the agent has not answered yet with NoProposalError ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L119), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L152)).
+- A person's ask and the agent's proposal live in the document beside the plan's blocks, so every client sees them and the plan itself stays unchanged until someone accepts ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L71), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L78)).
+- One pass proposes for the section a person asked about and for every other section its settled answers forced, each against that section as it stands, so every change is reviewed where it lands ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L167)).
+- A section whose proposal someone is already reviewing is left alone by a later pass, and reported as skipped rather than replaced ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L191)).
+- A proposal that reaches outside its section is refused with ProposalScopeError ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L91)).
+- Accepting writes the proposal into its section, marks the inputs it used, and clears it; discarding clears it and leaves the section alone ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L104), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L113), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L145)).
+- A proposal can be applied anyway, running its ops onto the section as it stands, so what was written meanwhile survives beside it ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L129)).
+- A proposal whose section changed after the ask is refused with SectionChangedError, and one the agent has not answered yet with NoProposalError ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L121), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L154)).
 
 ## Wire format
 
