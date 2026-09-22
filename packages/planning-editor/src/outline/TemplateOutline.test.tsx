@@ -6,6 +6,8 @@ import { TemplateOutline } from "./TemplateOutline.js";
 
 const TEMPLATE = templateFor("performance");
 
+const HEADINGS = TEMPLATE.slots.map(({ slot, title }) => ({ slot, title }));
+
 describe("TemplateOutline", () => {
   it("lists the missing KPI under Success criteria", async () => {
     const screen = await render(
@@ -41,5 +43,24 @@ describe("TemplateOutline", () => {
       />,
     );
     await expect.element(screen.getByText("Ready for approval")).toBeVisible();
+  });
+
+  it("lists the agent's Rollout section where the plan has it, never marked required", async () => {
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        sections={HEADINGS.toSpliced(1, 0, {
+          slot: "custom-rollout",
+          title: "Rollout",
+        })}
+      />,
+    );
+    const entries = [...screen.container.querySelectorAll("ol > li")];
+    expect(entries.slice(0, 3).map((entry) => entry.textContent)).toEqual([
+      "What we want and why required",
+      "Rollout",
+      "Success criteria required",
+    ]);
   });
 });

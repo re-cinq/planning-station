@@ -26,7 +26,10 @@ import type { PlanTransport, PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
 import { SessionNotice } from "./session/SessionNotice.js";
 import { usePlanSession, useSessionState } from "./session/use-plan-session.js";
-import { TemplateContext } from "./template/template-context.js";
+import {
+  SectionTitlesContext,
+  TemplateContext,
+} from "./template/template-context.js";
 import { usePlanEditor } from "./use-plan-editor.js";
 
 export interface PlanEditorProps {
@@ -64,6 +67,7 @@ type LayoutProps = Pick<
   editor: PlanBlockNoteEditor;
   awareness: PlanSession["awareness"];
   report: ValidationReport;
+  sections: PlanDocument["sections"];
 };
 
 const NO_ADAPTERS: PlanEditorAdapters = {};
@@ -128,7 +132,7 @@ function PlanWorkspace({
   const report = usePlanValidation(plan, validationPhase, onValidation);
   const { awareness } = session;
   useTrackEditing(editor, awareness);
-  const view = { ...props, editor, awareness, report };
+  const view = { ...props, editor, awareness, report, sections: plan.sections };
 
   return (
     <PlanActionsContext value={{ user, onRefine, doc: session.doc }}>
@@ -142,20 +146,37 @@ function WorkspaceLayout({
   showPresence = true,
   ...view
 }: LayoutProps) {
-  const { template, awareness, report, outlineFooter } = view;
+  const titles = useSectionTitles(view.sections);
 
   return (
-    <>
-      {showPresence && (
-        <PresenceBar awareness={awareness} template={template} />
-      )}
+    <SectionTitlesContext value={titles}>
+      {showPresence && <PresenceBar {...view} titles={titles} />}
       <EditorSurface {...view} />
-      {showOutline && (
-        <TemplateOutline template={template} report={report}>
-          {outlineFooter}
-        </TemplateOutline>
-      )}
-    </>
+      {showOutline && <OutlinePane {...view} />}
+    </SectionTitlesContext>
+  );
+}
+
+// Each section's title by slot, shared by the editor's blocks and the presence bar.
+function useSectionTitles(
+  sections: LayoutProps["sections"],
+): ReadonlyMap<string, string> {
+  return useMemo(
+    () => new Map(sections.map((section) => [section.slot, section.title])),
+    [sections],
+  );
+}
+
+function OutlinePane({
+  template,
+  report,
+  sections,
+  outlineFooter,
+}: Pick<LayoutProps, "template" | "report" | "sections" | "outlineFooter">) {
+  return (
+    <TemplateOutline template={template} report={report} sections={sections}>
+      {outlineFooter}
+    </TemplateOutline>
   );
 }
 

@@ -16,6 +16,9 @@ describe("@re-cinq/planning-document public surface", () => {
         "planDocumentSchema",
         "PLAN_BLOCK_CONFIGS",
         "PLAN_FRAGMENT",
+        "sectionSlotFor",
+        "planToMarkdown",
+        "markdownToOps",
       ].filter((name) => !(name in planningDocument)),
     ).toEqual([]);
   });

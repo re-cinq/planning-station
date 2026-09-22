@@ -10,8 +10,15 @@ import {
   planTitle,
   sectionOrder,
 } from "../projection/partition.js";
+import { actionsBlock, panelBlock } from "../projection/seed.js";
 import { toBlocks } from "../projection/to-blocks.js";
-import type { AgentOp, KpiInput, PrototypeInput } from "./agent-ops.js";
+import { isCustomSlot } from "../template/templates.js";
+import type {
+  AgentOp,
+  KpiInput,
+  PrototypeInput,
+  QuestionInput,
+} from "./agent-ops.js";
 
 const KPIS_SLOT = "kpis";
 const PROTOTYPE_SLOT = "prototype";
@@ -37,12 +44,34 @@ const appendToSection: Handler<"append-to-section"> = (blocks, op) =>
     ...paragraphs(op.slot, op.paragraphs, section.blocks.length),
   ]);
 
+const addSection: Handler<"add-section"> = (blocks, op) => {
+  const sections = partitionSections(blocks);
+  const after = sections.findIndex((section) => section.slot === op.after);
+  const taken = sections.some((section) => section.slot === op.slot);
+
+  return after < 0 || taken || !isCustomSlot(op.slot)
+    ? blocks
+    : withSections(blocks, sections.toSpliced(after + 1, 0, newSection(op)));
+};
+
+const setSectionTitle: Handler<"set-section-title"> = (blocks, op) =>
+  blocks.map((block) =>
+    block.type === "section-heading" &&
+    block.props.slot === op.slot &&
+    isCustomSlot(op.slot)
+      ? parseBlock({ ...block, props: { ...block.props, title: op.title } })
+      : block,
+  );
+
 const HANDLERS: Handlers = {
   "set-section-text": setSectionText,
   "append-to-section": appendToSection,
   "upsert-kpi": (blocks, op) => upsert(blocks, KPIS_SLOT, kpiBlock(op.kpi)),
   "set-prototype": (blocks, op) =>
     upsert(blocks, PROTOTYPE_SLOT, prototypeBlock(op.prototype)),
+  "add-section": addSection,
+  "set-section-title": setSectionTitle,
+  "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
 };
 
 /** Applies the planning agent's edits to a plan's blocks. */
@@ -73,7 +102,27 @@ function inSection(
       : section,
   );
 
-  return toBlocks({ sections, title: planTitle(blocks) ?? "" });
+  return withSections(blocks, sections);
+}
+
+function withSections(
+  blocks: readonly BlockJson[],
+  sections: readonly Section[],
+): BlockJson[] {
+  return toBlocks({ sections: [...sections], title: planTitle(blocks) ?? "" });
+}
+
+function newSection(op: Extract<AgentOp, { op: "add-section" }>): Section {
+  return {
+    headingId: `heading-${op.slot}`,
+    slot: op.slot,
+    title: op.title,
+    blocks: [
+      panelBlock(op.slot),
+      ...paragraphs(op.slot, op.paragraphs),
+      actionsBlock(op.slot),
+    ],
+  };
 }
 
 function upsert(
@@ -81,13 +130,37 @@ function upsert(
   slot: string,
   block: BlockJson,
 ): BlockJson[] {
-  const index = blocks.findIndex((current) => current.id === block.id);
+  const index = blocks.findIndex((current) => isSameEntity(current, block));
 
   if (index < 0) {
     return inSection(blocks, slot, (section) => [...section.blocks, block]);
   }
 
-  return blocks.map((current, at) => (at === index ? block : current));
+  return blocks.map((current, at) =>
+    at === index ? { ...block, id: current.id } : current,
+  );
+}
+
+// A block people made in the editor has an id of its own, so an entity is found by its key too.
+const ENTITY_KEYS: Partial<Record<string, (block: BlockJson) => string>> = {
+  kpi: (block) => propOf(block, "kpiId"),
+  question: (block) => propOf(block, "questionId"),
+  prototype: () => PROTOTYPE_SLOT,
+};
+
+function propOf(block: BlockJson, name: string): string {
+  return String((block.props as Readonly<Record<string, unknown>>)[name]);
+}
+
+function isSameEntity(current: BlockJson, next: BlockJson): boolean {
+  const keyOf = ENTITY_KEYS[next.type];
+
+  return (
+    current.id === next.id ||
+    (current.type === next.type &&
+      keyOf !== undefined &&
+      keyOf(current) === keyOf(next))
+  );
 }
 
 function paragraphs(
@@ -113,6 +186,17 @@ function kpiBlock(kpi: KpiInput): BlockJson {
     type: "kpi",
     props: { kpiId, ...props },
     content: inlineFromText(rationale),
+  });
+}
+
+function questionBlock(input: QuestionInput): BlockJson {
+  const { questionId, question, why, kind, options } = input;
+
+  return parseBlock({
+    id: questionId,
+    type: "question",
+    props: { questionId, why, kind, options: options.join(", ") },
+    content: inlineFromText(question),
   });
 }
 

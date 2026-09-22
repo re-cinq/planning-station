@@ -56,10 +56,10 @@ live document yourself, or when an agent edits a document outside your API.
 
 | Package                                                    | Runs in         | Status | What it is                                                                                                                        |
 | ---------------------------------------------------------- | --------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| [`@re-cinq/planning-document`](packages/planning-document) | Node + browser  | 0.1.0  | The JSON contract: block schemas, templates per plan type, `toPlanDocument` / `toBlocks`, `validatePlan`, agent ops, diffs        |
-| [`@re-cinq/planning-yjs`](packages/planning-yjs)           | Node (+browser) | 0.1.0  | Yjs bridge: headless schema, `seedDoc` / `readBlocks`, `applyOpsToDoc`, base64 wire helpers                                       |
-| [`@re-cinq/planning-editor`](packages/planning-editor)     | Browser (React) | 0.1.0  | Collaborative `PlanEditor` on BlockNote + Yjs over a `PlanTransport`: presence, live cursors, guarded sections, `/` menu, outline |
-| [`@re-cinq/planning-sync`](packages/planning-sync)         | Node (server)   | 0.1.0  | The server side: `PlanStore` port, in-memory store, plan service with versions and approval, collaboration server, hapi adapter   |
+| [`@re-cinq/planning-document`](packages/planning-document) | Node + browser  | 0.2.0  | The JSON contract: block schemas, templates per plan type, `toPlanDocument` / `toBlocks`, `validatePlan`, agent ops, diffs        |
+| [`@re-cinq/planning-yjs`](packages/planning-yjs)           | Node (+browser) | 0.2.0  | Yjs bridge: headless schema, `seedDoc` / `readBlocks`, `applyOpsToDoc`, base64 wire helpers                                       |
+| [`@re-cinq/planning-editor`](packages/planning-editor)     | Browser (React) | 0.2.0  | Collaborative `PlanEditor` on BlockNote + Yjs over a `PlanTransport`: presence, live cursors, guarded sections, `/` menu, outline |
+| [`@re-cinq/planning-sync`](packages/planning-sync)         | Node (server)   | 0.2.0  | The server side: `PlanStore` port, in-memory store, plan service with versions and approval, collaboration server, hapi adapter   |
 
 Each package's README opens with a step-by-step integration tutorial for exactly
 that side: [contract](packages/planning-document/README.md),

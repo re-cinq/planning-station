@@ -6,7 +6,7 @@
 | Package | `@re-cinq/planning-document`                                                                                          |
 | ADRs    | [ADR-001](../../adrs/ADR-001-packages-and-ports.md), [ADR-002](../../adrs/ADR-002-yjs-is-truth-json-is-projection.md) |
 
-The plan document is the JSON every consumer of a plan reads: the host application and the planning agent. A plan ends at approval; whatever is built from it afterwards, tickets included, lives outside the plan. This spec states what the contract guarantees, and each statement links the tests that prove it.
+The plan document is the JSON every consumer of a plan reads: the host application and the planning agent. A plan ends at approval; whatever is built from it afterwards, tickets included, lives outside the plan. A template names the sections a plan starts with but does not close the list: the planning agent may add sections of its own, and it edits the plan as one Markdown file, `plan.md`, that the host writes from the plan and reads back as agent ops. This spec states what the contract guarantees, and each statement links the tests that prove it.
 
 ## Blocks
 
@@ -24,11 +24,21 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 
 ## Templates
 
-- Each plan kind has an ordered template: a feature runs from intent to open questions, and an incident response starts with what happened ([validated by](../../packages/planning-document/src/template/templates.test.ts#L14), [validated by](../../packages/planning-document/src/template/templates.test.ts#L27)).
-- A refactor plan adds a risk section ([validated by](../../packages/planning-document/src/template/templates.test.ts#L31)).
-- A UI change always needs a prototype of at least click-dummy maturity ([validated by](../../packages/planning-document/src/template/templates.test.ts#L35)).
-- Every template asks for at least one KPI, and no template repeats a section ([validated by](../../packages/planning-document/src/template/templates.test.ts#L42), [validated by](../../packages/planning-document/src/template/templates.test.ts#L51)).
-- Looking up a section a template does not have throws UnknownSlotError ([validated by](../../packages/planning-document/src/template/templates.test.ts#L61), [validated by](../../packages/planning-document/src/template/templates.test.ts#L68)).
+- Each plan kind has an ordered template: a feature runs from intent to open questions, and an incident response starts with what happened ([validated by](../../packages/planning-document/src/template/templates.test.ts#L17), [validated by](../../packages/planning-document/src/template/templates.test.ts#L30)).
+- A refactor plan adds a risk section ([validated by](../../packages/planning-document/src/template/templates.test.ts#L34)).
+- A UI change always needs a prototype of at least click-dummy maturity ([validated by](../../packages/planning-document/src/template/templates.test.ts#L38)).
+- Every template asks for at least one KPI, and no template repeats a section ([validated by](../../packages/planning-document/src/template/templates.test.ts#L45), [validated by](../../packages/planning-document/src/template/templates.test.ts#L54)).
+- Looking up a section a template does not have throws UnknownSlotError, and the strict lookup knows no section the agent added ([validated by](../../packages/planning-document/src/template/templates.test.ts#L64), [validated by](../../packages/planning-document/src/template/templates.test.ts#L71), [validated by](../../packages/planning-document/src/template/templates.test.ts#L77)).
+
+## Open sections
+
+- The planning agent, never a person in the editor, may add a section to one plan and rename the sections it added; the template's own sections keep their titles ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L171), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L213), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L228)).
+- A section the agent adds has a slot of its own, minted fresh and starting with `custom-` ([validated by](../../packages/planning-document/src/template/templates.test.ts#L121)).
+- Resolving a section gives the template's slot when there is one, whatever title the caller passes, so a template's own title wins ([validated by](../../packages/planning-document/src/template/templates.test.ts#L85)).
+- A `custom-` section resolves to an optional slot under the title its heading carries, taking prose and the conversation (questions, answers and comments) and requiring nothing ([validated by](../../packages/planning-document/src/template/templates.test.ts#L91)).
+- Any other slot the template lacks still throws UnknownSlotError ([validated by](../../packages/planning-document/src/template/templates.test.ts#L113)).
+- A plan carrying a section the agent added still passes at approval: the section is not unknown, it breaks no template order, and it is never required ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L103)).
+- A block the agent's section does not take, such as a KPI, is reported like any disallowed block ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L118)).
 
 ## Projection
 
@@ -42,9 +52,13 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 
 ## Agent edits
 
-- The agent writes a section's prose without touching the plan blocks that live in it, and can append to what is already there ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L40), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L54), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L67)).
-- A KPI and a prototype declaration are written by id, so sending one twice updates it instead of adding a second ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L77), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L97), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L114)).
-- A rewritten KPI keeps its block id, so a person working in it keeps their cursor ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L138)).
+- The agent writes a section's prose without touching the plan blocks that live in it, and can append to what is already there ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L46), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L60), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L73)).
+- A KPI and a prototype declaration are written by id, so sending one twice updates it instead of adding a second, and a KPI people made in the editor is found by its kpiId ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L83), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L103), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L120), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L132)).
+- A rewritten KPI keeps its block id, so a person working in it keeps their cursor ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L150), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L120)).
+- `add-section` places the agent's section, with its heading, panel, actions and paragraphs, right after the section it names ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L171), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L182)).
+- A new section whose slot is taken or whose anchor is missing changes nothing, and one whose slot does not start with `custom-` is refused by the op schema ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L197), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L205)).
+- `set-section-title` renames a section the agent added; a template section keeps its title ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L213), [validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L228)).
+- `add-question` asks a question in a section, with why it asks, its kind and its suggested answers, before the section's actions ([validated by](../../packages/planning-document/src/ops/apply-ops.test.ts#L236)).
 
 ## Refining a section
 
@@ -52,7 +66,8 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 - The inputs name the questions and threads a proposal uses, and once they are marked used, the next refine does not write them in again ([validated by](../../packages/planning-document/src/refine/refine-inputs.test.ts#L73), [validated by](../../packages/planning-document/src/refine/refine-inputs.test.ts#L81), [validated by](../../packages/planning-document/src/refine/refine-inputs.test.ts#L88)).
 - A section's hash covers what a refine would rewrite, so a new comment or answer leaves it alone and a rewritten paragraph changes it ([validated by](../../packages/planning-document/src/refine/section-hash.test.ts#L12), [validated by](../../packages/planning-document/src/refine/section-hash.test.ts#L21), [validated by](../../packages/planning-document/src/refine/section-hash.test.ts#L27), [validated by](../../packages/planning-document/src/refine/section-hash.test.ts#L32)).
 - A proposal is asked for against a section hash and carries the agent's ops and the inputs they use ([validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L24), [validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L38)).
-- A proposal's ops stay inside its own section; one that reaches another section is refused with ProposalScopeError ([validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L46), [validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L50)).
+- A proposal's ops stay inside its own section; one that reaches another section is refused with ProposalScopeError ([validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L46), [validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L85)).
+- Each op names its section: a question asked in the refined section stays inside it, and a new section or a retitle belongs to the section it names ([validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L50), [validated by](../../packages/planning-document/src/refine/refine-proposal.test.ts#L66)).
 - A preview shows what accepting would change, line by line, and says when the section changed after the refine was asked for ([validated by](../../packages/planning-document/src/refine/proposal-preview.test.ts#L43), [validated by](../../packages/planning-document/src/refine/proposal-preview.test.ts#L53), [validated by](../../packages/planning-document/src/refine/proposal-preview.test.ts#L60)).
 
 ## Versions
@@ -66,10 +81,28 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 
 - A draft needs only its always-required sections, approval adds the for-approval ones, and an optional section is never required ([validated by](../../packages/planning-document/src/validation/problems.test.ts#L6), [validated by](../../packages/planning-document/src/validation/problems.test.ts#L10), [validated by](../../packages/planning-document/src/validation/problems.test.ts#L14), [validated by](../../packages/planning-document/src/validation/problems.test.ts#L18), [validated by](../../packages/planning-document/src/validation/problems.test.ts#L24), [validated by](../../packages/planning-document/src/validation/problems.test.ts#L28)).
 - A freshly seeded plan passes at draft and a complete one passes at approval ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L55), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L63)).
-- At approval every required section needs real content, a whitespace-only paragraph does not count, and the KPI and prototype counts must be met ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L69), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L125), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L134)).
-- At any phase a missing, unknown or out-of-order section is reported, and so is a block outside its section's allowed kinds ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L91), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L97), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L103), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L116)).
+- At approval every required section needs real content, a whitespace-only paragraph does not count, and the KPI and prototype counts must be met ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L69), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L149), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L158)).
+- At any phase a missing, unknown or out-of-order section is reported, and so is a block outside its section's allowed kinds ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L91), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L97), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L127), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L140)).
 - A section's own tools and the comments under it are allowed wherever they appear, and a section holding only those is still empty ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L81), [validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L69)).
-- A plan whose template sets a prototype minimum is refused at approval when its declared maturity is below it ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L147)).
+- A plan whose template sets a prototype minimum is refused at approval when its declared maturity is below it ([validated by](../../packages/planning-document/src/validation/validate-plan.test.ts#L171)).
+
+## Markdown
+
+- The host writes `plan.md` before the agent's pass and reads the agent's edits back as ops against the live plan, so the agent works in plain text while the plan keeps its block ids ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L59), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L91)).
+- Prose is flattened to its text: a list item or a heading reads as a plain paragraph and a table is left out, so rewriting a section's prose rewrites it as paragraphs ([validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L45), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L74)).
+- The file opens with the plan's title as `# `, then each section in document order as a `## ` heading marked `<!-- slot:... -->` ([validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L27)).
+- A section's heading carries the title its heading block gives, so a template that retitles a section, or a section the agent named, reads as it does in the editor ([validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L37), [validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L117)).
+- Prose is written as paragraphs parted by blank lines, and a line that would read as Markdown syntax is escaped with a backslash ([validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L45), [validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L108)).
+- Each KPI and the prototype are written as a `kpi` or `prototype` fence holding one JSON object, and a mockup as a note the agent cannot edit ([validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L57), [validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L79), [validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L93)).
+- The section's conversation is quoted read-only: each question with its id and its answers, and each comment with its author and whether its thread is resolved ([validated by](../../packages/planning-document/src/markdown/plan-to-markdown.test.ts#L99)).
+- A plan written out and read back gives no ops and no problems, for every fixture plan and every template ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L59)).
+- Reading the file back emits only what changed: new prose rewrites the section's text, a changed or new `kpi` fence upserts the KPI (minting its id when it has none), and a changed `prototype` fence sets the prototype ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L74), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L91), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L97), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L113)).
+- A `question` fence asks a new question in its section under a minted id ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L121)).
+- A heading without a slot marker is a new section, added after the section before it in the file, or after the plan's last section when none comes before it, and the fences under it apply to it ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L139), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L162), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L177)).
+- A changed title retitles a section the agent added; a renamed template section is reported as a problem and not applied ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L187), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L205)).
+- Quoted conversation lines are never read back, and a section missing from the file is left alone ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L226), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L258)).
+- Reading never throws: a fence that is not valid JSON and a marker naming no section of the plan come back as problems ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L235), [validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L243)).
+- A plan of more than 2 MB converts both ways within 2 seconds ([validated by](../../packages/planning-document/src/markdown/markdown-to-ops.test.ts#L263)).
 
 ## Document naming
 
@@ -77,7 +110,7 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 
 ## Package surface
 
-- The package exports its projection, validation, naming and schema entry points from one module ([validated by](../../packages/planning-document/src/index.test.ts#L6)).
+- The package exports its projection, validation, naming, section lookup, Markdown and schema entry points from one module ([validated by](../../packages/planning-document/src/index.test.ts#L6)).
 - A guard passes on a truthy condition and otherwise throws the given error class or the error its factory builds ([validated by](../../packages/planning-document/src/lib/enforce.test.ts#L8), [validated by](../../packages/planning-document/src/lib/enforce.test.ts#L14), [validated by](../../packages/planning-document/src/lib/enforce.test.ts#L20)).
 - A generated id carries its prefix and a fresh uuid ([validated by](../../packages/planning-document/src/lib/ids.test.ts#L6), [validated by](../../packages/planning-document/src/lib/ids.test.ts#L12)).
 
