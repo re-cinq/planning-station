@@ -20,11 +20,12 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 
 ## Agent writes
 
-- The agent's ops reach the live document: a paragraph it writes and a KPI it adds are in the plan afterwards ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L50), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L56)).
-- The whole write travels to everyone else as Yjs updates, like any other edit ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L62)).
-- Only the blocks that changed are rewritten, so the rest of the document, including what a person is writing elsewhere, is left alone ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L70), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L81)).
-- A KPI the agent writes again is revised in place instead of added twice ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L88)).
-- Writing to a document that holds no plan throws UnseededDocError ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L95)).
+- The agent's ops reach the live document: a paragraph it writes and a KPI it adds are in the plan afterwards ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L56), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L62)).
+- Rich prose the agent writes in `plan.md` (nested lists, checklists, marks, links, quotes, code and tables) reaches the live document as the editor's own blocks and reads back as the same `plan.md` ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L101)).
+- The whole write travels to everyone else as Yjs updates, like any other edit ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L68)).
+- Only the blocks that changed are rewritten, so the rest of the document, including what a person is writing elsewhere, is left alone ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L76), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L87)).
+- A KPI the agent writes again is revised in place instead of added twice ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L94)).
+- Writing to a document that holds no plan throws UnseededDocError ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L110)).
 
 ## Refine proposals
 

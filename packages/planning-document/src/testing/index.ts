@@ -8,3 +8,4 @@ export {
   writtenBlocks,
   type SectionContent,
 } from "./plans.js";
+export { richFeature, styledText } from "./rich-prose.js";

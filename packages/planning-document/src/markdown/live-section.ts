@@ -10,7 +10,6 @@ import type { KpiInput, PrototypeInput } from "../ops/agent-ops.js";
 import type { Section } from "../plan/plan-document.js";
 import type { PlanTemplate } from "../template/template.js";
 import { findSectionSlot } from "../template/templates.js";
-import { groupParagraphs } from "./markdown-syntax.js";
 
 /** A heading's own title wins: templates retitle sections, and the agent titles its own. */
 export function sectionTitle(section: Section, template: PlanTemplate): string {
@@ -21,25 +20,10 @@ export function sectionTitle(section: Section, template: PlanTemplate): string {
   );
 }
 
-/** A prose block and its nested blocks flattened to their text, one entry each; a table has none. */
-export function proseTexts(block: ProseBlock): string[] {
-  const own = Array.isArray(block.content) ? plainText(block.content) : "";
-
-  return [own, ...block.children.flatMap(proseTexts)];
-}
-
-/** What a section's prose reads as once written out and read back. */
-export function proseParagraphs(section: Section): string[] {
-  const prose = section.blocks.filter(
+export function liveProse(section: Section): ProseBlock[] {
+  return section.blocks.filter(
     (block): block is ProseBlock => !isPlanBlock(block),
   );
-
-  return groupParagraphs(proseLines(prose.flatMap(proseTexts)));
-}
-
-/** Each prose text as its lines, closed by the blank line that parts it from the next. */
-function proseLines(texts: readonly string[]): string[] {
-  return texts.flatMap((text) => [...text.split("\n"), ""]);
 }
 
 export function kpiInputOf(block: PlanBlockOf<"kpi">): KpiInput {

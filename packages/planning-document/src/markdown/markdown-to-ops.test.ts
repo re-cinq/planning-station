@@ -7,12 +7,15 @@ import { partitionSections } from "../projection/partition.js";
 import { PLAN_KINDS } from "../plan/plan-meta.js";
 import { templateFor } from "../template/templates.js";
 import { planWith, readyFeature, textBlock } from "../testing/plans.js";
+import { richFeature, styledText } from "../testing/rich-prose.js";
 import { markdownToOps } from "./markdown-to-ops.js";
 import { planToMarkdown } from "./plan-to-markdown.js";
 
 const FEATURE = templateFor("feature");
 const READY = readyFeature();
 const READY_MD = planToMarkdown(READY, FEATURE);
+
+const plain = (text: string) => styledText(text);
 
 const TALKED = planWith("feature", {
   intent: [
@@ -61,6 +64,7 @@ describe("markdownToOps", () => {
       [READY, "feature"],
       [TALKED, "feature"],
       [WITH_ROLLOUT, "feature"],
+      [richFeature(), "feature"],
       ...PLAN_KINDS.map((type): [BlockJson[], PlanKind] => [
         planWith(type, {}),
         type,
@@ -79,9 +83,12 @@ describe("markdownToOps", () => {
     ).toEqual({
       ops: [
         {
-          op: "set-section-text",
+          op: "set-section-prose",
           slot: "intent",
-          paragraphs: ["Checkout is slow.", "Fix it."],
+          blocks: [
+            { type: "paragraph", content: [plain("Checkout is slow.")] },
+            { type: "paragraph", content: [plain("Fix it.")] },
+          ],
         },
       ],
       problems: [],
@@ -136,24 +143,30 @@ describe("markdownToOps", () => {
     ]);
   });
 
-  it("adds a Rollout heading without a marker as a new section after scope, with its question", () => {
+  it("adds a Rollout heading without a marker as a new section after scope, with its prose and question", () => {
     const markdown = edited(
       "## Prototype <!-- slot:prototype -->",
       '## Rollout\n\nBehind a flag.\n\n```question\n{"question": "Which flag?"}\n```\n\n## Prototype <!-- slot:prototype -->',
     );
     const { ops } = opsFor(markdown);
     const [added] = ops;
+    const slot = added && "slot" in added ? added.slot : "";
     expect(ops).toEqual([
       {
         op: "add-section",
         slot: expect.stringMatching(/^custom-/),
         title: "Rollout",
         after: "scope",
-        paragraphs: ["Behind a flag."],
+        paragraphs: [],
+      },
+      {
+        op: "set-section-prose",
+        slot,
+        blocks: [{ type: "paragraph", content: [plain("Behind a flag.")] }],
       },
       expect.objectContaining({
         op: "add-question",
-        slot: added && "slot" in added ? added.slot : "",
+        slot,
         question: "Which flag?",
       }),
     ]);

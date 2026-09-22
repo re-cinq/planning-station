@@ -1,14 +1,17 @@
+import type { ProseInput } from "../ops/prose-input.js";
 import {
   closesFence,
-  fenceTag,
-  groupParagraphs,
+  fenceOpening,
+  isPlanFence,
   isReadOnly,
   parseHeading,
-  unescapeLine,
+  type FenceOpening,
+  type PlanFence,
 } from "./markdown-syntax.js";
+import { readProse } from "./read-prose.js";
 
 export interface Fence {
-  tag: string;
+  tag: PlanFence;
   body: string;
   closed: boolean;
 }
@@ -17,7 +20,7 @@ export interface Fence {
 export interface MarkdownSection {
   title: string;
   slot: string | null;
-  paragraphs: string[];
+  prose: ProseInput[];
   fences: Fence[];
 }
 
@@ -29,7 +32,8 @@ interface OpenSection {
 }
 
 interface OpenFence {
-  tag: string;
+  tag: PlanFence;
+  marker: string;
   lines: string[];
   closed: boolean;
 }
@@ -45,6 +49,7 @@ export function readMarkdown(markdown: string): MarkdownSection[] {
 class MarkdownReader {
   private readonly sections: OpenSection[] = [];
   private fence: OpenFence | null = null;
+  private codeMarker: string | null = null;
 
   read(line: string): void {
     if (this.fence) {
@@ -53,15 +58,13 @@ class MarkdownReader {
       return;
     }
 
-    const heading = parseHeading(line);
-
-    if (heading) {
-      this.sections.push({ ...heading, lines: [], fences: [] });
+    if (this.codeMarker === null) {
+      this.outside(line);
 
       return;
     }
 
-    this.inSection(line);
+    this.inCode(this.codeMarker, line);
   }
 
   finish(): MarkdownSection[] {
@@ -71,12 +74,12 @@ class MarkdownReader {
 
     return this.sections.map(({ lines, ...section }) => ({
       ...section,
-      paragraphs: groupParagraphs(lines),
+      prose: readProse(lines),
     }));
   }
 
   private inFence(fence: OpenFence, line: string): void {
-    if (closesFence(line)) {
+    if (closesFence(line, fence.marker)) {
       this.keepFence({ ...fence, closed: true });
 
       return;
@@ -91,16 +94,43 @@ class MarkdownReader {
     this.fence = null;
   }
 
-  private inSection(line: string): void {
-    const section = this.sections.at(-1);
-    const tag = fenceTag(line);
+  private outside(line: string): void {
+    const heading = parseHeading(line);
 
-    if (tag !== null) {
-      this.fence = { tag, lines: [], closed: false };
+    if (heading) {
+      this.sections.push({ ...heading, lines: [], fences: [] });
+
+      return;
     }
 
-    // A fence or a quote ends the paragraph before it, as a blank line would.
-    const breaks = tag !== null || isReadOnly(line);
-    section?.lines.push(breaks ? "" : unescapeLine(line));
+    this.inSection(line);
+  }
+
+  /** A code block is prose, kept line for line, so nothing inside it reads as a section or a fence. */
+  private inCode(marker: string, line: string): void {
+    this.sections.at(-1)?.lines.push(line);
+    this.codeMarker = closesFence(line, marker) ? null : marker;
+  }
+
+  private inSection(line: string): void {
+    this.open(fenceOpening(line));
+
+    // A plan fence or the conversation ends the prose before it, as a blank line would.
+    const breaks = this.fence !== null || isReadOnly(line);
+    this.sections.at(-1)?.lines.push(breaks ? "" : line);
+  }
+
+  private open(opening: FenceOpening | null): void {
+    if (opening === null) {
+      return;
+    }
+
+    if (isPlanFence(opening.tag)) {
+      this.fence = { ...opening, tag: opening.tag, lines: [], closed: false };
+
+      return;
+    }
+
+    this.codeMarker = opening.marker;
   }
 }

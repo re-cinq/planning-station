@@ -6,6 +6,7 @@ import {
   QUESTION_KINDS,
 } from "../blocks/plan-block-configs.js";
 import { CUSTOM_SLOT_PREFIX } from "../template/templates.js";
+import { proseInputSchema } from "./prose-input.js";
 
 export const kpiInputSchema = z.object({
   kpiId: z.string().min(1),
@@ -41,6 +42,11 @@ export const agentOpSchema = z.discriminatedUnion("op", [
     op: z.literal("set-section-text"),
     slot: z.string().min(1),
     paragraphs: z.array(z.string()),
+  }),
+  z.object({
+    op: z.literal("set-section-prose"),
+    slot: z.string().min(1),
+    blocks: z.array(proseInputSchema),
   }),
   z.object({
     op: z.literal("append-to-section"),

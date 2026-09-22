@@ -16,6 +16,7 @@ export * from "./projection/seed.js";
 export * from "./versions/diff-lines.js";
 export * from "./versions/diff-plans.js";
 export * from "./ops/agent-ops.js";
+export * from "./ops/prose-input.js";
 export * from "./ops/apply-ops.js";
 export * from "./validation/problems.js";
 export * from "./validation/validate-plan.js";

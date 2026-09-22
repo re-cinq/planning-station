@@ -6,23 +6,19 @@ import {
 } from "../blocks/block-json.js";
 import { plainText, type InlineContent } from "../blocks/inline-text.js";
 import type { PlanBlockKind } from "../blocks/plan-block-configs.js";
+import type { ProseBlock } from "../blocks/prose-blocks.js";
 import type { Section } from "../plan/plan-document.js";
 import { partitionSections, planTitle } from "../projection/partition.js";
 import type { PlanTemplate } from "../template/template.js";
+import { kpiInputOf, prototypeInputOf, sectionTitle } from "./live-section.js";
 import {
-  kpiInputOf,
-  proseTexts,
-  prototypeInputOf,
-  sectionTitle,
-} from "./live-section.js";
-import {
-  escapeLine,
   fenced,
   mockupNote,
   planHeading,
   quoted,
   sectionHeading,
 } from "./markdown-syntax.js";
+import { writeProse } from "./write-prose.js";
 
 type Answers = ReadonlyMap<string, readonly PlanBlockOf<"answer">[]>;
 
@@ -56,7 +52,7 @@ const RENDERERS: { [Kind in PlanBlockKind]: Render<Kind> } = {
   ],
 };
 
-/** Prose is flattened to its text, so lists and headings read as paragraphs and a table is left out. */
+/** Prose is written as the Markdown it reads as: lists, subheadings, quotes, code, tables, marks and links. */
 export function planToMarkdown(
   blocks: readonly BlockJson[],
   template: PlanTemplate,
@@ -74,21 +70,48 @@ function sectionLines(section: Section, template: PlanTemplate): string[] {
   return [
     "",
     sectionHeading(sectionTitle(section, template), section.slot),
-    ...section.blocks.flatMap((block) => blockLines(block, answers)),
+    ...groupsOf(section.blocks).flatMap((group) => {
+      const lines = groupLines(group, answers);
+
+      return lines.length > 0 ? ["", ...lines] : [];
+    }),
   ];
 }
 
-function blockLines(block: BlockJson, answers: Answers): string[] {
-  if (!isPlanBlock(block)) {
-    return proseTexts(block)
-      .filter((text) => text !== "")
-      .flatMap((text) => ["", ...text.split("\n").map(escapeLine)]);
+/** Each plan block alone, and each run of prose together, so a list is written as one. */
+function groupsOf(blocks: readonly BlockJson[]): BlockJson[][] {
+  const groups: BlockJson[][] = [];
+
+  for (const block of blocks) {
+    const last = groups.at(-1);
+
+    if (last && joinsProse(last, block)) {
+      last.push(block);
+      continue;
+    }
+
+    groups.push([block]);
   }
 
-  const render = RENDERERS[block.type] as Render<PlanBlockKind>;
-  const lines = render(block as PlanBlockOf<PlanBlockKind>, answers);
+  return groups;
+}
 
-  return lines.length > 0 ? ["", ...lines] : [];
+function joinsProse(group: readonly BlockJson[], block: BlockJson): boolean {
+  const [first] = group;
+
+  return first !== undefined && !isPlanBlock(first) && !isPlanBlock(block);
+}
+
+function groupLines(group: readonly BlockJson[], answers: Answers): string[] {
+  const [first] = group;
+
+  if (!first || !isPlanBlock(first)) {
+    return writeProse(group as ProseBlock[]);
+  }
+
+  const render = RENDERERS[first.type] as Render<PlanBlockKind>;
+
+  return render(first as PlanBlockOf<PlanBlockKind>, answers);
 }
 
 function answersOf(blocks: readonly BlockJson[]): Answers {

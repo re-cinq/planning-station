@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { inlineContentSchema, type InlineContent } from "./inline-text.js";
+import {
+  inlineContentSchema,
+  inlineFromText,
+  type InlineContent,
+} from "./inline-text.js";
 
 export const PROSE_BLOCK_KINDS = [
   "paragraph",
@@ -50,6 +54,26 @@ export const proseBlockSchema: z.ZodType<ProseBlock> = z.lazy(() =>
       path: ["props", "level"],
     }),
 ) as z.ZodType<ProseBlock>;
+
+// The editor writes a cell as a string, an inline array or a tableCell holding one.
+const tableCellSchema = z.union([
+  z.string().transform(inlineFromText),
+  inlineContentSchema,
+  z.object({ content: inlineContentSchema }).transform((cell) => cell.content),
+]);
+
+const tableRowsSchema = z.object({
+  rows: z.array(z.object({ cells: z.array(tableCellSchema) })),
+});
+
+/** A table's cells, row by row, each as its inline content; content that is not a table has none. */
+export function tableCells(
+  content: InlineContent | TableContent,
+): InlineContent[][] {
+  const { data: table } = tableRowsSchema.safeParse(content);
+
+  return table ? table.rows.map((row) => row.cells) : [];
+}
 
 export function isProseBlockKind(type: string): type is ProseBlockKind {
   return (PROSE_BLOCK_KINDS as readonly string[]).includes(type);
