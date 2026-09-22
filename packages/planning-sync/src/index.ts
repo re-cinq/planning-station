@@ -17,6 +17,7 @@ export {
   AGENT_ORIGIN,
   type AgentWriter,
   type OpsRequest,
+  type PassRequest,
   type ProposalRequest,
 } from "./core/agent-writer.js";
 export { PlanNotFoundError } from "./core/errors.js";
