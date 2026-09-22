@@ -92,10 +92,21 @@ export function acceptRefine(
   slot: string,
   origin?: unknown,
 ): BlockJson[] {
-  const { ops, uses, baseHash } = proposedFor(doc, slot);
+  const { baseHash } = proposedFor(doc, slot);
+  enforceSectionUnchanged(doc, { slot, hash: baseHash });
+
+  return applyRefineAnyway(doc, slot, origin);
+}
+
+/** Writes the proposal in whatever the section says now: what a person chooses when they would rather have the answer than the words it was written against. */
+export function applyRefineAnyway(
+  doc: Doc,
+  slot: string,
+  origin?: unknown,
+): BlockJson[] {
+  const { ops, uses } = proposedFor(doc, slot);
   const written: BlockJson[][] = [];
   doc.transact(() => {
-    enforceSectionUnchanged(doc, { slot, hash: baseHash });
     written.push(
       rewriteDoc(
         doc,

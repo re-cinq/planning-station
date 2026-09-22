@@ -256,7 +256,7 @@ describe("applyOps add-question", () => {
           questionId: "q-flag",
           why: "Rollout needs one",
           kind: "choice",
-          options: "beta, canary",
+          options: '["beta","canary"]',
         },
         content: [{ text: "Which flag?" }],
       },

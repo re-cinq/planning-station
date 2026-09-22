@@ -1,3 +1,4 @@
+import { parseJson } from "../lib/parse-json.js";
 import { z } from "zod";
 
 import { newId } from "../lib/ids.js";
@@ -115,13 +116,4 @@ function issuesOf({ issues }: z.ZodError): string {
 
 function describeIssue({ path, message }: z.core.$ZodIssue): string {
   return `${path.join(".") || "fence"}: ${message}`;
-}
-
-// JSON.parse is the one way to read JSON, and it throws on text that is not.
-function parseJson(body: string): unknown {
-  try {
-    return JSON.parse(body) as unknown;
-  } catch {
-    return undefined;
-  }
 }

@@ -3,6 +3,7 @@ export * from "./blocks/plan-block-configs.js";
 export * from "./blocks/plan-blocks.js";
 export * from "./blocks/prose-blocks.js";
 export * from "./blocks/block-json.js";
+export * from "./blocks/question-options.js";
 export * from "./plan/plan-meta.js";
 export * from "./plan/entities.js";
 export * from "./plan/plan-document.js";

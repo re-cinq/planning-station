@@ -147,6 +147,24 @@ describe("RefineControls", () => {
       .toMatchObject([{ type: "comment" }, { type: "question" }]);
   });
 
+  it("writes a stale proposal into the plan when Ana applies it anyway", async () => {
+    const { hub, actions, lastPlan } = await renderPlan(agentProposes);
+    await refine(actions);
+    applyOpsToDoc(hub.doc, [
+      {
+        op: "append-to-section",
+        slot: "questions",
+        paragraphs: ["Ben typed."],
+      },
+    ]);
+    await userEvent.click(
+      actions.getByRole("button", { name: "Apply anyway" }),
+    );
+    await expect
+      .poll(() => JSON.stringify(questionsOf(lastPlan())))
+      .toContain(STOP_AT);
+  });
+
   it("offers Ask again instead of Accept when the open questions changed after Ana asked", async () => {
     const { hub, actions } = await renderPlan(agentProposes);
     await refine(actions);

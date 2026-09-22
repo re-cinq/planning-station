@@ -1,3 +1,4 @@
+import { encodeOptions } from "../blocks/question-options.js";
 import {
   isPlanBlock,
   parseBlock,
@@ -209,7 +210,7 @@ function questionBlock(input: QuestionInput): BlockJson {
   return parseBlock({
     id: questionId,
     type: "question",
-    props: { questionId, why, kind, options: options.join(", ") },
+    props: { questionId, why, kind, options: encodeOptions(options) },
     content: inlineFromText(question),
   });
 }

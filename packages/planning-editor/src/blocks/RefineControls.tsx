@@ -103,7 +103,7 @@ interface Proposed {
   proposal: ProposedRefine;
 }
 
-/** A stale proposal cannot be accepted, only asked for again. */
+/** A stale proposal is asked for again, or applied anyway onto the section as it stands. */
 function ProposalButtons({
   refine,
   ask,
@@ -116,10 +116,17 @@ function ProposalButtons({
       <button type="button" className={styles.refine} onClick={run}>
         {label}
       </button>
-      <button type="button" className={styles.quiet} onClick={refine.discard}>
-        Discard
-      </button>
+      {stale && <Quiet label="Apply anyway" run={refine.applyAnyway} />}
+      <Quiet label="Discard" run={refine.discard} />
     </p>
+  );
+}
+
+function Quiet({ label, run }: { label: string; run: () => void }) {
+  return (
+    <button type="button" className={styles.quiet} onClick={run}>
+      {label}
+    </button>
   );
 }
 

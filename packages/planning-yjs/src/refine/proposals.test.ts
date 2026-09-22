@@ -15,6 +15,7 @@ import { applyOpsToDoc } from "../convert/apply-ops.js";
 import { docFromBlocks, readBlocks } from "../convert/plan-doc.js";
 import {
   acceptRefine,
+  applyRefineAnyway,
   askRefine,
   discardRefine,
   NoProposalError,
@@ -121,6 +122,22 @@ describe("refine proposals", () => {
       { op: "append-to-section", slot: "scope", paragraphs: ["Ben typed."] },
     ]);
     expect(() => acceptRefine(doc, "scope")).toThrow(SectionChangedError);
+  });
+
+  it("applies a proposal anyway onto the scope Ana changed after asking, keeping what she wrote", () => {
+    const doc = proposed();
+    applyOpsToDoc(doc, [
+      { op: "append-to-section", slot: "scope", paragraphs: ["Ben typed."] },
+    ]);
+    applyRefineAnyway(doc, "scope");
+    expect({ proposals: proposalsIn(doc), scope: scopeText(doc) }).toEqual({
+      proposals: [],
+      scope: [
+        "In: the price step.",
+        "Ben typed.",
+        "Out: the payment provider's page.",
+      ],
+    });
   });
 
   it("drops a discarded proposal and leaves scope as it was", () => {

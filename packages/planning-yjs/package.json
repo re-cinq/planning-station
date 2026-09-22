@@ -1,6 +1,6 @@
 {
   "name": "@re-cinq/planning-yjs",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "The plan's Yjs bridge: a headless BlockNote schema and block <-> Yjs conversions for Node and browsers.",
   "license": "Apache-2.0",
   "type": "module",
