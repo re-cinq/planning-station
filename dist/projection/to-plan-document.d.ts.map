@@ -1,0 +1,1 @@
+{"version":3,"file":"to-plan-document.d.ts","sourceRoot":"","sources":["../../src/projection/to-plan-document.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yBAAyB,CAAC;AACzD,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,0BAA0B,CAAC;AAC7D,OAAO,KAAK,EAAE,QAAQ,EAAE,MAAM,sBAAsB,CAAC;AAIrD,wBAAgB,cAAc,CAC5B,MAAM,EAAE,SAAS,SAAS,EAAE,EAC5B,IAAI,EAAE,QAAQ,GACb,YAAY,CAWd"}
