@@ -14,7 +14,7 @@ export * from "./projection/partition.js";
 export * from "./projection/to-plan-document.js";
 export * from "./projection/to-blocks.js";
 export * from "./projection/seed.js";
-export * from "./versions/diff-lines.js";
+export * from "./lib/diff-lines.js";
 export * from "./versions/diff-plans.js";
 export * from "./ops/agent-ops.js";
 export * from "./ops/prose-input.js";

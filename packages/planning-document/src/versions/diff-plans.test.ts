@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import type { PlanDocument } from "../plan/plan-document.js";
 import { toPlanDocument } from "../projection/to-plan-document.js";
 import { planMeta, planWith, textBlock } from "../testing/plans.js";
-import { diffLines } from "./diff-lines.js";
+import { diffLines } from "../lib/diff-lines.js";
 import { diffPlans } from "./diff-plans.js";
 
 const planOf = (

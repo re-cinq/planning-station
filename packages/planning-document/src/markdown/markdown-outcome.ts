@@ -24,8 +24,8 @@ export interface MarkdownOps {
 
 export const NO_CHANGE: MarkdownOps = { ops: [], problems: [] };
 
-export function changed(op: AgentOp): MarkdownOps {
-  return { ops: [op], problems: [] };
+export function changed(...ops: AgentOp[]): MarkdownOps {
+  return { ops, problems: [] };
 }
 
 export function problem(

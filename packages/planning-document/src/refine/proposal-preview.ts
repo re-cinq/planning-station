@@ -1,7 +1,7 @@
 import { isPlanBlock, type BlockJson } from "../blocks/block-json.js";
 import { plainText } from "../blocks/inline-text.js";
 import { applyOps } from "../ops/apply-ops.js";
-import { diffLines, type LineChange } from "../versions/diff-lines.js";
+import { diffLines, type LineChange } from "../lib/diff-lines.js";
 import type { ProposedRefine } from "./refine-proposal.js";
 import { sectionHash, writtenIn } from "./section-hash.js";
 

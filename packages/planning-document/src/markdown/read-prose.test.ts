@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { templateFor } from "../template/templates.js";
-import { readyFeature } from "../testing/plans.js";
+import { planWith } from "../testing/plans.js";
 import { styledText } from "../testing/rich-prose.js";
 import { markdownToOps } from "./markdown-to-ops.js";
 import { readProse } from "./read-prose.js";
@@ -17,12 +17,12 @@ const bullet = (text: string, children: object[] = []) => ({
 const scopeOps = (lines: string[]) =>
   markdownToOps(
     ["## In and out of scope <!-- slot:scope -->", "", ...lines].join("\n"),
-    readyFeature(),
+    planWith("feature", {}),
     templateFor("feature"),
   ).ops;
 
 describe("readProse", () => {
-  it("reads bold labels and bullet lists with code and bold as one set-section-prose, leaving no ** or - in the text", () => {
+  it("reads bold labels and bullet lists with code and bold as one insert, leaving no ** or - in the text", () => {
     const ops = scopeOps([
       "**In scope**",
       "",
@@ -39,8 +39,9 @@ describe("readProse", () => {
     }).toEqual({
       ops: [
         {
-          op: "set-section-prose",
+          op: "insert-blocks",
           slot: "scope",
+          after: null,
           blocks: [
             { type: "paragraph", content: [styledText("In scope", "bold")] },
             {
@@ -133,7 +134,7 @@ describe("readProse", () => {
       ]),
     ).toMatchObject([
       {
-        op: "set-section-prose",
+        op: "insert-blocks",
         blocks: [
           { type: "codeBlock", language: "js", content: [plain("lookup();")] },
         ],
@@ -152,8 +153,9 @@ describe("readProse", () => {
       ]),
     ).toEqual([
       {
-        op: "set-section-prose",
+        op: "insert-blocks",
         slot: "scope",
+        after: null,
         blocks: [
           { type: "quote", content: [plain("Germany is the biggest market.")] },
         ],

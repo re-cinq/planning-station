@@ -53,6 +53,24 @@ export const agentOpSchema = z.discriminatedUnion("op", [
     slot: z.string().min(1),
     paragraphs: z.array(z.string()),
   }),
+  z.object({
+    op: z.literal("replace-block"),
+    slot: z.string().min(1),
+    blockId: z.string().min(1),
+    block: proseInputSchema,
+  }),
+  z.object({
+    op: z.literal("insert-blocks"),
+    slot: z.string().min(1),
+    /** The block the new ones follow; null puts them at the top of the section. */
+    after: z.string().min(1).nullable(),
+    blocks: z.array(proseInputSchema),
+  }),
+  z.object({
+    op: z.literal("remove-block"),
+    slot: z.string().min(1),
+    blockId: z.string().min(1),
+  }),
   z.object({ op: z.literal("upsert-kpi"), kpi: kpiInputSchema }),
   z.object({ op: z.literal("set-prototype"), prototype: prototypeInputSchema }),
   z.object({

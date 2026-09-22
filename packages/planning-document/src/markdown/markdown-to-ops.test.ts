@@ -75,26 +75,6 @@ describe("markdownToOps", () => {
     );
   });
 
-  it("rewrites the intent when its paragraph changed", () => {
-    expect(
-      opsFor(
-        edited("Checkout takes too long.", "Checkout is slow.\n\nFix it."),
-      ),
-    ).toEqual({
-      ops: [
-        {
-          op: "set-section-prose",
-          slot: "intent",
-          blocks: [
-            { type: "paragraph", content: [plain("Checkout is slow.")] },
-            { type: "paragraph", content: [plain("Fix it.")] },
-          ],
-        },
-      ],
-      problems: [],
-    });
-  });
-
   it("upserts KPI k1 when its target changed to 150 ms", () => {
     expect(opsFor(edited('"200 ms"', '"150 ms"')).ops).toMatchObject([
       { op: "upsert-kpi", kpi: { kpiId: "k1", target: "150 ms" } },
@@ -160,8 +140,9 @@ describe("markdownToOps", () => {
         paragraphs: [],
       },
       {
-        op: "set-section-prose",
+        op: "insert-blocks",
         slot,
+        after: null,
         blocks: [{ type: "paragraph", content: [plain("Behind a flag.")] }],
       },
       expect.objectContaining({

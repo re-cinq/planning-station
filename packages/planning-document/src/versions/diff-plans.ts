@@ -1,6 +1,6 @@
 import { plainText } from "../blocks/inline-text.js";
 import type { PlanDocument, Section } from "../plan/plan-document.js";
-import { diffLines, type LineChange } from "./diff-lines.js";
+import { diffLines, type LineChange } from "../lib/diff-lines.js";
 
 export const ENTITY_CHANGES = ["added", "removed", "changed"] as const;
 
