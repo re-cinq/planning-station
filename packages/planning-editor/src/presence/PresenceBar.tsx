@@ -2,15 +2,17 @@ import type { PlanTemplate } from "@re-cinq/planning-document";
 import type { Awareness } from "y-protocols/awareness";
 
 import styles from "./PresenceBar.module.scss";
-import type { PresenceUser } from "./presence-users.js";
+import { presenceLabel } from "./presence-users.js";
 import { usePresence } from "./use-presence.js";
 
 export interface PresenceBarProps {
   awareness: Awareness;
   template: PlanTemplate;
+  /** Each section's title by slot, so a section the agent added reads by its name. */
+  titles: ReadonlyMap<string, string>;
 }
 
-export function PresenceBar({ awareness, template }: PresenceBarProps) {
+export function PresenceBar({ awareness, template, titles }: PresenceBarProps) {
   const users = usePresence(awareness);
 
   return (
@@ -20,15 +22,9 @@ export function PresenceBar({ awareness, template }: PresenceBarProps) {
           <svg className={styles.dot} viewBox="0 0 2 2" aria-hidden="true">
             <circle cx="1" cy="1" r="1" fill={user.color} />
           </svg>
-          {describe(user, template)}
+          {presenceLabel(user, template, titles)}
         </li>
       ))}
     </ul>
   );
-}
-
-function describe(user: PresenceUser, template: PlanTemplate): string {
-  const section = template.slots.find((slot) => slot.slot === user.slot);
-
-  return section ? `${user.name} in ${section.title}` : user.name;
 }

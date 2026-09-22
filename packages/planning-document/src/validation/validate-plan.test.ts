@@ -100,6 +100,30 @@ describe("validatePlan", () => {
     ).toEqual([["unknown-section", "risk"]]);
   });
 
+  it("passes a ready feature with the agent's Rollout section at approval", () => {
+    const withRollout = [
+      ...READY_FEATURE.slice(0, 2),
+      heading("custom-rollout", "Rollout"),
+      paragraph("Ship behind a flag."),
+      block("question", { questionId: "q-flag" }, { text: "Which flag?" }),
+      ...READY_FEATURE.slice(2),
+    ];
+    expect(validatePlan(plan(withRollout), "approval")).toEqual({
+      passed: true,
+      phase: "approval",
+      problems: [],
+    });
+  });
+
+  it("reports a KPI block inside the custom Rollout section as disallowed", () => {
+    expect(
+      codes(
+        [...READY_FEATURE, heading("custom-rollout", "Rollout"), block("kpi")],
+        "draft",
+      ),
+    ).toEqual([["disallowed-block", "custom-rollout"]]);
+  });
+
   it("reports kpis placed after scope as out of order", () => {
     expect(
       codes(

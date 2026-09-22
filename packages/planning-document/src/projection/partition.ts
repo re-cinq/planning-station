@@ -17,12 +17,15 @@ export function planTitle(blocks: readonly BlockJson[]): string | null {
     : null;
 }
 
+// Grows the sections it builds in place: copying them per block made a large plan quadratic.
 export function partitionSections(blocks: readonly BlockJson[]): Section[] {
   return blocks
     .filter((block) => block.type !== TITLE_BLOCK)
     .reduce<Section[]>((sections, block) => {
       if (block.type === "section-heading") {
-        return [...sections, openSection(block.id, block.props)];
+        sections.push(openSection(block.id, block.props));
+
+        return sections;
       }
 
       const current = sections.at(-1);
@@ -31,11 +34,9 @@ export function partitionSections(blocks: readonly BlockJson[]): Section[] {
         PlanShapeError,
         `block ${block.id} precedes the first section heading`,
       );
+      current.blocks.push(block);
 
-      return [
-        ...sections.slice(0, -1),
-        { ...current, blocks: [...current.blocks, block] },
-      ];
+      return sections;
     }, []);
 }
 

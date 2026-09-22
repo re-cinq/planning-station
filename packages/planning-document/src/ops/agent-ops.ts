@@ -3,7 +3,9 @@ import { z } from "zod";
 import {
   KPI_DIRECTIONS,
   PROTOTYPE_MATURITIES,
+  QUESTION_KINDS,
 } from "../blocks/plan-block-configs.js";
+import { CUSTOM_SLOT_PREFIX } from "../template/templates.js";
 
 export const kpiInputSchema = z.object({
   kpiId: z.string().min(1),
@@ -22,6 +24,17 @@ export const prototypeInputSchema = z.object({
   notes: z.string().default(""),
 });
 
+const customSlotSchema = z.string().startsWith(CUSTOM_SLOT_PREFIX);
+
+export const questionInputSchema = z.object({
+  slot: z.string().min(1),
+  questionId: z.string().min(1),
+  question: z.string().min(1),
+  why: z.string().default(""),
+  kind: z.enum(QUESTION_KINDS).default("text"),
+  options: z.array(z.string()).default([]),
+});
+
 /** What the planning agent writes: semantic, id-stable edits of a section. */
 export const agentOpSchema = z.discriminatedUnion("op", [
   z.object({
@@ -36,10 +49,24 @@ export const agentOpSchema = z.discriminatedUnion("op", [
   }),
   z.object({ op: z.literal("upsert-kpi"), kpi: kpiInputSchema }),
   z.object({ op: z.literal("set-prototype"), prototype: prototypeInputSchema }),
+  z.object({
+    op: z.literal("add-section"),
+    slot: customSlotSchema,
+    title: z.string().min(1),
+    after: z.string().min(1),
+    paragraphs: z.array(z.string()).default([]),
+  }),
+  z.object({
+    op: z.literal("set-section-title"),
+    slot: customSlotSchema,
+    title: z.string().min(1),
+  }),
+  z.object({ op: z.literal("add-question"), ...questionInputSchema.shape }),
 ]);
 
 export const agentOpsSchema = z.array(agentOpSchema);
 
 export type KpiInput = z.infer<typeof kpiInputSchema>;
 export type PrototypeInput = z.infer<typeof prototypeInputSchema>;
+export type QuestionInput = z.infer<typeof questionInputSchema>;
 export type AgentOp = z.infer<typeof agentOpSchema>;

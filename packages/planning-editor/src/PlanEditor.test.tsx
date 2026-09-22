@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
-import { templateFor, type ValidationReport } from "@re-cinq/planning-document";
+import {
+  applyOps,
+  templateFor,
+  type ValidationReport,
+} from "@re-cinq/planning-document";
 import { writtenBlocks } from "@re-cinq/planning-document/testing";
 
 import { PlanEditor, type PlanEditorProps } from "./PlanEditor.js";
@@ -22,6 +26,31 @@ const SEED = planSeed("performance", {
 const FIRST_TITLE = "What we want and why";
 
 const firstHeading = { name: FIRST_TITLE };
+
+const WITH_ROLLOUT = {
+  ...SEED,
+  blocks: applyOps(SEED.blocks, [
+    {
+      op: "add-section",
+      slot: "custom-rollout",
+      title: "Rollout",
+      after: "kpis",
+      paragraphs: ["Behind a flag."],
+    },
+  ]),
+};
+
+const renderRollout = async () => {
+  const { props } = editingAna(WITH_ROLLOUT);
+  const screen = await render(<PlanEditor {...props} />);
+  await expect
+    .element(screen.getByRole("heading", { name: "Rollout" }))
+    .toBeVisible();
+
+  return screen;
+};
+
+const dragHandles = () => document.querySelectorAll('[data-test="dragHandle"]');
 
 const renderPlan = async (extra: Partial<PlanEditorProps> = {}) => {
   const { props, lastPlan } = editingAna(SEED);
@@ -93,6 +122,39 @@ describe("PlanEditor", () => {
     await userEvent.keyboard("{End}{Enter}/KPI");
     await userEvent.click(screen.getByRole("option", { name: /KPI/ }));
     expect(lastPlan()?.kpis).toHaveLength(1);
+  });
+
+  it("renders the agent's Rollout section under its title, with the agent's hint", async () => {
+    const screen = await renderRollout();
+    await expect
+      .element(screen.getByText("Added by the planning agent for this plan."))
+      .toBeVisible();
+  });
+
+  it("lists the agent's Rollout section in the outline after Success criteria", async () => {
+    const screen = await renderRollout();
+    const outline = screen.getByRole("navigation", { name: "Plan outline" });
+    const titles = [...outline.element().querySelectorAll("ol > li")].map(
+      (entry) => entry.getAttribute("aria-label"),
+    );
+    expect(titles.slice(1, 3)).toEqual(["Success criteria", "Rollout"]);
+  });
+
+  it("offers Question in the agent's Rollout section when '/' is typed", async () => {
+    const screen = await renderRollout();
+    await userEvent.click(screen.getByText("Behind a flag."));
+    await userEvent.keyboard("{End}{Enter}/Question");
+    await expect
+      .element(screen.getByRole("option", { name: /Question/ }))
+      .toBeVisible();
+  });
+
+  it("gives a paragraph a drag handle and the Rollout heading none", async () => {
+    const screen = await renderRollout();
+    await userEvent.hover(screen.getByText("Behind a flag."));
+    await expect.poll(() => dragHandles().length).toBe(1);
+    await userEvent.hover(screen.getByRole("heading", { name: "Rollout" }));
+    await expect.poll(() => dragHandles().length).toBe(0);
   });
 
   it("draws the 'Approve plan' footer inside the plan outline", async () => {

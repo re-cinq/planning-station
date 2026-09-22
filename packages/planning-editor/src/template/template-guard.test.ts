@@ -72,6 +72,27 @@ describe("templateGuard", () => {
     expect(editor.document.map((block) => block.id)).toContain("panel-intent");
   });
 
+  it("keeps the intent actions when a user deletes them", () => {
+    const editor = guardedEditor();
+    editor.removeBlocks(["actions-intent"]);
+    expect(editor.document.map((block) => block.id)).toContain(
+      "actions-intent",
+    );
+  });
+
+  it("refuses moving the kpis heading above the intent heading", () => {
+    const editor = guardedEditor();
+    editor.transact(() => {
+      editor.removeBlocks(["h-kpis"]);
+      editor.insertBlocks(
+        [{ type: "section-heading", props: { slot: "kpis", title: "KPIs" } }],
+        "h-intent",
+        "before",
+      );
+    });
+    expect(slotsOf(editor)).toEqual(["intent", "kpis"]);
+  });
+
   it("lets the host remove the kpis heading when it bypasses the template", () => {
     const editor = guardedEditor();
     editor.transact((transaction) => {
