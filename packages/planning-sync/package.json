@@ -1,6 +1,6 @@
 {
   "name": "@re-cinq/planning-sync",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "The plan's server side: a PlanStore port, an in-memory store, the collaboration server and a hapi adapter.",
   "license": "Apache-2.0",
   "type": "module",

@@ -19,6 +19,7 @@ import {
   type MarkdownOps,
 } from "./markdown-outcome.js";
 import { readMarkdown, type MarkdownSection } from "./read-markdown.js";
+import { proseDiffOps } from "./prose-diff.js";
 import { writeProse } from "./write-prose.js";
 
 interface LivePlan extends LiveEntities {
@@ -133,7 +134,7 @@ function newSectionContent(
   const { prose } = written;
 
   return merged([
-    prose.length > 0 ? proseOp(slot, prose) : NO_CHANGE,
+    prose.length > 0 ? insertedProse(slot, prose) : NO_CHANGE,
     ...fencesOps(written, slot, live),
   ]);
 }
@@ -178,9 +179,18 @@ function proseOps(written: MarkdownSection, existing: Section): MarkdownOps {
   const current = writeProse(liveProse(existing)).join("\n");
   const next = writeProse(toProseBlocks(slot, written.prose)).join("\n");
 
-  return current === next ? NO_CHANGE : proseOp(slot, written.prose);
+  return current === next ? NO_CHANGE : proseOp(slot, written.prose, existing);
 }
 
-function proseOp(slot: string, blocks: ProseInput[]): MarkdownOps {
-  return changed({ op: "set-section-prose", slot, blocks });
+/** A section the file just added holds nothing yet, so all of its prose is an insert. */
+function insertedProse(slot: string, blocks: ProseInput[]): MarkdownOps {
+  return changed({ op: "insert-blocks", slot, after: null, blocks });
+}
+
+function proseOp(
+  slot: string,
+  blocks: ProseInput[],
+  existing: Section,
+): MarkdownOps {
+  return changed(...proseDiffOps(slot, liveProse(existing), blocks));
 }

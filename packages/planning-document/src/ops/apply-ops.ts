@@ -6,13 +6,8 @@ import {
 } from "../blocks/block-json.js";
 import { inlineFromText } from "../blocks/inline-text.js";
 import type { Section } from "../plan/plan-document.js";
-import {
-  partitionSections,
-  planTitle,
-  sectionOrder,
-} from "../projection/partition.js";
+import { partitionSections } from "../projection/partition.js";
 import { actionsBlock, panelBlock } from "../projection/seed.js";
-import { toBlocks } from "../projection/to-blocks.js";
 import { isCustomSlot } from "../template/templates.js";
 import type {
   AgentOp,
@@ -20,12 +15,12 @@ import type {
   PrototypeInput,
   QuestionInput,
 } from "./agent-ops.js";
+import { insertBlocks, removeBlock, replaceBlock } from "./block-ops.js";
+import { inSection, withSections } from "./in-section.js";
 import { toProseBlocks } from "./prose-input.js";
 
 const KPIS_SLOT = "kpis";
 const PROTOTYPE_SLOT = "prototype";
-
-type Change = (section: Section) => BlockJson[];
 
 type Handler<Kind extends AgentOp["op"]> = (
   blocks: BlockJson[],
@@ -72,6 +67,9 @@ const HANDLERS: Handlers = {
   "upsert-kpi": (blocks, op) => upsert(blocks, KPIS_SLOT, kpiBlock(op.kpi)),
   "set-prototype": (blocks, op) =>
     upsert(blocks, PROTOTYPE_SLOT, prototypeBlock(op.prototype)),
+  "replace-block": replaceBlock,
+  "insert-blocks": insertBlocks,
+  "remove-block": removeBlock,
   "add-section": addSection,
   "set-section-title": setSectionTitle,
   "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
@@ -94,20 +92,6 @@ function applyOp(blocks: BlockJson[], op: AgentOp): BlockJson[] {
   return apply(blocks, op);
 }
 
-function inSection(
-  blocks: readonly BlockJson[],
-  slot: string,
-  change: Change,
-): BlockJson[] {
-  const sections = partitionSections(blocks).map((section) =>
-    section.slot === slot
-      ? { ...section, blocks: sectionOrder(change(section)) }
-      : section,
-  );
-
-  return withSections(blocks, sections);
-}
-
 /** A section's prose is replaced whole, and the plan blocks in it stay. */
 function withProse(
   blocks: readonly BlockJson[],
@@ -118,13 +102,6 @@ function withProse(
     ...prose,
     ...section.blocks.filter(isPlanBlock),
   ]);
-}
-
-function withSections(
-  blocks: readonly BlockJson[],
-  sections: readonly Section[],
-): BlockJson[] {
-  return toBlocks({ sections: [...sections], title: planTitle(blocks) ?? "" });
 }
 
 function newSection(op: Extract<AgentOp, { op: "add-section" }>): Section {
