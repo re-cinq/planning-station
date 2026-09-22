@@ -16,6 +16,7 @@ import {
   problem,
   type MarkdownOps,
 } from "./markdown-outcome.js";
+import type { PlanFence } from "./markdown-syntax.js";
 import type { Fence } from "./read-markdown.js";
 
 /** What the plan holds now, for telling a changed fence from one written back as it was. */
@@ -40,7 +41,7 @@ const questionFenceSchema = questionInputSchema.omit({
   questionId: true,
 });
 
-const FENCE_OPS: Partial<Record<string, (input: FenceInput) => MarkdownOps>> = {
+const FENCE_OPS: Record<PlanFence, (input: FenceInput) => MarkdownOps> = {
   kpi: (input) =>
     fenceOp(kpiFenceSchema, input, (kpi) =>
       same(kpiFenceSchema, input.kpis.get(kpi.kpiId), kpi)
@@ -70,16 +71,11 @@ export function fenceOps(
   slot: string,
   live: LiveEntities,
 ): MarkdownOps {
-  const toOps = FENCE_OPS[fence.tag];
   const value = fence.closed ? parseJson(fence.body) : undefined;
-
-  if (!toOps) {
-    return problem("unknown-fence", slot, `no plan entity is a ${fence.tag}`);
-  }
 
   return value === undefined
     ? problem("invalid-fence", slot, `the ${fence.tag} fence is not JSON`)
-    : toOps({ ...live, value, slot });
+    : FENCE_OPS[fence.tag]({ ...live, value, slot });
 }
 
 function fenceOp<Schema extends z.ZodType>(

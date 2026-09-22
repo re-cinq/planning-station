@@ -3,10 +3,11 @@ import type { Section } from "../plan/plan-document.js";
 import { partitionSections } from "../projection/partition.js";
 import type { PlanTemplate } from "../template/template.js";
 import { isCustomSlot, newCustomSlot } from "../template/templates.js";
+import { toProseBlocks, type ProseInput } from "../ops/prose-input.js";
 import {
   livePrototype,
   liveKpis,
-  proseParagraphs,
+  liveProse,
   sectionTitle,
 } from "./live-section.js";
 import { fenceOps, type LiveEntities } from "./markdown-fences.js";
@@ -18,6 +19,7 @@ import {
   type MarkdownOps,
 } from "./markdown-outcome.js";
 import { readMarkdown, type MarkdownSection } from "./read-markdown.js";
+import { writeProse } from "./write-prose.js";
 
 interface LivePlan extends LiveEntities {
   sections: ReadonlyMap<string, Section>;
@@ -102,7 +104,7 @@ function newSectionOps(
   written: MarkdownSection,
   reading: Reading,
 ): MarkdownOps {
-  const { title, paragraphs } = written;
+  const { title } = written;
 
   if (title === "") {
     return problem(
@@ -117,8 +119,22 @@ function newSectionOps(
   reading.after = slot;
 
   return merged([
-    changed({ op: "add-section", slot, title, after, paragraphs }),
-    ...fencesOps(written, slot, reading.live),
+    changed({ op: "add-section", slot, title, after, paragraphs: [] }),
+    newSectionContent(written, slot, reading.live),
+  ]);
+}
+
+/** A new section's prose and fences, written into it once it exists. */
+function newSectionContent(
+  written: MarkdownSection,
+  slot: string,
+  live: LivePlan,
+): MarkdownOps {
+  const { prose } = written;
+
+  return merged([
+    prose.length > 0 ? proseOp(slot, prose) : NO_CHANGE,
+    ...fencesOps(written, slot, live),
   ]);
 }
 
@@ -156,19 +172,15 @@ function retitled(slot: string, title: string): MarkdownOps {
     : changed({ op: "set-section-title", slot, title });
 }
 
+/** Prose is compared as the canonical Markdown both sides write, so a section written back as it was is no change. */
 function proseOps(written: MarkdownSection, existing: Section): MarkdownOps {
-  const current = proseParagraphs(existing);
-  const same =
-    current.length === written.paragraphs.length &&
-    current.every(
-      (paragraph, index) => paragraph === written.paragraphs[index],
-    );
+  const { slot } = existing;
+  const current = writeProse(liveProse(existing)).join("\n");
+  const next = writeProse(toProseBlocks(slot, written.prose)).join("\n");
 
-  return same
-    ? NO_CHANGE
-    : changed({
-        op: "set-section-text",
-        slot: existing.slot,
-        paragraphs: written.paragraphs,
-      });
+  return current === next ? NO_CHANGE : proseOp(slot, written.prose);
+}
+
+function proseOp(slot: string, blocks: ProseInput[]): MarkdownOps {
+  return changed({ op: "set-section-prose", slot, blocks });
 }

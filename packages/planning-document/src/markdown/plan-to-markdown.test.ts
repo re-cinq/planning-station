@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { applyOps } from "../ops/apply-ops.js";
 import { templateFor } from "../template/templates.js";
 import { planWith, readyFeature, textBlock } from "../testing/plans.js";
+import { richFeature } from "../testing/rich-prose.js";
 import { planToMarkdown } from "./plan-to-markdown.js";
 
 const FEATURE = templateFor("feature");
@@ -42,15 +43,74 @@ describe("planToMarkdown", () => {
     ).toContain("## What must stay true <!-- slot:kpis -->");
   });
 
-  it("writes a section's prose as paragraphs parted by blank lines", () => {
+  it("writes a section's blocks parted by blank lines, and a list's items together", () => {
     const blocks = planWith("feature", {
       scope: [
         textBlock("paragraph", {}, "Only the price lookup."),
         textBlock("bulletListItem", {}, "Not the payment page."),
+        textBlock("bulletListItem", {}, "Not the basket."),
       ],
     });
     expect(planToMarkdown(blocks, FEATURE)).toContain(
-      "<!-- slot:scope -->\n\nOnly the price lookup.\n\nNot the payment page.\n",
+      "<!-- slot:scope -->\n\nOnly the price lookup.\n\n- Not the payment page.\n- Not the basket.\n",
+    );
+  });
+
+  it("writes every kind of prose block with its marks, links and nesting as Markdown", () => {
+    const markdown = planToMarkdown(richFeature(), FEATURE);
+    const scope = markdown.slice(
+      markdown.indexOf("<!-- slot:scope -->"),
+      markdown.indexOf("## Prototype"),
+    );
+    expect(scope.split("\n")).toEqual([
+      "<!-- slot:scope -->",
+      "",
+      "**In scope**",
+      "",
+      "- the `price_lookup()` call",
+      "  - *cached* per market",
+      "1. measure",
+      "2. ship ~~v1~~",
+      "- [x] flag exists",
+      "- [ ] rollout plan",
+      "",
+      "> Latency is the product.",
+      "",
+      "```ts",
+      "const p95 = 200;",
+      "## not a section",
+      "```",
+      "",
+      "| Market | p95 |",
+      "| --- | --- |",
+      "| DE | 200 ms |",
+      "",
+      "See [the ADR](https://example.com/adr) before - 1. or \\*this\\*",
+      "",
+      "",
+    ]);
+  });
+
+  it("writes a level 2 heading in the prose as a subheading, below the section's own", () => {
+    expect(linesOf(planToMarkdown(richFeature(), FEATURE))).toContain(
+      "### Why now",
+    );
+  });
+
+  it("escapes a paragraph that would read as a list, a numbered item or a quote", () => {
+    const blocks = planWith("feature", {
+      scope: [
+        textBlock("paragraph", {}, "- not a list"),
+        textBlock("paragraph", {}, "1. not numbered"),
+        textBlock("paragraph", {}, "> not a quote"),
+      ],
+    });
+    expect(linesOf(planToMarkdown(blocks, FEATURE))).toEqual(
+      expect.arrayContaining([
+        "\\- not a list",
+        "1\\. not numbered",
+        "\\> not a quote",
+      ]),
     );
   });
 

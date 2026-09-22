@@ -211,11 +211,20 @@ const next = applyOps(blocks, [
 ]);
 ```
 
-`set-section-text` replaces a section's prose and leaves its plan blocks,
-questions and comments alone; `append-to-section` adds to it. Sending that same
-`upsert-kpi` again rewrites the KPI and keeps its block id, which is what keeps
-other people's cursors from jumping when the agent writes into a document they
-are editing.
+`set-section-text` replaces a section's prose with plain paragraphs and leaves
+its plan blocks, questions and comments alone; `append-to-section` adds to it.
+`set-section-prose` does the same with rich blocks: paragraphs, level 3
+headings, nested bullet, numbered and checklist items, quotes, code with its
+language and tables, their text marked bold, italic, code or struck through,
+with links. Sending that same `upsert-kpi` again rewrites the KPI and keeps its
+block id, which is what keeps other people's cursors from jumping when the
+agent writes into a document they are editing.
+
+When the agent edits the plan as a file instead, `planToMarkdown` writes it as
+`plan.md` and `markdownToOps` reads the edited file back. Prose is ordinary
+Markdown both ways (`**bold**`, `` `code` ``, `- ` lists, `### ` subheadings,
+`> ` quotes, fenced code, GFM tables, which read back as the table block), and a
+section whose prose changed comes back as one `set-section-prose`.
 
 ## Scenario: refining one section while people are still talking
 

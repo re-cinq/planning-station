@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
-import type { AgentOp } from "@re-cinq/planning-document";
+import {
+  markdownToOps,
+  planToMarkdown,
+  templateFor,
+  type AgentOp,
+} from "@re-cinq/planning-document";
 import {
   blockText,
   planWith,
   readyFeature,
+  richFeature,
 } from "@re-cinq/planning-document/testing";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 
@@ -90,6 +96,15 @@ describe("applyOpsToDoc", () => {
     applyOpsToDoc(doc, [latency("200 ms")]);
     applyOpsToDoc(doc, [latency("150 ms")]);
     expect(kpisIn(doc)).toMatchObject([{ props: { target: "150 ms" } }]);
+  });
+
+  it("writes the agent's lists, marks, code and table into the live document and reads them back as the same plan.md", () => {
+    const doc = seeded();
+    const feature = templateFor("feature");
+    const markdown = planToMarkdown(richFeature(), feature);
+    const { ops } = markdownToOps(markdown, readBlocks(doc), feature);
+    applyOpsToDoc(doc, ops);
+    expect(planToMarkdown(readBlocks(doc), feature)).toEqual(markdown);
   });
 
   it("throws UnseededDocError when the document holds no plan yet", () => {

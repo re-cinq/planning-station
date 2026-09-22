@@ -19,6 +19,7 @@ import type {
   PrototypeInput,
   QuestionInput,
 } from "./agent-ops.js";
+import { toProseBlocks } from "./prose-input.js";
 
 const KPIS_SLOT = "kpis";
 const PROTOTYPE_SLOT = "prototype";
@@ -33,10 +34,10 @@ type Handler<Kind extends AgentOp["op"]> = (
 type Handlers = { [Kind in AgentOp["op"]]: Handler<Kind> };
 
 const setSectionText: Handler<"set-section-text"> = (blocks, op) =>
-  inSection(blocks, op.slot, (section) => [
-    ...paragraphs(op.slot, op.paragraphs),
-    ...section.blocks.filter(isPlanBlock),
-  ]);
+  withProse(blocks, op.slot, paragraphs(op.slot, op.paragraphs));
+
+const setSectionProse: Handler<"set-section-prose"> = (blocks, op) =>
+  withProse(blocks, op.slot, toProseBlocks(op.slot, op.blocks));
 
 const appendToSection: Handler<"append-to-section"> = (blocks, op) =>
   inSection(blocks, op.slot, (section) => [
@@ -65,6 +66,7 @@ const setSectionTitle: Handler<"set-section-title"> = (blocks, op) =>
 
 const HANDLERS: Handlers = {
   "set-section-text": setSectionText,
+  "set-section-prose": setSectionProse,
   "append-to-section": appendToSection,
   "upsert-kpi": (blocks, op) => upsert(blocks, KPIS_SLOT, kpiBlock(op.kpi)),
   "set-prototype": (blocks, op) =>
@@ -103,6 +105,18 @@ function inSection(
   );
 
   return withSections(blocks, sections);
+}
+
+/** A section's prose is replaced whole, and the plan blocks in it stay. */
+function withProse(
+  blocks: readonly BlockJson[],
+  slot: string,
+  prose: readonly BlockJson[],
+): BlockJson[] {
+  return inSection(blocks, slot, (section) => [
+    ...prose,
+    ...section.blocks.filter(isPlanBlock),
+  ]);
 }
 
 function withSections(
