@@ -17,10 +17,18 @@
 .sidebar {
   position: sticky;
   top: var(--ps-space-layout);
+  max-height: calc(100dvh - 2 * var(--ps-space-layout));
+  overflow-y: auto;
 }
 
 @media (width < 48rem) {
   .withSidebar {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sidebar {
+    order: -1;
+    position: static;
+    max-height: none;
   }
 }

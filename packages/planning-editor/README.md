@@ -296,7 +296,9 @@ top of the sidebar, above the outline, names everyone else with the section they
 are in ("Ana in Success criteria"). A participant whose cursor is in the
 document is a button: clicking it scrolls their cursor into view. One who has
 not placed a cursor yet is listed but not clickable. Pass `showPresence={false}`
-to hide the list; the cursors stay.
+to hide the list; the cursors stay. The sidebar column shows while either the
+outline or the participants are on; hide both for a single column. On a narrow
+screen the sidebar moves above the document.
 
 ## Scenario: a preview, a version view, or a test without a server
 

@@ -57,25 +57,29 @@ export interface PlanEditorProps {
 
 type SessionProps = Omit<
   PlanEditorProps,
-  "transport" | "adapters" | "className"
-> & { session: PlanSession };
+  "transport" | "adapters" | "className" | keyof Panes
+> &
+  Panes & { session: PlanSession };
 
 type WorkspaceProps = Omit<SessionProps, "template"> & {
   meta: PlanMeta;
   template: PlanTemplate;
 };
 
+type Panes = { showOutline: boolean; showPresence: boolean };
+
 type LayoutProps = Pick<
   WorkspaceProps,
-  "template" | "readOnly" | "showOutline" | "outlineFooter" | "showPresence"
-> & {
-  editor: PlanBlockNoteEditor;
-  doc: Doc;
-  hosts: ChangeHosts;
-  awareness: PlanSession["awareness"];
-  report: ValidationReport;
-  sections: PlanDocument["sections"];
-};
+  "template" | "readOnly" | "outlineFooter"
+> &
+  Panes & {
+    editor: PlanBlockNoteEditor;
+    doc: Doc;
+    hosts: ChangeHosts;
+    awareness: PlanSession["awareness"];
+    report: ValidationReport;
+    sections: PlanDocument["sections"];
+  };
 
 const NO_ADAPTERS: PlanEditorAdapters = {};
 
@@ -86,12 +90,13 @@ export function PlanEditor({
   ...props
 }: PlanEditorProps) {
   const session = usePlanSession(transport);
+  const panes = panesOf(props);
 
   return (
     <AdaptersContext value={adapters}>
-      <div className={editorClasses({ ...props, className })}>
+      <div className={editorClasses({ ...panes, className })}>
         {session ? (
-          <SessionEditor {...props} session={session} />
+          <SessionEditor {...props} {...panes} session={session} />
         ) : (
           <SessionNotice status="connecting" />
         )}
@@ -100,16 +105,21 @@ export function PlanEditor({
   );
 }
 
+// Both panes are on unless the host turns one off; decided once, here.
+function panesOf({
+  showOutline = true,
+  showPresence = true,
+}: Pick<PlanEditorProps, keyof Panes>): Panes {
+  return { showOutline, showPresence };
+}
+
 function editorClasses({
   showOutline,
   showPresence,
   className,
-}: Pick<
-  PlanEditorProps,
-  "showOutline" | "showPresence" | "className"
->): string {
-  const sidebar = showOutline !== false || showPresence !== false;
-  const layout = sidebar ? styles.withSidebar : styles.single;
+}: Panes & Pick<PlanEditorProps, "className">): string {
+  const layout =
+    showOutline || showPresence ? styles.withSidebar : styles.single;
 
   return [styles.editor, layout, "ps-editor", className]
     .filter(Boolean)
@@ -166,28 +176,18 @@ function editing(
   };
 }
 
-function WorkspaceLayout({
-  showOutline = true,
-  showPresence = true,
-  ...view
-}: LayoutProps) {
+function WorkspaceLayout(view: LayoutProps) {
   const titles = useSectionTitles(view.sections);
-
-  const panes = { showPresence, showOutline };
 
   return (
     <SectionTitlesContext value={titles}>
       <EditorSurface {...view} />
-      <Sidebar {...view} {...panes} titles={titles} />
+      <Sidebar {...view} titles={titles} />
     </SectionTitlesContext>
   );
 }
 
-type SidebarProps = Omit<LayoutProps, "showPresence" | "showOutline"> & {
-  showPresence: boolean;
-  showOutline: boolean;
-  titles: ReadonlyMap<string, string>;
-};
+type SidebarProps = LayoutProps & { titles: ReadonlyMap<string, string> };
 
 // Participants sit above the outline so a name can be followed to its cursor while the outline stays put.
 function Sidebar({ showPresence, showOutline, ...view }: SidebarProps) {

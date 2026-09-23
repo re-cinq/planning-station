@@ -1,12 +1,17 @@
 .participants {
   display: grid;
   gap: var(--ps-space-inline);
-  margin: 0 0 var(--ps-space-list);
-  padding: 0 0 var(--ps-space-inline);
-  border-bottom: 1px solid var(--ps-rule);
+  margin: 0;
+  padding: 0;
   list-style: none;
   color: var(--ps-fg-muted);
   font-size: var(--ps-fs-hint);
+
+  &:not(:last-child) {
+    margin-bottom: var(--ps-space-list);
+    padding-bottom: var(--ps-space-inline);
+    border-bottom: 1px solid var(--ps-rule);
+  }
 }
 
 .locate,

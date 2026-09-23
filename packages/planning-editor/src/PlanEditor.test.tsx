@@ -70,7 +70,10 @@ const LONG_SEED = planSeed("performance", {
 });
 
 const cursorIn = (region: Element) =>
-  region.querySelector(".bn-collaboration-cursor__base");
+  region.querySelector(".bn-collaboration-cursor__caret");
+
+const blockOf = (element: Element | null) =>
+  element?.closest(".bn-block-content")?.textContent ?? "";
 
 const isOnScreen = (element: Element | null) => {
   const rect = element?.getBoundingClientRect();
@@ -224,13 +227,19 @@ describe("PlanEditor", () => {
       .toBeVisible();
   });
 
-  it("scrolls Ben's view to Ana's cursor when he clicks her name", async () => {
+  it("scrolls Ben's view to Ana's cursor when he clicks her name, keeping focus where it was", async () => {
     const { ana, ben } = await renderPair(LONG_SEED);
     await userEvent.click(ana.getByText("Last line"));
     const cursor = () => cursorIn(ben.element());
-    await expect.poll(() => isOnScreen(cursor())).toBeFalsy();
+    await expect.poll(() => blockOf(cursor())).toContain("Last line");
+    const offScreenBefore = !isOnScreen(cursor());
+    const focused = document.activeElement;
     await userEvent.click(ben.getByRole("button", { name: /^Ana in/ }));
     await expect.poll(() => isOnScreen(cursor())).toBeTruthy();
+    expect({
+      offScreenBefore,
+      focusKept: document.activeElement === focused,
+    }).toEqual({ offScreenBefore: true, focusKept: true });
   });
 
   it("draws Ana's cursor labelled with her name in Ben's editor", async () => {

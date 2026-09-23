@@ -5,7 +5,7 @@ export interface PresenceUser {
   name: string;
   color: string;
   slot: string | null;
-  /** Whether the person has placed a cursor in the document, so there is somewhere to scroll to. */
+  /** Whether the person has placed a cursor in the document, which is when the entry offers to scroll to it. */
   hasCursor: boolean;
 }
 

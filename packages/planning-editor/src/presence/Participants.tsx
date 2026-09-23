@@ -39,6 +39,7 @@ function Participant({ user, template, titles, onLocate }: ParticipantProps) {
     <button
       type="button"
       className={styles.locate}
+      aria-description={`Go to ${user.name}'s cursor`}
       onMouseDown={keepFocus}
       onClick={() => onLocate(user)}
     >
