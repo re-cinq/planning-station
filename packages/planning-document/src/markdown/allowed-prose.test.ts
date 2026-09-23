@@ -95,4 +95,25 @@ describe("markdownToOps and what a section has no place for", () => {
 
     expect(() => opsFor(markdown, incident)).not.toThrow();
   });
+
+  it("anchors a paragraph the pass adds below a person's bullet under Open questions to that bullet", () => {
+    const asked = planWith("feature", {
+      questions: [
+        textBlock("paragraph", {}, "Alpha."),
+        textBlock("bulletListItem", {}, "Regions?"),
+        textBlock("paragraph", {}, "Omega."),
+      ],
+    });
+    const bullet = asked.find((block) => block.type === "bulletListItem");
+    const markdown = edited(
+      "- Regions?",
+      "- Regions?\n\nNew after bullet.",
+      planToMarkdown(asked, FEATURE),
+    );
+
+    expect(opsFor(markdown, asked)).toMatchObject({
+      ops: [{ op: "insert-blocks", after: bullet?.id }],
+      problems: [],
+    });
+  });
 });
