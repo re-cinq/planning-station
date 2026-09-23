@@ -1,7 +1,11 @@
 import { isPlanBlock, type BlockJson } from "../blocks/block-json.js";
 import { plainText } from "../blocks/inline-text.js";
 import type { Section } from "../plan/plan-document.js";
-import { ALWAYS_ALLOWED, NOT_CONTENT } from "../template/slots.js";
+import {
+  allowsBlock,
+  disallowedBlockMessage,
+  NOT_CONTENT,
+} from "../template/slots.js";
 import type {
   BlockRequirement,
   PlanTemplate,
@@ -68,12 +72,12 @@ export const disallowedBlocks: Check = ({ plan: { sections }, template }) =>
   sectionsWithSlots(sections, template).flatMap(
     ({ section: { blocks }, slot }) =>
       blocks
-        .filter((block) => !allowedIn(slot, block))
+        .filter((block) => !allowsBlock(slot, block.type))
         .map((block) => ({
           code: "disallowed-block" as const,
           slot: slot.slot,
           blockId: block.id,
-          message: `a ${block.type} block does not belong in "${slot.title}"`,
+          message: disallowedBlockMessage(slot, block.type),
         })),
   );
 
@@ -184,13 +188,6 @@ function rankOf(
   section: Section | undefined,
 ): number {
   return rank.get(section?.slot ?? "") ?? -1;
-}
-
-function allowedIn(slot: SectionSlot, block: BlockJson): boolean {
-  return (
-    slot.allows.includes(block.type) ||
-    ALWAYS_ALLOWED.includes(block.type as (typeof ALWAYS_ALLOWED)[number])
-  );
 }
 
 function isMeaningful(block: BlockJson): boolean {

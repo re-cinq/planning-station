@@ -106,3 +106,18 @@ export const SLOTS = {
     hint: "What the agent needs a person to decide.",
   },
 } as const satisfies Record<string, SectionSlot>;
+
+/** Whether a section of this slot may hold a block of this type: what its template allows, or what every section carries. */
+export function allowsBlock(slot: SectionSlot, type: string): boolean {
+  return (
+    (slot.allows as readonly string[]).includes(type) ||
+    ALWAYS_ALLOWED.includes(type as (typeof ALWAYS_ALLOWED)[number])
+  );
+}
+
+export function disallowedBlockMessage(
+  slot: SectionSlot,
+  type: string,
+): string {
+  return `a ${type} block does not belong in "${slot.title}"`;
+}

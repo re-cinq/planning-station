@@ -1,8 +1,12 @@
 import type { BlockJson } from "../blocks/block-json.js";
 import type { Section } from "../plan/plan-document.js";
 import { partitionSections } from "../projection/partition.js";
-import type { PlanTemplate } from "../template/template.js";
-import { isCustomSlot, newCustomSlot } from "../template/templates.js";
+import type { PlanTemplate, SectionSlot } from "../template/template.js";
+import {
+  isCustomSlot,
+  newCustomSlot,
+  sectionSlotFor,
+} from "../template/templates.js";
 import { toProseBlocks, type ProseInput } from "../ops/prose-input.js";
 import {
   livePrototype,
@@ -10,6 +14,7 @@ import {
   liveProse,
   sectionTitle,
 } from "./live-section.js";
+import { withoutDisallowed } from "./allowed-prose.js";
 import { fenceOps, type LiveEntities } from "./markdown-fences.js";
 import {
   changed,
@@ -91,7 +96,7 @@ function markedSectionOps(
 
   return merged([
     titleOps(written, existing, live.template),
-    proseOps(written, existing),
+    withoutDisallowed(proseOps(written, existing), slotOf(live, slot, written)),
     ...fencesOps(written, slot, live),
   ]);
 }
@@ -134,7 +139,12 @@ function newSectionContent(
   const { prose } = written;
 
   return merged([
-    prose.length > 0 ? insertedProse(slot, prose) : NO_CHANGE,
+    prose.length > 0
+      ? withoutDisallowed(
+          insertedProse(slot, prose),
+          slotOf(live, slot, written),
+        )
+      : NO_CHANGE,
     ...fencesOps(written, slot, live),
   ]);
 }
@@ -180,6 +190,15 @@ function proseOps(written: MarkdownSection, existing: Section): MarkdownOps {
   const next = writeProse(toProseBlocks(slot, written.prose)).join("\n");
 
   return current === next ? NO_CHANGE : proseOp(slot, written.prose, existing);
+}
+
+/** The slot a section of the file is written into, template or custom, under the title the file gives it. */
+function slotOf(
+  live: LivePlan,
+  slot: string,
+  written: MarkdownSection,
+): SectionSlot {
+  return sectionSlotFor(live.template, slot, written.title);
 }
 
 /** A section the file just added holds nothing yet, so all of its prose is an insert. */
