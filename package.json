@@ -1,0 +1,35 @@
+{
+  "name": "@re-cinq/planning-document",
+  "version": "0.5.3",
+  "description": "The plan document contract: JSON schema, templates, projection and validation.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./lib/enforce.js": {
+      "types": "./dist/lib/enforce.d.ts",
+      "default": "./dist/lib/enforce.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    }
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/re-cinq/planning-station.git",
+    "directory": "packages/planning-document"
+  }
+}
