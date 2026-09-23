@@ -108,9 +108,27 @@ export function guardOps(
   const guarded = ops.map((op) => guardOp(op, slot, theirs));
 
   return {
-    ops: guarded.flatMap(({ op }) => (op ? [op] : [])),
+    ops: joinedInserts(guarded.flatMap(({ op }) => (op ? [op] : []))),
     problems: guarded.flatMap(({ problems }) => problems),
   };
+}
+
+/** A rewrite turned into an insert anchors where the run after it anchors too; as two inserts after one block they would land in reverse, so they are joined in the order written. */
+function joinedInserts(ops: readonly AgentOp[]): AgentOp[] {
+  return ops.reduce<AgentOp[]>((joined, op) => {
+    const last = joined.at(-1);
+    const follows =
+      last?.op === "insert-blocks" &&
+      op.op === "insert-blocks" &&
+      last.after === op.after;
+
+    return follows
+      ? [
+          ...joined.slice(0, -1),
+          { ...last, blocks: [...last.blocks, ...op.blocks] },
+        ]
+      : [...joined, op];
+  }, []);
 }
 
 interface GuardedOp {

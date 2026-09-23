@@ -171,4 +171,22 @@ describe("markdownToOps and what a section has no place for", () => {
       problems: ONE_REFUSAL,
     });
   });
+
+  it("keeps the pass's two new paragraphs in the order it wrote them when both land after a person's bullet", () => {
+    const { ops } = passOver(
+      BULLET_THEN_OMEGA,
+      "- Regions?\n\nOmega.",
+      "First.\n\nSecond.\n\nOmega.\n\n- Regions?",
+    );
+
+    expect(ops).toMatchObject([
+      {
+        op: "insert-blocks",
+        blocks: [
+          { content: [{ text: "First." }] },
+          { content: [{ text: "Second." }] },
+        ],
+      },
+    ]);
+  });
 });
