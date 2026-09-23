@@ -14,6 +14,7 @@ import type { Doc, Map as YMap } from "yjs";
 
 import { rewriteDoc } from "../convert/apply-ops.js";
 import { readBlocks } from "../convert/plan-doc.js";
+import { discardRefine } from "./proposals.js";
 
 /** Changes live beside the plan's blocks, so everyone sees them and the plan itself stays as it was until someone accepts one. */
 export const CHANGES = "changes";
@@ -45,6 +46,8 @@ export function proposeChanges(
   const changes = changesFor(readBlocks(doc), pass);
   doc.transact(() => {
     changes.forEach((change) => changeMap(doc).set(change.changeId, change));
+    // The ask is answered by the pass, even when it changed nothing: left standing, the plan would say a refine is still coming for ever.
+    discardRefine(doc, pass.slot, origin);
   }, origin);
 
   return changes;

@@ -14,6 +14,7 @@ import type { Doc } from "yjs";
 
 import { applyOpsToDoc } from "../convert/apply-ops.js";
 import { docFromBlocks, readBlocks } from "../convert/plan-doc.js";
+import { askRefine, proposalsIn } from "./proposals.js";
 import {
   acceptChange,
   applyChangeAnyway,
@@ -76,6 +77,23 @@ describe("proposeChanges", () => {
       changes: 2,
       text: ["Checkout is slow.", "Carts are abandoned."],
     });
+  });
+
+  it("answers the ask a person made, so the plan stops saying a refine is still coming", () => {
+    const doc = seeded();
+    askRefine(doc, { slot: "intent", askedBy: "Ana" });
+    proposeChanges(
+      doc,
+      {
+        slot: "intent",
+        ops: [rewrite(doc, "Checkout p95 is 450 ms.")],
+        uses: { questions: [], comments: [] },
+        proposedBy: "planning-agent",
+      },
+      "agent",
+    );
+
+    expect(proposalsIn(doc)).toEqual([]);
   });
 
   it("accepts one change and leaves the other waiting", () => {

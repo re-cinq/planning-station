@@ -41,11 +41,12 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 
 ## Changes, one paragraph at a time
 
-- A pass's answer is cut into one change per paragraph it touched, each waiting beside the plan: the plan reads as it did until someone takes one ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L71)).
-- A change is accepted on its own, and the ones beside it keep waiting ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L81)).
-- Each change is held against the paragraph it is about, not against the section: one paragraph moving on leaves every other change acceptable, and the ones that moved on are named ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L92), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L102), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L132)).
-- A change whose paragraph moved on can still be applied anyway, onto the paragraph as it stands ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L112)).
-- A discarded change leaves the plan as it was ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L121)).
+- A pass's answer is cut into one change per paragraph it touched, each waiting beside the plan: the plan reads as it did until someone takes one ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L72)).
+- A pass answers the ask a person made, even when it changed nothing there, so the plan never says a refine is still coming after it arrived ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L82)).
+- A change is accepted on its own, and the ones beside it keep waiting ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L99)).
+- Each change is held against the paragraph it is about, not against the section: one paragraph moving on leaves every other change acceptable, and the ones that moved on are named ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L110), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L120), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L150)).
+- A change whose paragraph moved on can still be applied anyway, onto the paragraph as it stands ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L130)).
+- A discarded change leaves the plan as it was ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L139)).
 
 ## Wire format
 
