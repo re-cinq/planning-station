@@ -23,7 +23,8 @@ import { PlanSlashMenu } from "./menu/PlanSlashMenu.js";
 import { TemplateOutline } from "./outline/TemplateOutline.js";
 import styles from "./PlanEditor.module.scss";
 import type { PlanBlockNoteEditor } from "./schema/block-bridge.js";
-import { PresenceBar } from "./presence/PresenceBar.js";
+import { Participants } from "./presence/Participants.js";
+import { scrollToCursor } from "./presence/scroll-to-cursor.js";
 import { useTrackEditing } from "./presence/use-presence.js";
 import type { PlanTransport, PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
@@ -101,9 +102,14 @@ export function PlanEditor({
 
 function editorClasses({
   showOutline,
+  showPresence,
   className,
-}: Pick<PlanEditorProps, "showOutline" | "className">): string {
-  const layout = showOutline === false ? styles.single : styles.withOutline;
+}: Pick<
+  PlanEditorProps,
+  "showOutline" | "showPresence" | "className"
+>): string {
+  const sidebar = showOutline !== false || showPresence !== false;
+  const layout = sidebar ? styles.withSidebar : styles.single;
 
   return [styles.editor, layout, "ps-editor", className]
     .filter(Boolean)
@@ -167,22 +173,61 @@ function WorkspaceLayout({
 }: LayoutProps) {
   const titles = useSectionTitles(view.sections);
 
+  const panes = { showPresence, showOutline };
+
   return (
     <SectionTitlesContext value={titles}>
-      {showPresence && <PresenceBar {...view} titles={titles} />}
       <EditorSurface {...view} />
-      {showOutline && <OutlinePane {...view} />}
+      <Sidebar {...view} {...panes} titles={titles} />
     </SectionTitlesContext>
   );
 }
 
-// Each section's title by slot, shared by the editor's blocks and the presence bar.
+type SidebarProps = Omit<LayoutProps, "showPresence" | "showOutline"> & {
+  showPresence: boolean;
+  showOutline: boolean;
+  titles: ReadonlyMap<string, string>;
+};
+
+// Participants sit above the outline so a name can be followed to its cursor while the outline stays put.
+function Sidebar({ showPresence, showOutline, ...view }: SidebarProps) {
+  if (!showPresence && !showOutline) {
+    return null;
+  }
+
+  return (
+    <aside className={styles.sidebar}>
+      {showPresence && <ParticipantsPane {...view} />}
+      {showOutline && <OutlinePane {...view} />}
+    </aside>
+  );
+}
+
+// Each section's title by slot, shared by the editor's blocks and the participants list.
 function useSectionTitles(
   sections: LayoutProps["sections"],
 ): ReadonlyMap<string, string> {
   return useMemo(
     () => new Map(sections.map((section) => [section.slot, section.title])),
     [sections],
+  );
+}
+
+function ParticipantsPane({
+  editor,
+  awareness,
+  template,
+  titles,
+}: Pick<LayoutProps, "editor" | "awareness" | "template"> & {
+  titles: ReadonlyMap<string, string>;
+}) {
+  return (
+    <Participants
+      awareness={awareness}
+      template={template}
+      titles={titles}
+      onLocate={(user) => scrollToCursor(editor, user.clientId)}
+    />
   );
 }
 

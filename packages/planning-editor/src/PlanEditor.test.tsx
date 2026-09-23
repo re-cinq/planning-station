@@ -60,8 +60,26 @@ const renderPlan = async (extra: Partial<PlanEditorProps> = {}) => {
   return { screen, lastPlan };
 };
 
-const renderPair = async () => {
-  const hub = createMemoryHub(SEED);
+const LONG_SEED = planSeed("performance", {
+  intent: [
+    ...[...Array(60).keys()].map((line) =>
+      textBlock("paragraph", {}, `Line ${line}`),
+    ),
+    textBlock("paragraph", {}, "Last line"),
+  ],
+});
+
+const cursorIn = (region: Element) =>
+  region.querySelector(".bn-collaboration-cursor__base");
+
+const isOnScreen = (element: Element | null) => {
+  const rect = element?.getBoundingClientRect();
+
+  return Boolean(rect && rect.top >= 0 && rect.bottom <= window.innerHeight);
+};
+
+const renderPair = async (seed = SEED) => {
+  const hub = createMemoryHub(seed);
   const screen = await render(
     <>
       <section aria-label="Ana's editor">
@@ -189,10 +207,30 @@ describe("PlanEditor", () => {
     await expect.element(ben.getByText(/Checkout under 200 ms/)).toBeVisible();
   });
 
-  it("lists Ana in Ben's presence bar with the section she is editing", async () => {
+  it("lists Ana in Ben's participants with the section she is editing", async () => {
     const { ana, ben } = await renderPair();
     await userEvent.click(ana.getByText("Checkout"));
     await expect.element(ben.getByText(`Ana in ${FIRST_TITLE}`)).toBeVisible();
+  });
+
+  it("lists Ana as plain text until she places her cursor, then as a button", async () => {
+    const { ana, ben } = await renderPair();
+    const participants = ben.getByRole("list", { name: "Participants" });
+    await expect.element(participants.getByText("Ana")).toBeVisible();
+    expect(participants.getByRole("button").elements()).toEqual([]);
+    await userEvent.click(ana.getByText("Checkout"));
+    await expect
+      .element(participants.getByRole("button", { name: /^Ana in/ }))
+      .toBeVisible();
+  });
+
+  it("scrolls Ben's view to Ana's cursor when he clicks her name", async () => {
+    const { ana, ben } = await renderPair(LONG_SEED);
+    await userEvent.click(ana.getByText("Last line"));
+    const cursor = () => cursorIn(ben.element());
+    await expect.poll(() => isOnScreen(cursor())).toBeFalsy();
+    await userEvent.click(ben.getByRole("button", { name: /^Ana in/ }));
+    await expect.poll(() => isOnScreen(cursor())).toBeTruthy();
   });
 
   it("draws Ana's cursor labelled with her name in Ben's editor", async () => {

@@ -6,7 +6,7 @@
   font-family: var(--ps-font);
 }
 
-.withOutline {
+.withSidebar {
   grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
 }
 
@@ -14,8 +14,13 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.sidebar {
+  position: sticky;
+  top: var(--ps-space-layout);
+}
+
 @media (width < 48rem) {
-  .withOutline {
+  .withSidebar {
     grid-template-columns: minmax(0, 1fr);
   }
 }
