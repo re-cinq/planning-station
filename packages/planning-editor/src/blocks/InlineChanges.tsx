@@ -75,12 +75,22 @@ function Bar({ review }: { review: ReviewableChange }) {
   );
 }
 
-/** The change as a person reads it: that this paragraph goes, or the words it proposes. */
+/** What a change that writes no words does, for the ops where that is something a person must be told. */
+const NOTHING_WRITTEN: Partial<Record<PlanChange["op"]["op"], string>> = {
+  "remove-block": "This paragraph goes.",
+  "set-section-text": "This section is cleared.",
+  "set-section-prose": "This section is cleared.",
+};
+
+/** The change as a person reads it: the words it proposes, or what writing none of them does. */
 function Words({ change }: { change: PlanChange }): ReactNode {
-  return change.op.op === "remove-block" ? (
-    <p className={styles.dropped}>This paragraph goes.</p>
+  const words = changeWords(change);
+  const warning = NOTHING_WRITTEN[change.op.op];
+
+  return words.length === 0 && warning ? (
+    <p className={styles.dropped}>{warning}</p>
   ) : (
-    changeWords(change).map((line, index) => (
+    words.map((line, index) => (
       <p key={index} className={styles.words}>
         {line}
       </p>

@@ -6,6 +6,7 @@ export const MARKDOWN_PROBLEM_CODES = [
   "renamed-template-section",
   "untitled-section",
   "invalid-fence",
+  "disallowed-block",
 ] as const;
 
 export type MarkdownProblemCode = (typeof MARKDOWN_PROBLEM_CODES)[number];
