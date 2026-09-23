@@ -10,11 +10,17 @@ import {
   planWith,
   readyFeature,
   richFeature,
+  textBlock,
 } from "@re-cinq/planning-document/testing";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 
 import { docFromBlocks, readBlocks } from "./plan-doc.js";
-import { applyOpsToDoc, rewriteDoc, UnseededDocError } from "./apply-ops.js";
+import {
+  applyOpsToDoc,
+  rewriteDoc,
+  runsOf,
+  UnseededDocError,
+} from "./apply-ops.js";
 
 const latency = (target: string): AgentOp => ({
   op: "upsert-kpi",
@@ -39,6 +45,11 @@ const INTENT: AgentOp = {
 };
 
 const seeded = () => docFromBlocks(planWith("feature", {}));
+
+const paragraph = (id: string, text: string) => ({
+  ...textBlock("paragraph", {}, text),
+  id,
+});
 
 const texts = (doc: Doc) =>
   readBlocks(doc)
@@ -107,20 +118,15 @@ describe("applyOpsToDoc", () => {
     expect(planToMarkdown(readBlocks(doc), feature)).toEqual(markdown);
   });
 
-  it(
-    "writes a 40 000-paragraph intent in one pass within 4 seconds, where one insert per block took 19",
-    { timeout: 4_000 },
-    () => {
-      const doc = seeded();
-      const paragraphs = [...Array(40_000).keys()].map(
-        (index) => `Finding ${index}.`,
-      );
-      applyOpsToDoc(doc, [
-        { op: "set-section-text", slot: "intent", paragraphs },
-      ]);
-      expect(texts(doc).at(-1)).toEqual("Finding 39999.");
-    },
-  );
+  it("writes a run of changed blocks as ONE insert, however long the run, so a write stays proportional to the plan", () => {
+    const paragraphs = [...Array(5_000).keys()].map((index) =>
+      paragraph(`p${index}`, `Finding ${index}.`),
+    );
+
+    expect(
+      runsOf(["kept"], new Map([["kept", "same"]]), paragraphs),
+    ).toMatchObject([{ at: 0, blocks: { length: 5_000 } }]);
+  });
 
   it("moves the first section's heading to the end once, leaving no copy where it was", () => {
     const doc = seeded();

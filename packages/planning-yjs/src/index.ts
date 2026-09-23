@@ -29,4 +29,15 @@ export {
   type RefineOffer,
   type SectionBase,
 } from "./refine/proposals.js";
+export {
+  acceptChange,
+  applyChangeAnyway,
+  changesIn,
+  CHANGES,
+  discardChange,
+  discardChangesIn,
+  NoChangeError,
+  proposeChanges,
+  staleChanges,
+} from "./refine/changes.js";
 export { fromBase64, toBase64 } from "./wire/base64.js";

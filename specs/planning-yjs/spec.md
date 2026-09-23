@@ -20,14 +20,14 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 
 ## Agent writes
 
-- The agent's ops reach the live document: a paragraph it writes and a KPI it adds are in the plan afterwards ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L56), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L62)).
-- Rich prose the agent writes in `plan.md` (nested lists, checklists, marks, links, quotes, code and tables) reaches the live document as the editor's own blocks and reads back as the same `plan.md` ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L101)).
-- The whole write travels to everyone else as Yjs updates, like any other edit ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L68)).
-- Only the blocks that changed are rewritten, so the rest of the document, including what a person is writing elsewhere, is left alone ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L76), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L87)).
-- A KPI the agent writes again is revised in place instead of added twice ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L94)).
-- A write costs time in proportion to the plan: each run of changed blocks between two unchanged ones is converted and inserted at once, so a section of 40 000 paragraphs is written in well under 4 seconds ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L110)).
-- A block that moves ends up once, where the new plan holds it ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L125)).
-- Writing to a document that holds no plan throws UnseededDocError ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L135)).
+- The agent's ops reach the live document: a paragraph it writes and a KPI it adds are in the plan afterwards ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L67), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L73)).
+- Rich prose the agent writes in `plan.md` (nested lists, checklists, marks, links, quotes, code and tables) reaches the live document as the editor's own blocks and reads back as the same `plan.md` ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L112)).
+- The whole write travels to everyone else as Yjs updates, like any other edit ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L79)).
+- Only the blocks that changed are rewritten, so the rest of the document, including what a person is writing elsewhere, is left alone ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L87), [validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L98)).
+- A KPI the agent writes again is revised in place instead of added twice ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L105)).
+- A write costs time in proportion to the plan: each run of changed blocks between two unchanged ones is written as ONE insert, however long the run — an insert per block walks the child list every time, and 40 000 paragraphs took 19 s that way ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L121)).
+- A block that moves ends up once, where the new plan holds it ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L131)).
+- Writing to a document that holds no plan throws UnseededDocError ([validated by](../../packages/planning-yjs/src/convert/apply-ops.test.ts#L141)).
 
 ## Refine proposals
 
@@ -38,6 +38,14 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 - Accepting writes the proposal into its section, marks the inputs it used, and clears it; discarding clears it and leaves the section alone ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L104), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L113), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L145)).
 - A proposal can be applied anyway, running its ops onto the section as it stands, so what was written meanwhile survives beside it ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L129)).
 - A proposal whose section changed after the ask is refused with SectionChangedError, and one the agent has not answered yet with NoProposalError ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L121), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L154)).
+
+## Changes, one paragraph at a time
+
+- A pass's answer is cut into one change per paragraph it touched, each waiting beside the plan: the plan reads as it did until someone takes one ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L71)).
+- A change is accepted on its own, and the ones beside it keep waiting ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L81)).
+- Each change is held against the paragraph it is about, not against the section: one paragraph moving on leaves every other change acceptable, and the ones that moved on are named ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L92), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L102), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L132)).
+- A change whose paragraph moved on can still be applied anyway, onto the paragraph as it stands ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L112)).
+- A discarded change leaves the plan as it was ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L121)).
 
 ## Wire format
 

@@ -15,6 +15,7 @@ import {
 import { planSchema } from "./schema/plan-schema.js";
 import type { PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
+import { changeWidgets, type ChangeHosts } from "./schema/change-widgets.js";
 import { templateGuard } from "./template/template-guard.js";
 
 export interface PlanEditorOptions {
@@ -30,7 +31,8 @@ export function usePlanEditor({
   user,
   onChange,
 }: PlanEditorOptions) {
-  const editor = useCollaborativeEditor(session, user);
+  const hosts = useMemo<ChangeHosts>(() => new Map(), []);
+  const editor = useCollaborativeEditor(session, user, hosts);
   const onEdit = useCallback(
     (document: readonly unknown[]) => onChange?.(projectBlocks(document, meta)),
     [meta, onChange],
@@ -38,19 +40,20 @@ export function usePlanEditor({
   const blocks = useEditedBlocks(editor, session, onEdit);
   const plan = useMemo(() => projectBlocks(blocks, meta), [blocks, meta]);
 
-  return { editor, plan };
+  return { editor, plan, hosts };
 }
 
 function useCollaborativeEditor(
   session: PlanSession,
   user: PlanUser,
+  hosts: ChangeHosts,
 ): PlanBlockNoteEditor {
   const { doc } = session;
 
   return useCreateBlockNote(
     withCollaboration({
       schema: planSchema,
-      extensions: [templateGuard],
+      extensions: [templateGuard, changeWidgets(doc, hosts)],
       collaboration: {
         fragment: doc.getXmlFragment(PLAN_FRAGMENT),
         user: { ...user },

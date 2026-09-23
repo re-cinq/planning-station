@@ -1,0 +1,124 @@
+import {
+  applyOps,
+  blockHash,
+  changesFor,
+  enforceTrue,
+  markUsed,
+  planChangeSchema,
+  SectionChangedError,
+  type BlockJson,
+  type PassOps,
+  type PlanChange,
+} from "@re-cinq/planning-document";
+import type { Doc, Map as YMap } from "yjs";
+
+import { rewriteDoc } from "../convert/apply-ops.js";
+import { readBlocks } from "../convert/plan-doc.js";
+
+/** Changes live beside the plan's blocks, so everyone sees them and the plan itself stays as it was until someone accepts one. */
+export const CHANGES = "changes";
+
+export class NoChangeError extends Error {}
+
+/** Every change waiting on this plan, in the order the pass wrote them. */
+export function changesIn(doc: Doc): PlanChange[] {
+  return [...changeMap(doc).values()].flatMap((value) => {
+    const parsed = planChangeSchema.safeParse(value);
+
+    return parsed.success ? [parsed.data] : [];
+  });
+}
+
+/** The changes whose own paragraph reads differently now, so accepting one would write over what someone else wrote. */
+export function staleChanges(doc: Doc): PlanChange[] {
+  const blocks = readBlocks(doc);
+
+  return changesIn(doc).filter((change) => isStale(blocks, change));
+}
+
+/** One pass's answer, cut into a change per op: each is reviewed where it lands. */
+export function proposeChanges(
+  doc: Doc,
+  pass: PassOps,
+  origin?: unknown,
+): PlanChange[] {
+  const changes = changesFor(readBlocks(doc), pass);
+  doc.transact(() => {
+    changes.forEach((change) => changeMap(doc).set(change.changeId, change));
+  }, origin);
+
+  return changes;
+}
+
+/** Writes one change into the plan and marks what it used, unless its own paragraph moved on. */
+export function acceptChange(
+  doc: Doc,
+  changeId: string,
+  origin?: unknown,
+): BlockJson[] {
+  const change = changeFor(doc, changeId);
+  enforceTrue(
+    !isStale(readBlocks(doc), change),
+    SectionChangedError,
+    `${change.slot} changed after the agent read it`,
+  );
+
+  return applyChangeAnyway(doc, changeId, origin);
+}
+
+/** Writes one change onto the paragraph as it stands: what a person chooses when they would rather have the answer than the words it was written against. */
+export function applyChangeAnyway(
+  doc: Doc,
+  changeId: string,
+  origin?: unknown,
+): BlockJson[] {
+  const { op, uses } = changeFor(doc, changeId);
+  const written: BlockJson[][] = [];
+  doc.transact(() => {
+    written.push(
+      rewriteDoc(
+        doc,
+        (blocks) => markUsed(applyOps(blocks, [op]), uses),
+        origin,
+      ),
+    );
+    changeMap(doc).delete(changeId);
+  }, origin);
+
+  return written[0] ?? [];
+}
+
+export function discardChange(
+  doc: Doc,
+  changeId: string,
+  origin?: unknown,
+): void {
+  doc.transact(() => changeMap(doc).delete(changeId), origin);
+}
+
+/** Drops every change waiting on one section, for a person asking the agent again. */
+export function discardChangesIn(
+  doc: Doc,
+  slot: string,
+  origin?: unknown,
+): void {
+  const waiting = changesIn(doc).filter((change) => change.slot === slot);
+  doc.transact(() => {
+    waiting.forEach((change) => changeMap(doc).delete(change.changeId));
+  }, origin);
+}
+
+function isStale(blocks: readonly BlockJson[], change: PlanChange): boolean {
+  return blockHash(blocks, change.anchorId) !== change.baseHash;
+}
+
+function changeFor(doc: Doc, changeId: string): PlanChange {
+  const change = changesIn(doc).find((one) => one.changeId === changeId);
+  enforceTrue(change, NoChangeError, `no change ${changeId} to write`);
+
+  return change as PlanChange;
+}
+
+function changeMap(doc: Doc): YMap<unknown> {
+  return doc.getMap(CHANGES);
+}
