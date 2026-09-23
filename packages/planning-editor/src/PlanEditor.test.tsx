@@ -237,6 +237,13 @@ describe("PlanEditor", () => {
     await expect.element(ben.getByText(`Ana in ${FIRST_TITLE}`)).toBeVisible();
   });
 
+  it("renders no participants list when Ana is alone on the plan", async () => {
+    const { screen } = await renderPlan();
+    expect(
+      screen.getByRole("list", { name: "Participants" }).elements(),
+    ).toEqual([]);
+  });
+
   it("lists Ana as plain text until she places her cursor, then as a button", async () => {
     const { ana, ben } = await renderPair();
     const participants = ben.getByRole("list", { name: "Participants" });

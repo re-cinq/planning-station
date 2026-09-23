@@ -88,11 +88,12 @@ The plan editor is the React component people write a plan in: the feature's nam
 ## Presence
 
 - The participants list, at the top of the sidebar above the outline, names everyone else on the plan with the section they are editing, and never the viewer ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L234), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L20)).
+- A viewer alone on the plan gets no participants list at all, not an empty one ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L240)).
 - A peer that has not announced a name is not listed, and one without a cursor yet is listed with no section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L43), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L47)).
-- A participant whose cursor is in the document is a button, and one who has not placed a cursor is plain text ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L240), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L36)).
-- Clicking a participant scrolls their cursor into view without moving the reader's own caret ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L251)).
+- A participant whose cursor is in the document is a button, and one who has not placed a cursor is plain text ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L247), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L36)).
+- Clicking a participant scrolls their cursor into view without moving the reader's own caret ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L258)).
 - A peer editing a section the agent added is listed with that section's own title, the same as a template section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L65)).
-- Each remote cursor is drawn in the editor, labelled with its owner's name ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L266)).
+- Each remote cursor is drawn in the editor, labelled with its owner's name ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L273)).
 
 ## Plan blocks
 

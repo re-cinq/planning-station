@@ -17,6 +17,10 @@ export interface ParticipantsProps {
 export function Participants({ awareness, ...entry }: ParticipantsProps) {
   const users = usePresence(awareness);
 
+  if (users.length === 0) {
+    return null;
+  }
+
   return (
     <ul className={styles.participants} aria-label="Participants">
       {users.map((user) => (
