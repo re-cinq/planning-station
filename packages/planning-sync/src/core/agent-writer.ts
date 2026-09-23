@@ -3,6 +3,7 @@ import {
   docName,
   toPlanDocument,
   type AgentOp,
+  type PlanChange,
   type PlanDocument,
   type PlanMeta,
   type ProposedRefine,
@@ -11,6 +12,7 @@ import {
 import {
   applyOpsToDoc,
   enforceSectionUnchanged,
+  proposeChanges,
   proposePass,
   proposeRefine,
   type PassOutcome,
@@ -54,6 +56,8 @@ export interface AgentWriter {
   propose(request: ProposalRequest): Promise<ProposedRefine>;
   /** A pass's proposals, one per section it touched, each against that section as it stands. */
   proposePass(request: PassRequest): Promise<PassOutcome>;
+  /** A pass's proposals, one per PARAGRAPH it changed: each is read and taken where it lands. */
+  proposeChanges(request: PassRequest): Promise<PlanChange[]>;
 }
 
 export interface AgentWriterOptions {
@@ -66,6 +70,7 @@ export function createAgentWriter(options: AgentWriterOptions): AgentWriter {
     applyOps: (request) => write(options, request),
     propose: (request) => propose(options, request),
     proposePass: (request) => pass(options, request),
+    proposeChanges: (request) => changes(options, request),
   };
 }
 
@@ -102,6 +107,21 @@ async function pass(
 
   return inDocument(options, json, (document) =>
     proposePass(document, { ...offer, proposedBy: actor }, AGENT_ORIGIN),
+  );
+}
+
+async function changes(
+  options: AgentWriterOptions,
+  { planId, actor, asked, ops, uses }: PassRequest,
+): Promise<PlanChange[]> {
+  const { json } = await options.service.readPlan(planId);
+
+  return inDocument(options, json, (document) =>
+    proposeChanges(
+      document,
+      { slot: asked?.slot ?? "", ops, uses, proposedBy: actor },
+      AGENT_ORIGIN,
+    ),
   );
 }
 

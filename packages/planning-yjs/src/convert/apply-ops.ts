@@ -66,7 +66,8 @@ interface Walk {
 }
 
 /** The runs that turn the children, in order, into `next`, each between two blocks that stay as they are. */
-function runsOf(
+/** Exported for its own test: writing a run of changed blocks as ONE insert is what keeps a write proportional to the plan — an insert per block walks the child list every time, and 40 000 paragraphs took 19 s that way. */
+export function runsOf(
   existing: readonly string[],
   before: ReadonlyMap<string, string>,
   next: readonly BlockJson[],

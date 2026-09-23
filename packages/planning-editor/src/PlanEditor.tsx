@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type ReactNode } from "react";
+import type { Doc } from "yjs";
 import { BlockNoteView } from "@blocknote/ariakit";
 import {
   templateFor,
@@ -15,6 +16,8 @@ import {
   PlanActionsContext,
   type RefineRequest,
 } from "./blocks/plan-actions.js";
+import { InlineChanges } from "./blocks/InlineChanges.js";
+import type { ChangeHosts } from "./blocks/change-hosts.js";
 import { PlanSideMenu } from "./menu/PlanSideMenu.js";
 import { PlanSlashMenu } from "./menu/PlanSlashMenu.js";
 import { TemplateOutline } from "./outline/TemplateOutline.js";
@@ -25,6 +28,7 @@ import { useTrackEditing } from "./presence/use-presence.js";
 import type { PlanTransport, PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
 import { SessionNotice } from "./session/SessionNotice.js";
+import { usePlanChanges } from "./session/use-plan-changes.js";
 import { usePlanSession, useSessionState } from "./session/use-plan-session.js";
 import {
   SectionTitlesContext,
@@ -65,6 +69,8 @@ type LayoutProps = Pick<
   "template" | "readOnly" | "showOutline" | "outlineFooter" | "showPresence"
 > & {
   editor: PlanBlockNoteEditor;
+  doc: Doc;
+  hosts: ChangeHosts;
   awareness: PlanSession["awareness"];
   report: ValidationReport;
   sections: PlanDocument["sections"];
@@ -128,17 +134,30 @@ function PlanWorkspace({
   ...props
 }: WorkspaceProps) {
   const { session, user } = props;
-  const { editor, plan } = usePlanEditor(props);
+  const { editor, plan, hosts } = usePlanEditor(props);
+  const live = editing(session, editor, hosts);
   const report = usePlanValidation(plan, validationPhase, onValidation);
-  const { awareness } = session;
-  useTrackEditing(editor, awareness);
-  const view = { ...props, editor, awareness, report, sections: plan.sections };
+  useTrackEditing(editor, session.awareness);
 
   return (
     <PlanActionsContext value={{ user, onRefine, doc: session.doc }}>
-      <WorkspaceLayout {...view} />
+      <WorkspaceLayout {...props} {...live} {...plan} report={report} />
     </PlanActionsContext>
   );
+}
+
+/** What the layout reads about the live document: the editor, the plan's own doc, where a change hangs, and who else is here. */
+function editing(
+  session: PlanSession,
+  editor: PlanBlockNoteEditor,
+  hosts: ChangeHosts,
+) {
+  return {
+    editor,
+    hosts,
+    doc: session.doc,
+    awareness: session.awareness,
+  };
 }
 
 function WorkspaceLayout({
@@ -183,7 +202,11 @@ function OutlinePane({
 function EditorSurface({
   editor,
   readOnly,
-}: Pick<LayoutProps, "editor" | "readOnly">) {
+  doc,
+  hosts,
+}: Pick<LayoutProps, "editor" | "readOnly" | "doc" | "hosts">) {
+  const changes = usePlanChanges(doc, () => redraw(editor));
+
   return (
     <BlockNoteView
       editor={editor}
@@ -193,6 +216,7 @@ function EditorSurface({
     >
       <PlanSlashMenu />
       <PlanSideMenu />
+      <InlineChanges changes={changes} hosts={hosts} />
     </BlockNoteView>
   );
 }
@@ -206,4 +230,15 @@ function usePlanValidation(
   useEffect(() => onValidation?.(report), [report, onValidation]);
 
   return report;
+}
+
+/** A transaction that changes nothing, so ProseMirror recomputes its decorations and a change proposed just now gets its place; queued because dispatching inside the update that prompted it re-enters the editor mid-apply. */
+function redraw(editor: PlanBlockNoteEditor): void {
+  queueMicrotask(() => {
+    const view = editor.prosemirrorView;
+
+    if (!view.isDestroyed) {
+      view.dispatch(view.state.tr);
+    }
+  });
 }
