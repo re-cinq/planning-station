@@ -77,6 +77,30 @@ describe("a change proposed about one paragraph", () => {
     }).toEqual({ shows: true, repeats: false, under: true });
   });
 
+  it("draws a change about no paragraph of its own at the end of its section, rather than nowhere", async () => {
+    const { hub, screen } = await rendered();
+    proposeChanges(hub.doc, {
+      slot: "intent",
+      ops: [
+        {
+          op: "add-question",
+          slot: "intent",
+          questionId: "q-new",
+          question: "Which market first?",
+          why: "the plan names none",
+          kind: "text",
+          options: [],
+        },
+      ],
+      uses: { questions: [], comments: [] },
+      proposedBy: "planning-agent",
+    });
+
+    await expect
+      .element(screen.getByRole("group", { name: "Proposed change" }))
+      .toBeVisible();
+  });
+
   it("writes only that paragraph when Accept is clicked", async () => {
     const { hub, screen, lastPlan } = await rendered();
     proposeRewrite(hub);

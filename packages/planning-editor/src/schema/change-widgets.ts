@@ -33,13 +33,20 @@ function widgets(
   doc: Doc,
   hosts: ChangeHosts,
 ): Decoration[] {
-  const ends = blockEnds(state);
+  const places = blockPlaces(state);
 
   return changesIn(doc).flatMap((change) => {
-    const at = ends.get(change.anchorId ?? "");
+    const at = placeOf(places, change);
 
     return at === undefined ? [] : [widget(at, change, hosts)];
   });
+}
+
+/** Where a change hangs: after the paragraph it is about, or — for one about no paragraph of its own, like a question it asks — at the end of its section, before the section's own actions. */
+function placeOf(places: Places, change: PlanChange): number | undefined {
+  return change.anchorId
+    ? places.ends.get(change.anchorId)
+    : places.starts.get(`actions-${change.slot}`);
 }
 
 function widget(
@@ -67,19 +74,26 @@ function host(changeId: string, hosts: ChangeHosts): HTMLElement {
   return element;
 }
 
-/** Where each block ends, by the id it carries: the position a change about it hangs at. */
-function blockEnds(state: EditorState): Map<string, number> {
-  const ends = new Map<string, number>();
+interface Places {
+  /** Where each block ends: the position a change about it hangs at. */
+  ends: Map<string, number>;
+  /** Where each block starts: the position a change hangs BEFORE it at. */
+  starts: Map<string, number>;
+}
+
+/** Each block's place, by the id it carries. The outermost node wins: a block and the content inside it carry the same id, and a change hangs around the whole block, never inside its text. */
+function blockPlaces(state: EditorState): Places {
+  const places: Places = { ends: new Map(), starts: new Map() };
   state.doc.descendants((node: Node, pos: number) => {
     const id = String(node.attrs["id"] ?? "");
 
-    // The outermost node wins: a block and the content inside it carry the same id, and a change hangs after the whole block, never inside its text.
-    if (id && !ends.has(id)) {
-      ends.set(id, pos + node.nodeSize);
+    if (id && !places.ends.has(id)) {
+      places.ends.set(id, pos + node.nodeSize);
+      places.starts.set(id, pos);
     }
 
     return true;
   });
 
-  return ends;
+  return places;
 }
