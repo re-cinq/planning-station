@@ -12,7 +12,7 @@
   "dependencies": {
     "@hapi/hapi": "^21.4.10",
     "@re-cinq/planning-document": "^0.5.0",
-    "@re-cinq/planning-editor": "^0.6.0",
+    "@re-cinq/planning-editor": "^0.7.0",
     "@re-cinq/planning-sync": "^0.5.0",
     "@re-cinq/planning-yjs": "^0.5.0",
     "react": "^19.2.8",
