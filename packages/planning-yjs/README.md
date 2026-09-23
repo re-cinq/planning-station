@@ -241,6 +241,22 @@ acceptRefine(doc, "scope"); // writes it, marks q-tax used, clears the proposal
 changed after the ask; comments and answers added meanwhile do not count as a
 change. `discardRefine` drops a proposal, and `proposalsIn(doc)` lists them.
 
+A refine is `asked`, then `proposed` — or `failed`, when the agent could not
+answer. `failRefine` turns the ask into a failure that keeps who asked and
+carries the reason:
+
+```ts
+failRefine(doc, {
+  slot: "scope",
+  reason: "the agent stopped before it wrote anything",
+});
+```
+
+It returns what the section holds afterwards. A proposal that already arrived is
+kept (a late failure never wipes a real answer), and a section nobody asked
+about stays empty. A failed refine has nothing to accept (`NoProposalError`), a
+later pass may propose for its section, and `askRefine` simply replaces it.
+
 ## Scenario: carrying Yjs over a JSON transport
 
 Updates are bytes; most transports carry text. The wire helpers are the same ones

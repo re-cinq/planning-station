@@ -9,6 +9,7 @@ import {
   slotOf,
   type AgentOp,
   type BlockJson,
+  type FailedRefine,
   type ProposedRefine,
   type RefineProposal,
   type RefineUses,
@@ -48,6 +49,12 @@ export interface PassOffer {
 export interface PassOutcome {
   proposed: string[];
   skipped: string[];
+}
+
+/** Why the agent could not answer a section's ask. */
+export interface RefineFailure {
+  slot: string;
+  reason: string;
 }
 
 export interface SectionBase {
@@ -97,6 +104,29 @@ export function proposeRefine(
   return proposed;
 }
 
+/** The agent could not answer: an ask becomes failed, with the reason, so the person sees it and can ask again. A proposal already there is kept, since a late failure must not wipe a real answer. Returns what the slot holds afterwards — failed when this failed it — or undefined when nobody asked. */
+export function failRefine(
+  doc: Doc,
+  { slot, reason }: RefineFailure,
+  origin?: unknown,
+): RefineProposal | undefined {
+  const current = proposalFor(doc, slot);
+
+  if (current?.status !== "asked") {
+    return current;
+  }
+
+  const failed: FailedRefine = {
+    ...current,
+    status: "failed",
+    reason,
+    failedAt: new Date().toISOString(),
+  };
+  doc.transact(() => proposalMap(doc).set(slot, failed), origin);
+
+  return failed;
+}
+
 /** One pass's answer: the section a person asked about, and every other section the settled answers forced the agent to change. Each is proposed against ITSELF as it stands, so a person reviewing one section is never told about another's drift; a section whose proposal someone is already reviewing is left alone rather than replaced. */
 export function proposePass(
   doc: Doc,
@@ -116,7 +146,11 @@ export function proposePass(
 
 function writePass(doc: Doc, context: PassContext): void {
   const { pass, bySlot, outcome } = context;
-  const pending = new Set(proposalsIn(doc).map((proposal) => proposal.slot));
+  const pending = new Set(
+    proposalsIn(doc)
+      .filter((proposal) => proposal.status !== "failed")
+      .map((proposal) => proposal.slot),
+  );
 
   if (pass.asked) {
     offer(doc, context, pass.asked);

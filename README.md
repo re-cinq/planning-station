@@ -247,6 +247,9 @@ questions and threads it used, so the next Refine does not write them in again;
 if the section changed after the ask, it can only be asked for again. An agent
 that writes directly can send the same guard: `base: { slot, hash }` on
 `agent-edits` answers 409 `section-changed` instead of overwriting someone.
+When the agent could not answer at all, the host fails the ask with a reason
+(the agent writer's `failRefine`), and the section says so with Ask again,
+rather than looking refined with nothing to accept.
 
 ### 6. Approval ends the plan
 

@@ -18,6 +18,7 @@ export {
   askRefine,
   discardRefine,
   enforceSectionUnchanged,
+  failRefine,
   NoProposalError,
   PROPOSALS,
   proposalsIn,
@@ -26,6 +27,7 @@ export {
   type PassOffer,
   type PassOutcome,
   type RefineAsk,
+  type RefineFailure,
   type RefineOffer,
   type SectionBase,
 } from "./refine/proposals.js";

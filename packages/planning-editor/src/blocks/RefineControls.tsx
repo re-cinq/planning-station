@@ -1,4 +1,8 @@
-import type { LineChange, ProposedRefine } from "@re-cinq/planning-document";
+import type {
+  LineChange,
+  ProposedRefine,
+  RefineProposal,
+} from "@re-cinq/planning-document";
 import type { Doc } from "yjs";
 
 import {
@@ -25,15 +29,26 @@ export function RefineControls(props: RefineControlsProps) {
   const ask = useAsk(props, refine);
   const view = { ...props, refine, ask };
 
-  if (refine.proposal?.status === "proposed") {
-    return <Proposal {...view} proposal={refine.proposal} />;
-  }
+  return refine.proposal ? (
+    <RefineState {...view} proposal={refine.proposal} />
+  ) : (
+    <RefineButton {...view} />
+  );
+}
 
-  if (refine.proposal?.status === "asked") {
-    return <Asked {...view} askedBy={refine.proposal.askedBy} />;
+/** A section's refine once asked: waiting on the agent, answered, or failed. */
+function RefineState({
+  proposal,
+  ...view
+}: Refining & { proposal: RefineProposal }) {
+  switch (proposal.status) {
+    case "asked":
+      return <Asked {...view} askedBy={proposal.askedBy} />;
+    case "failed":
+      return <Failed {...view} reason={proposal.reason} />;
+    default:
+      return <Proposal {...view} proposal={proposal} />;
   }
-
-  return <RefineButton {...view} />;
 }
 
 function useAsk({ slot, title }: RefineControlsProps, refine: SectionRefine) {
@@ -77,6 +92,23 @@ function Asked({ refine, askedBy }: Refining & { askedBy: string }) {
         Withdraw
       </button>
     </p>
+  );
+}
+
+/** Asking again overwrites the failure, whatever is settled by now: the person already chose to refine this section. */
+function Failed({ refine, ask, reason }: Refining & { reason: string }) {
+  return (
+    <section className={styles.proposal}>
+      <p className={styles.failed} role="alert">
+        The agent could not refine this section: {reason}
+      </p>
+      <p className={styles.bar}>
+        <button type="button" className={styles.refine} onClick={ask}>
+          Ask again
+        </button>
+        <Quiet label="Dismiss" run={refine.discard} />
+      </p>
+    </section>
   );
 }
 

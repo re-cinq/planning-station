@@ -260,6 +260,11 @@ refine never writes straight in:
    ask, Accept writes the proposal and marks the questions and threads it used,
    which then read "in the plan" and no longer count. If someone did, the
    proposal can only be asked for again.
+5. **A failure is shown, not swallowed.** When your agent could not answer,
+   fail the ask with a reason (`failRefine` in `@re-cinq/planning-yjs`, or the
+   agent writer's `failRefine` in `@re-cinq/planning-sync`). The section then
+   says "The agent could not refine this section: …" with Ask again and
+   Dismiss.
 
 ```tsx
 <PlanEditor

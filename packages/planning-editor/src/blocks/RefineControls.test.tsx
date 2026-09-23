@@ -2,7 +2,11 @@ import { describe, it, expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import type { BlockJson, PlanDocument } from "@re-cinq/planning-document";
-import { applyOpsToDoc, proposeRefine } from "@re-cinq/planning-yjs";
+import {
+  applyOpsToDoc,
+  failRefine,
+  proposeRefine,
+} from "@re-cinq/planning-yjs";
 
 import { PlanEditor } from "../PlanEditor.js";
 import { createMemoryHub } from "../session/memory-hub.js";
@@ -58,6 +62,14 @@ const agentProposes =
       ops: [{ op: "append-to-section", slot, paragraphs: [STOP_AT] }],
       proposedBy: "planning-agent",
     });
+  };
+
+const CRASHED = "the agent crashed before its first turn";
+
+const agentFails =
+  (hub: ReturnType<typeof createMemoryHub>): OnRefine =>
+  async ({ slot }) => {
+    failRefine(hub.doc, { slot, reason: CRASHED });
   };
 
 const refine = (actions: Awaited<ReturnType<typeof renderPlan>>["actions"]) =>
@@ -178,5 +190,36 @@ describe("RefineControls", () => {
     await expect
       .element(actions.getByRole("button", { name: "Ask again" }))
       .toBeVisible();
+  });
+
+  it("tells Ana the agent could not refine the open questions, and why", async () => {
+    const { actions } = await renderPlan(agentFails);
+    await refine(actions);
+    await expect
+      .element(actions.getByRole("alert"))
+      .toHaveTextContent(`The agent could not refine this section: ${CRASHED}`);
+  });
+
+  it("asks the host again when Ana asks again after the agent failed", async () => {
+    const onRefine = vi.fn<OnRefine>(() => new Promise(() => {}));
+    const { actions } = await renderPlan((hub) => {
+      onRefine.mockImplementationOnce(agentFails(hub));
+
+      return onRefine;
+    });
+    await refine(actions);
+    await userEvent.click(actions.getByRole("button", { name: "Ask again" }));
+    await expect
+      .element(actions.getByText("The agent is refining this for Ana…"))
+      .toBeVisible();
+  });
+
+  it("offers Refine again once Ana dismisses the failed refine", async () => {
+    const { actions } = await renderPlan(agentFails);
+    await refine(actions);
+    await userEvent.click(actions.getByRole("button", { name: "Dismiss" }));
+    await expect
+      .element(actions.getByRole("button", { name: "Refine this section" }))
+      .toBeEnabled();
   });
 });

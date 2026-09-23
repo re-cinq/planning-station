@@ -302,6 +302,22 @@ it. Ops that reach another section are refused with 400. Accepting happens in
 the browser and is checked against `baseHash`, so a section someone changed in
 the meantime is never overwritten.
 
+When the agent could not answer at all (its run crashed, say), fail the ask
+rather than answer it with nothing, so the person is told instead of seeing a
+refine that silently did nothing:
+
+```ts
+await writer.failRefine({
+  planId,
+  slot: "scope",
+  reason: "the agent stopped before it wrote anything",
+});
+// resolves to what the section holds now: the failed refine, the agent's
+// proposal if one already arrived (it is kept), or undefined if nobody asked
+```
+
+The section then shows the reason with Ask again, which overwrites the failure.
+
 The same guard is there for direct writes. Send the hash the agent read, and a
 changed section answers 409 `urn:planning:section-changed` instead:
 

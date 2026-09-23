@@ -63,7 +63,8 @@
   border-radius: var(--ps-radius);
 }
 
-.stale {
+.stale,
+.failed {
   margin: 0;
   color: var(--ps-warning);
   font-size: var(--ps-fs-hint);

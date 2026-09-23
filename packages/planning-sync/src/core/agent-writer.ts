@@ -7,11 +7,13 @@ import {
   type PlanDocument,
   type PlanMeta,
   type ProposedRefine,
+  type RefineProposal,
   type RefineUses,
 } from "@re-cinq/planning-document";
 import {
   applyOpsToDoc,
   enforceSectionUnchanged,
+  failRefine,
   proposeChanges,
   proposePass,
   proposeRefine,
@@ -58,6 +60,15 @@ export interface AgentWriter {
   proposePass(request: PassRequest): Promise<PassOutcome>;
   /** A pass's proposals, one per PARAGRAPH it changed: each is read and taken where it lands. */
   proposeChanges(request: PassRequest): Promise<PlanChange[]>;
+  /** The agent could not answer a person's Refine: the ask shows as failed, with the reason, until someone asks again. Resolves to what the section holds afterwards; a proposal already there is kept. */
+  failRefine(request: FailRequest): Promise<RefineProposal | undefined>;
+}
+
+/** Why the agent could not answer the Refine a person asked for one section. */
+export interface FailRequest {
+  planId: string;
+  slot: string;
+  reason: string;
 }
 
 export interface AgentWriterOptions {
@@ -71,7 +82,19 @@ export function createAgentWriter(options: AgentWriterOptions): AgentWriter {
     propose: (request) => propose(options, request),
     proposePass: (request) => pass(options, request),
     proposeChanges: (request) => changes(options, request),
+    failRefine: (request) => fail(options, request),
   };
+}
+
+async function fail(
+  options: AgentWriterOptions,
+  { planId, ...failure }: FailRequest,
+): Promise<RefineProposal | undefined> {
+  const { json } = await options.service.readPlan(planId);
+
+  return inDocument(options, json, (document) =>
+    failRefine(document, failure, AGENT_ORIGIN),
+  );
 }
 
 async function write(

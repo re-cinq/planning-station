@@ -16,6 +16,7 @@ export {
   createAgentWriter,
   AGENT_ORIGIN,
   type AgentWriter,
+  type FailRequest,
   type OpsRequest,
   type PassRequest,
   type ProposalRequest,

@@ -4,7 +4,8 @@ import {
   readyFeature,
   writtenBlocks,
 } from "@re-cinq/planning-document/testing";
-import { docFromBlocks } from "@re-cinq/planning-yjs";
+import { askRefine, docFromBlocks, proposalsIn } from "@re-cinq/planning-yjs";
+import { applyUpdate, Doc } from "yjs";
 
 import { startTestServer, type TestServer } from "../testing/test-server.js";
 
@@ -29,12 +30,12 @@ const writtenIntent = (plan: PlanDocument) => {
 
 let running: TestServer | undefined;
 
-const startPlan = async () => {
+const startPlan = async (doc = docFromBlocks(readyFeature())) => {
   running = await startTestServer({ debounce: 10 });
   const { meta } = await running.service.createPlan(NEW_PLAN);
   await running.service.storeDocument({
     planId: meta.id,
-    doc: docFromBlocks(readyFeature()),
+    doc,
     actor: "ana",
     reason: "publish",
   });
@@ -78,4 +79,26 @@ describe("createAgentWriter", () => {
     });
     expect(await test.store.getMeta(planId)).toMatchObject({ status: "draft" });
   });
+
+  it("fails the Refine ana asked for the intent, and the next reader sees why", async () => {
+    const asked = docFromBlocks(readyFeature());
+    askRefine(asked, { slot: "intent", askedBy: "ana" });
+    const { test, planId } = await startPlan(asked);
+    await test.writer.failRefine({ planId, slot: "intent", reason: CRASHED });
+    const reloaded = new Doc();
+    applyUpdate(reloaded, (await test.service.loadState(planId)) ?? NO_STATE);
+    expect(proposalsIn(reloaded)).toMatchObject([
+      { status: "failed", slot: "intent", askedBy: "ana", reason: CRASHED },
+    ]);
+  });
+
+  it("returns nothing when nobody asked to refine the intent", async () => {
+    const { test, planId } = await startPlan();
+    expect(
+      await test.writer.failRefine({ planId, slot: "intent", reason: CRASHED }),
+    ).toBeUndefined();
+  });
 });
+
+const CRASHED = "the agent crashed before its first turn";
+const NO_STATE = new Uint8Array();
