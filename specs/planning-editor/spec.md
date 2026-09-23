@@ -44,8 +44,9 @@ The plan editor is the React component people write a plan in: the feature's nam
 ## A change under its paragraph
 
 - The agent's answer is read where it lands: each proposed change is drawn under the paragraph it is about, showing the words it would put there and not repeating the ones already above it ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L63)).
-- Accepting writes that one paragraph and leaves the rest of the plan alone ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L80)).
-- Discarding takes the card away and leaves the paragraph as it was ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L89)).
+- A change about no paragraph of its own — a question the agent asks — hangs at the end of its section, before the section's own actions ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L80)).
+- Accepting writes that one paragraph and leaves the rest of the plan alone ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L104)).
+- Discarding takes the card away and leaves the paragraph as it was ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L113)).
 
 ## Template guard
 
