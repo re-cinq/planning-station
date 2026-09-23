@@ -291,9 +291,14 @@ and either way an `answer` block goes under it.
 ## Scenario: two people in one plan
 
 Nothing to configure. Every local edit goes out immediately, remote cursors are
-drawn in their owner's colour with their name, and the presence bar above the
-document lists everyone else with the section they are in ("Ana in Success
-criteria"). Pass `showPresence={false}` to hide the bar; the cursors stay.
+drawn in their owner's colour with their name, and the participants list at the
+top of the sidebar, above the outline, names everyone else with the section they
+are in ("Ana in Success criteria"). A participant whose cursor is in the
+document is a button: clicking it scrolls their cursor into view. One who has
+not placed a cursor yet is listed but not clickable. Pass `showPresence={false}`
+to hide the list; the cursors stay. The sidebar column shows while either the
+outline or the participants are on; hide both for a single column. On a narrow
+screen the sidebar moves above the document.
 
 ## Scenario: a preview, a version view, or a test without a server
 

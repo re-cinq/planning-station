@@ -5,6 +5,8 @@ export interface PresenceUser {
   name: string;
   color: string;
   slot: string | null;
+  /** Whether the person has placed a cursor in the document, which is when the entry offers to scroll to it. */
+  hasCursor: boolean;
 }
 
 interface AnnouncedUser {
@@ -15,27 +17,29 @@ interface AnnouncedUser {
 export interface AwarenessState {
   user?: AnnouncedUser;
   editing?: { slot?: unknown };
+  /** Set by the editor's collaboration cursor plugin once a selection exists. */
+  cursor?: unknown;
 }
 
 export function presenceUsers(
   states: ReadonlyMap<number, AwarenessState>,
   selfId: number,
 ): PresenceUser[] {
-  return [...states].flatMap(([clientId, { user, editing }]) =>
-    clientId === selfId || !user ? [] : [toPresence(clientId, user, editing)],
+  return [...states].flatMap(([clientId, state]) =>
+    clientId === selfId || !state.user ? [] : [toPresence(clientId, state)],
   );
 }
 
 function toPresence(
   clientId: number,
-  user: AnnouncedUser,
-  editing: AwarenessState["editing"],
+  { user = {}, editing, cursor }: AwarenessState,
 ): PresenceUser {
   return {
     clientId,
     name: String(user.name ?? "Someone"),
     color: String(user.color ?? "gray"),
     slot: slotOf(editing),
+    hasCursor: cursor != null,
   };
 }
 

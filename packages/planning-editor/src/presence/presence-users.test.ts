@@ -23,8 +23,21 @@ describe("presenceUsers", () => {
       [2, ANA_STATE],
     ]);
     expect(presenceUsers(both, 1)).toEqual([
-      { clientId: 2, name: "Ana", color: "#d33682", slot: "kpis" },
+      {
+        clientId: 2,
+        name: "Ana",
+        color: "#d33682",
+        slot: "kpis",
+        hasCursor: false,
+      },
     ]);
+  });
+
+  it("marks Ana as placed once her awareness carries a cursor", () => {
+    const placed = states([
+      [2, { ...ANA_STATE, cursor: { anchor: {}, head: {} } }],
+    ]);
+    expect(presenceUsers(placed, 1)).toMatchObject([{ hasCursor: true }]);
   });
 
   it("leaves out a client that has not announced a user yet", () => {
@@ -41,7 +54,13 @@ describe("presenceUsers", () => {
 
 describe("presenceLabel", () => {
   const template = templateFor("feature");
-  const ana = { clientId: 2, name: "Ana", color: "#d33682", slot: "kpis" };
+  const ana = {
+    clientId: 2,
+    name: "Ana",
+    color: "#d33682",
+    slot: "kpis",
+    hasCursor: true,
+  };
 
   it("names the template section and the section the agent added that Ana is editing", () => {
     expect([
