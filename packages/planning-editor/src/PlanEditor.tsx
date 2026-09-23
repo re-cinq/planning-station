@@ -70,7 +70,7 @@ type Panes = { showOutline: boolean; showPresence: boolean };
 
 type LayoutProps = Pick<
   WorkspaceProps,
-  "template" | "readOnly" | "outlineFooter"
+  "meta" | "template" | "readOnly" | "outlineFooter"
 > &
   Panes & {
     editor: PlanBlockNoteEditor;
@@ -232,13 +232,15 @@ function ParticipantsPane({
 }
 
 function OutlinePane({
-  template,
-  report,
-  sections,
+  meta,
   outlineFooter,
-}: Pick<LayoutProps, "template" | "report" | "sections" | "outlineFooter">) {
+  ...outline
+}: Pick<
+  LayoutProps,
+  "meta" | "template" | "report" | "sections" | "outlineFooter"
+>) {
   return (
-    <TemplateOutline template={template} report={report} sections={sections}>
+    <TemplateOutline {...outline} approval={meta.approval}>
       {outlineFooter}
     </TemplateOutline>
   );

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type {
+  PlanMeta,
   Problem,
   PlanTemplate,
   ValidationReport,
@@ -18,6 +19,8 @@ export interface TemplateOutlineProps {
   report: ValidationReport;
   /** The plan's sections in document order; without them the outline lists the template's. */
   sections?: readonly PlanSectionHeading[];
+  /** Once the plan is approved, the outline says by whom instead of whether it is ready. */
+  approval?: PlanMeta["approval"];
   children?: ReactNode;
 }
 
@@ -27,12 +30,13 @@ export function TemplateOutline({
   template,
   report,
   sections = NO_SECTIONS,
+  approval = null,
   children,
 }: TemplateOutlineProps) {
   return (
     <nav className={styles.outline} aria-label="Plan outline">
       <p className={styles.phase}>
-        {report.passed ? "Ready for" : "Not ready for"} {report.phase}
+        {approval ? approvedLine(approval) : readinessLine(report)}
       </p>
       <OutlineSlots template={template} report={report} sections={sections} />
       {children && <div className={styles.footer}>{children}</div>}
@@ -40,11 +44,28 @@ export function TemplateOutline({
   );
 }
 
+function readinessLine(report: ValidationReport): string {
+  return `${report.passed ? "Ready for" : "Not ready for"} ${report.phase}`;
+}
+
+function approvedLine({
+  approvedBy,
+  approvedAt,
+}: NonNullable<PlanMeta["approval"]>): string {
+  return `Approved by ${approvedBy} on ${dateOf(approvedAt)}`;
+}
+
+function dateOf(iso: string): string {
+  const when = new Date(iso);
+
+  return Number.isNaN(when.getTime()) ? iso : when.toLocaleDateString();
+}
+
 function OutlineSlots({
   template,
   report,
   sections,
-}: Required<Omit<TemplateOutlineProps, "children">>) {
+}: Pick<Required<TemplateOutlineProps>, "template" | "report" | "sections">) {
   const problems = problemsBySlot(report.problems);
 
   return (

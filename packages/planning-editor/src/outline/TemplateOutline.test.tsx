@@ -45,6 +45,25 @@ describe("TemplateOutline", () => {
     await expect.element(screen.getByText("Ready for approval")).toBeVisible();
   });
 
+  it("says Ana approved the plan on its approval date instead of ready for approval", async () => {
+    const approvedAt = "2026-09-21T14:05:00.000Z";
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        approval={{ mode: "manual", approvedBy: "Ana", approvedAt, version: 3 }}
+      />,
+    );
+    await expect
+      .element(
+        screen.getByText(
+          `Approved by Ana on ${new Date(approvedAt).toLocaleDateString()}`,
+        ),
+      )
+      .toBeVisible();
+    expect(screen.container.textContent).not.toContain("Ready for approval");
+  });
+
   it("lists the agent's Rollout section where the plan has it, never marked required", async () => {
     const screen = await render(
       <TemplateOutline

@@ -191,6 +191,27 @@ describe("PlanEditor", () => {
       .toBeVisible();
   });
 
+  it("says in the outline that Ana approved an approved plan", async () => {
+    const approval = {
+      mode: "manual" as const,
+      approvedBy: "Ana",
+      approvedAt: "2026-09-21T14:05:00.000Z",
+      version: 3,
+    };
+    const { props } = editingAna({
+      ...SEED,
+      meta: { ...SEED.meta, status: "approved", approval },
+    });
+    const screen = await render(<PlanEditor {...props} />);
+    await expect
+      .element(
+        screen
+          .getByRole("navigation", { name: "Plan outline" })
+          .getByText(/^Approved by Ana on /),
+      )
+      .toBeVisible();
+  });
+
   it("reports the missing KPI to onValidation at approval", async () => {
     const onValidation = vi.fn<(report: ValidationReport) => void>();
     await renderPlan({ onValidation });

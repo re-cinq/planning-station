@@ -81,6 +81,25 @@
   flex: 1 1 100%;
 }
 
+.confirm {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: var(--ps-space-list);
+  align-items: center;
+  padding: var(--ps-space-inline);
+  background: var(--ps-bg);
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius);
+}
+
+// Nested to outrank BlockNote's `.bn-default-styles p` reset.
+.confirm .question {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: var(--ps-fs-label);
+}
+
 .input {
   width: 100%;
   padding: var(--ps-space-hint) var(--ps-space-inline);
