@@ -14,7 +14,7 @@ import {
   liveProse,
   sectionTitle,
 } from "./live-section.js";
-import { judgeProse, type JudgedProse } from "./allowed-prose.js";
+import { guardOps, judgeProse, type JudgedProse } from "./allowed-prose.js";
 import { fenceOps, type LiveEntities } from "./markdown-fences.js";
 import {
   changed,
@@ -188,10 +188,14 @@ function proseOps(
   const judged = judgeProse(sectionSlot, liveProse(existing), written.prose);
   const current = writeProse(judged.live).join("\n");
   const next = writeProse(toProseBlocks(slot, judged.written)).join("\n");
-  const ops =
+  const diff =
     current === next ? [] : proseDiffOps(slot, judged.live, judged.written);
+  const guarded = guardOps(diff, sectionSlot, liveProse(existing));
 
-  return { ops, problems: judged.problems };
+  return {
+    ops: guarded.ops,
+    problems: [...judged.problems, ...guarded.problems],
+  };
 }
 
 /** The slot a section of the file is written into, under the title the file gives it; none for a slot its template has lost. */

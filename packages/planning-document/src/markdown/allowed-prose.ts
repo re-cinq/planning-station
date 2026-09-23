@@ -1,4 +1,5 @@
 import type { ProseBlock } from "../blocks/prose-blocks.js";
+import type { AgentOp } from "../ops/agent-ops.js";
 import { toProseBlocks, type ProseInput } from "../ops/prose-input.js";
 import { allowsBlock, disallowedBlockMessage } from "../template/slots.js";
 import type { SectionSlot } from "../template/template.js";
@@ -89,4 +90,71 @@ function canonical(block: ProseBlock): string {
 
 function canonicalInput(slot: string, block: ProseInput): string {
   return writeProse(toProseBlocks(slot, [block])).join("\n");
+}
+
+/** The diff's ops, held to the same rule: a copy or a move of a person's refused block pairs as a new insert, so no op may add a refused block or take away one a person wrote. */
+export function guardOps(
+  ops: readonly AgentOp[],
+  slot: SectionSlot | undefined,
+  live: readonly ProseBlock[],
+): { ops: AgentOp[]; problems: MarkdownProblem[] } {
+  if (!slot) {
+    return { ops: [...ops], problems: [] };
+  }
+
+  const theirs = new Set(
+    live.filter((block) => !allowsBlock(slot, block.type)).map(({ id }) => id),
+  );
+  const guarded = ops.map((op) => guardOp(op, slot, theirs));
+
+  return {
+    ops: guarded.flatMap(({ op }) => (op ? [op] : [])),
+    problems: guarded.flatMap(({ problems }) => problems),
+  };
+}
+
+interface GuardedOp {
+  op: AgentOp | null;
+  problems: MarkdownProblem[];
+}
+
+function guardOp(
+  op: AgentOp,
+  slot: SectionSlot,
+  theirs: ReadonlySet<string>,
+): GuardedOp {
+  if (op.op === "remove-block") {
+    return { op: theirs.has(op.blockId) ? null : op, problems: [] };
+  }
+
+  if (op.op === "replace-block") {
+    const refused = refusedAmong(slot, [op.block]);
+
+    return { op: refused.length > 0 ? null : op, problems: refused };
+  }
+
+  return op.op === "insert-blocks"
+    ? guardInsert(op, slot)
+    : { op, problems: [] };
+}
+
+function guardInsert(
+  op: Extract<AgentOp, { op: "insert-blocks" }>,
+  slot: SectionSlot,
+): GuardedOp {
+  const blocks = op.blocks.filter((block) => allowsBlock(slot, block.type));
+
+  return {
+    op: blocks.length > 0 ? { ...op, blocks } : null,
+    problems: refusedAmong(slot, op.blocks),
+  };
+}
+
+function refusedAmong(
+  slot: SectionSlot,
+  blocks: readonly ProseInput[],
+): MarkdownProblem[] {
+  return blocks
+    .filter((block) => !allowsBlock(slot, block.type))
+    .map((block) => refusal(slot, block));
 }

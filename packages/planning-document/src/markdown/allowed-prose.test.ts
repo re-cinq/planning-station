@@ -116,4 +116,39 @@ describe("markdownToOps and what a section has no place for", () => {
       problems: [],
     });
   });
+
+  it("refuses a second copy of a person's bullet under Open questions and reports it", () => {
+    const asked = planWith("feature", {
+      questions: [textBlock("bulletListItem", {}, "Regions?")],
+    });
+    const markdown = edited(
+      "- Regions?",
+      "- Regions?\n- Regions?",
+      planToMarkdown(asked, FEATURE),
+    );
+
+    expect(opsFor(markdown, asked)).toMatchObject({
+      ops: [],
+      problems: [{ code: "disallowed-block", slot: "questions" }],
+    });
+  });
+
+  it("leaves a person's bullet under Open questions where it stands when the pass moves it, and reports the move", () => {
+    const asked = planWith("feature", {
+      questions: [
+        textBlock("bulletListItem", {}, "Regions?"),
+        textBlock("paragraph", {}, "Omega."),
+      ],
+    });
+    const markdown = edited(
+      "- Regions?\n\nOmega.",
+      "Omega.\n\n- Regions?",
+      planToMarkdown(asked, FEATURE),
+    );
+
+    expect(opsFor(markdown, asked)).toMatchObject({
+      ops: [],
+      problems: [{ code: "disallowed-block", slot: "questions" }],
+    });
+  });
 });
