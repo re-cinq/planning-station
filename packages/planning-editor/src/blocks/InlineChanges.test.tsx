@@ -104,14 +104,17 @@ describe("a change proposed about one paragraph", () => {
     }).toEqual({ asks: true, drops: false });
   });
 
-  it("does not claim a paragraph goes when set-section-text writes no paragraphs", async () => {
+  it("warns that the section is cleared, not that a paragraph goes, when set-section-text writes no paragraphs", async () => {
     const words = await cardWordsFor({
       op: "set-section-text",
       slot: "intent",
       paragraphs: [],
     });
 
-    expect(words.includes("This paragraph goes.")).toBe(false);
+    expect({
+      paragraphGoes: words.includes("This paragraph goes."),
+      sectionCleared: words.includes("This section is cleared."),
+    }).toEqual({ paragraphGoes: false, sectionCleared: true });
   });
 
   it("writes only that paragraph when Accept is clicked", async () => {
