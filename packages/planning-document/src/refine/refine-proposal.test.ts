@@ -35,6 +35,26 @@ describe("refineProposalSchema", () => {
     });
   });
 
+  it("parses a failed refine of scope with the reason the agent crashed", () => {
+    const failed = {
+      ...ASKED,
+      status: "failed",
+      reason: "the agent crashed before its first turn",
+      failedAt: "2026-09-21T10:01:00.000Z",
+    };
+    expect(refineProposalSchema.parse(failed)).toEqual(failed);
+  });
+
+  it("rejects a failed refine that gives no reason", () => {
+    expect(
+      refineProposalSchema.safeParse({
+        ...ASKED,
+        status: "failed",
+        failedAt: "2026-09-21T10:01:00.000Z",
+      }).success,
+    ).toBe(false);
+  });
+
   it("rejects a refine asked for without a base hash", () => {
     expect(
       refineProposalSchema.safeParse({ ...ASKED, baseHash: "" }).success,

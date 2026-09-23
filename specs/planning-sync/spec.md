@@ -35,8 +35,9 @@ The sync library is the plan's server side, registered inside the host's own hap
 
 ## Agent writes
 
-- The planning agent's ops go into the live document, and what it wrote is still there for the next reader ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L51), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L61)).
-- An agent write changes the plan's content only; its workflow status is left alone ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L72)).
+- The planning agent's ops go into the live document, and what it wrote is still there for the next reader ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L52), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L62)).
+- An agent write changes the plan's content only; its workflow status is left alone ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L73)).
+- When the agent could not answer a person's Refine, the host fails it with the reason, and the next reader sees the failed refine; a failure for a section nobody asked about writes nothing ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L83), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L95)).
 
 ## Routes
 

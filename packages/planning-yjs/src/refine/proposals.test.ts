@@ -19,6 +19,7 @@ import {
   applyRefineAnyway,
   askRefine,
   discardRefine,
+  failRefine,
   NoProposalError,
   proposalsIn,
   proposePass,
@@ -188,9 +189,8 @@ describe("proposePass", () => {
     });
   });
 
-  it("leaves a section whose proposal someone is already reviewing, rather than replacing it", () => {
-    const doc = proposed();
-    const outcome = proposePass(
+  const intentPassRipplingIntoScope = (doc: Doc) =>
+    proposePass(
       doc,
       {
         asked: {
@@ -204,6 +204,77 @@ describe("proposePass", () => {
       "agent",
     );
 
-    expect(outcome).toEqual({ proposed: ["intent"], skipped: ["scope"] });
+  it("leaves a section whose proposal someone is already reviewing, rather than replacing it", () => {
+    expect(intentPassRipplingIntoScope(proposed())).toEqual({
+      proposed: ["intent"],
+      skipped: ["scope"],
+    });
+  });
+
+  it("replaces a section whose refine failed, since nobody is reviewing it", () => {
+    const { doc } = askedByAna();
+    failRefine(doc, { slot: "scope", reason: AGENT_CRASHED });
+
+    expect(intentPassRipplingIntoScope(doc)).toEqual({
+      proposed: ["intent", "scope"],
+      skipped: [],
+    });
+  });
+});
+
+const AGENT_CRASHED = "the agent crashed before its first turn";
+
+describe("failRefine", () => {
+  it("turns Ana's ask for scope into a failed refine that keeps her name, her time and the section she asked against", () => {
+    const { doc, baseHash } = askedByAna();
+    const [asked] = proposalsIn(doc);
+    failRefine(doc, { slot: "scope", reason: AGENT_CRASHED });
+
+    expect(proposalsIn(doc)).toMatchObject([
+      {
+        status: "failed",
+        slot: "scope",
+        baseHash,
+        askedBy: "Ana",
+        askedAt: asked?.askedAt,
+        reason: AGENT_CRASHED,
+      },
+    ]);
+  });
+
+  it("leaves the agent's proposal for scope alone when a failure arrives after it", () => {
+    const doc = proposed();
+    const kept = failRefine(doc, { slot: "scope", reason: AGENT_CRASHED });
+
+    expect({ kept, proposals: proposalsIn(doc) }).toMatchObject({
+      kept: { status: "proposed" },
+      proposals: [{ status: "proposed", slot: "scope" }],
+    });
+  });
+
+  it("returns nothing and writes nothing when nobody asked to refine scope", () => {
+    const doc = seeded();
+
+    expect({
+      kept: failRefine(doc, { slot: "scope", reason: AGENT_CRASHED }),
+      proposals: proposalsIn(doc),
+    }).toEqual({ kept: undefined, proposals: [] });
+  });
+
+  it("replaces the failed refine of scope with Ben's new ask", () => {
+    const { doc } = askedByAna();
+    failRefine(doc, { slot: "scope", reason: AGENT_CRASHED });
+    askRefine(doc, { slot: "scope", askedBy: "Ben" });
+
+    expect(proposalsIn(doc)).toMatchObject([
+      { status: "asked", slot: "scope", askedBy: "Ben" },
+    ]);
+  });
+
+  it("throws NoProposalError when a failed refine of scope is accepted", () => {
+    const { doc } = askedByAna();
+    failRefine(doc, { slot: "scope", reason: AGENT_CRASHED });
+
+    expect(() => acceptRefine(doc, "scope")).toThrow(NoProposalError);
   });
 });

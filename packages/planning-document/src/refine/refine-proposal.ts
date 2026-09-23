@@ -27,15 +27,23 @@ const proposedSchema = askedSchema.extend({
   proposedAt: z.string(),
 });
 
-/** One section's refine: asked for by a person, then proposed by the agent, until someone accepts or discards it. */
+const failedSchema = askedSchema.extend({
+  status: z.literal("failed"),
+  reason: z.string().min(1),
+  failedAt: z.string(),
+});
+
+/** One section's refine: asked for by a person, then proposed by the agent — or failed, with the reason, when the agent could not answer — until someone accepts, discards or asks again. */
 export const refineProposalSchema = z.discriminatedUnion("status", [
   askedSchema,
   proposedSchema,
+  failedSchema,
 ]);
 
 export type RefineUses = z.infer<typeof refineUsesSchema>;
 export type RefineProposal = z.infer<typeof refineProposalSchema>;
 export type ProposedRefine = z.infer<typeof proposedSchema>;
+export type FailedRefine = z.infer<typeof failedSchema>;
 
 export class ProposalScopeError extends Error {}
 
