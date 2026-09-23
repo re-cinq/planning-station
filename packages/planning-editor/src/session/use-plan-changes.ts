@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PlanChange } from "@re-cinq/planning-document";
 import {
   acceptChange,
@@ -42,20 +42,23 @@ function reviewable(doc: Doc): ReviewableChange[] {
   }));
 }
 
-/** Bumps on every document update, so the changes are read again as the agent writes them. */
+/** Bumps on every document update, so the changes are read again as the agent writes them. The caller's `onRead` is held in a ref: taken as a dependency it would re-subscribe on every render, and each subscription reads again — a render loop that also dispatched an editor transaction each time round. */
 function useDocVersion(doc: Doc, onRead?: () => void): number {
   const [version, setVersion] = useState(0);
-  const read = useCallback(() => {
-    setVersion((one) => one + 1);
-    onRead?.();
-  }, [onRead]);
+  const latest = useRef(onRead);
+  latest.current = onRead;
 
   useEffect(() => {
+    const read = () => {
+      setVersion((one) => one + 1);
+      latest.current?.();
+    };
+
     doc.on("update", read);
     read();
 
     return () => doc.off("update", read);
-  }, [doc, read]);
+  }, [doc]);
 
   return version;
 }

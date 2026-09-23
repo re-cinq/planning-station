@@ -232,8 +232,13 @@ function usePlanValidation(
   return report;
 }
 
-/** A transaction that changes nothing: ProseMirror recomputes its decorations on it, which is how a change proposed just now gets its place under the paragraph it is about. */
+/** A transaction that changes nothing, so ProseMirror recomputes its decorations and a change proposed just now gets its place; queued because dispatching inside the update that prompted it re-enters the editor mid-apply. */
 function redraw(editor: PlanBlockNoteEditor): void {
-  const view = editor.prosemirrorView;
-  view.dispatch(view.state.tr);
+  queueMicrotask(() => {
+    const view = editor.prosemirrorView;
+
+    if (!view.isDestroyed) {
+      view.dispatch(view.state.tr);
+    }
+  });
 }
