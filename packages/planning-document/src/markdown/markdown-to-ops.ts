@@ -5,16 +5,16 @@ import type { PlanTemplate, SectionSlot } from "../template/template.js";
 import {
   isCustomSlot,
   newCustomSlot,
-  sectionSlotFor,
+  findSectionSlot,
 } from "../template/templates.js";
-import { toProseBlocks, type ProseInput } from "../ops/prose-input.js";
+import { toProseBlocks } from "../ops/prose-input.js";
 import {
   livePrototype,
   liveKpis,
   liveProse,
   sectionTitle,
 } from "./live-section.js";
-import { withoutDisallowed } from "./allowed-prose.js";
+import { judgeProse, type JudgedProse } from "./allowed-prose.js";
 import { fenceOps, type LiveEntities } from "./markdown-fences.js";
 import {
   changed,
@@ -96,7 +96,7 @@ function markedSectionOps(
 
   return merged([
     titleOps(written, existing, live.template),
-    withoutDisallowed(proseOps(written, existing), slotOf(live, slot, written)),
+    proseOps(written, existing, slotOf(live, slot, written)),
     ...fencesOps(written, slot, live),
   ]);
 }
@@ -136,15 +136,10 @@ function newSectionContent(
   slot: string,
   live: LivePlan,
 ): MarkdownOps {
-  const { prose } = written;
+  const judged = judgeProse(slotOf(live, slot, written), [], written.prose);
 
   return merged([
-    prose.length > 0
-      ? withoutDisallowed(
-          insertedProse(slot, prose),
-          slotOf(live, slot, written),
-        )
-      : NO_CHANGE,
+    insertedProse(slot, judged),
     ...fencesOps(written, slot, live),
   ]);
 }
@@ -184,32 +179,37 @@ function retitled(slot: string, title: string): MarkdownOps {
 }
 
 /** Prose is compared as the canonical Markdown both sides write, so a section written back as it was is no change. */
-function proseOps(written: MarkdownSection, existing: Section): MarkdownOps {
+function proseOps(
+  written: MarkdownSection,
+  existing: Section,
+  sectionSlot: SectionSlot | undefined,
+): MarkdownOps {
   const { slot } = existing;
-  const current = writeProse(liveProse(existing)).join("\n");
-  const next = writeProse(toProseBlocks(slot, written.prose)).join("\n");
+  const judged = judgeProse(sectionSlot, liveProse(existing), written.prose);
+  const current = writeProse(judged.live).join("\n");
+  const next = writeProse(toProseBlocks(slot, judged.written)).join("\n");
+  const ops =
+    current === next ? [] : proseDiffOps(slot, judged.live, judged.written);
 
-  return current === next ? NO_CHANGE : proseOp(slot, written.prose, existing);
+  return { ops, problems: judged.problems };
 }
 
-/** The slot a section of the file is written into, template or custom, under the title the file gives it. */
+/** The slot a section of the file is written into, under the title the file gives it; none for a slot its template has lost. */
 function slotOf(
   live: LivePlan,
   slot: string,
   written: MarkdownSection,
-): SectionSlot {
-  return sectionSlotFor(live.template, slot, written.title);
+): SectionSlot | undefined {
+  return findSectionSlot(live.template, slot, written.title);
 }
 
 /** A section the file just added holds nothing yet, so all of its prose is an insert. */
-function insertedProse(slot: string, blocks: ProseInput[]): MarkdownOps {
-  return changed({ op: "insert-blocks", slot, after: null, blocks });
-}
+function insertedProse(slot: string, judged: JudgedProse): MarkdownOps {
+  const { written: blocks, problems } = judged;
+  const ops =
+    blocks.length > 0
+      ? [{ op: "insert-blocks" as const, slot, after: null, blocks }]
+      : [];
 
-function proseOp(
-  slot: string,
-  blocks: ProseInput[],
-  existing: Section,
-): MarkdownOps {
-  return changed(...proseDiffOps(slot, liveProse(existing), blocks));
+  return { ops, problems };
 }

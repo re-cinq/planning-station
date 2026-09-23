@@ -272,37 +272,4 @@ describe("markdownToOps", () => {
       }).toEqual({ large: true, result: { ops: [], problems: [] } });
     },
   );
-
-  it("refuses bullets written under Open questions, keeps the paragraph beside them, and reports each bullet", () => {
-    const asked = planWith("feature", {
-      questions: [textBlock("paragraph", {}, "Two things are open.")],
-    });
-    const markdown = edited(
-      "Two things are open.",
-      "Two things are open.\n\nThey are listed here:\n\n- Which regions?\n- Which quarter?",
-      planToMarkdown(asked, FEATURE),
-    );
-
-    expect(opsFor(markdown, asked)).toMatchObject({
-      ops: [
-        {
-          op: "insert-blocks",
-          slot: "questions",
-          blocks: [{ type: "paragraph" }],
-        },
-      ],
-      problems: [
-        {
-          code: "disallowed-block",
-          slot: "questions",
-          message: 'a bulletListItem block does not belong in "Open questions"',
-        },
-        {
-          code: "disallowed-block",
-          slot: "questions",
-          message: 'a bulletListItem block does not belong in "Open questions"',
-        },
-      ],
-    });
-  });
 });

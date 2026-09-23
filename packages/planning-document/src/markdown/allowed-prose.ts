@@ -1,61 +1,62 @@
-import type { AgentOp } from "../ops/agent-ops.js";
-import type { ProseInput } from "../ops/prose-input.js";
+import type { ProseBlock } from "../blocks/prose-blocks.js";
+import { toProseBlocks, type ProseInput } from "../ops/prose-input.js";
 import { allowsBlock, disallowedBlockMessage } from "../template/slots.js";
 import type { SectionSlot } from "../template/template.js";
-import type { MarkdownOps, MarkdownProblem } from "./markdown-outcome.js";
+import type { MarkdownProblem } from "./markdown-outcome.js";
+import { writeProse } from "./write-prose.js";
 
-/** A pass never writes what validation would flag: a block its section has no place for is refused and reported. Only what the pass adds is judged, so a block a person already wrote stays. */
-export function withoutDisallowed(
-  outcome: MarkdownOps,
-  slot: SectionSlot,
-): MarkdownOps {
-  const judged = outcome.ops.map((op) => judgeOp(op, slot));
-
-  return {
-    ops: judged.flatMap(({ op }) => (op ? [op] : [])),
-    problems: [
-      ...outcome.problems,
-      ...judged.flatMap(({ problems }) => problems),
-    ],
-  };
-}
-
-interface JudgedOp {
-  /** The op as it may be written, or null when nothing of it may. */
-  op: AgentOp | null;
+/** Both sides of a section's prose, with what its slot has no place for taken out before they are compared. */
+export interface JudgedProse {
+  live: ProseBlock[];
+  written: ProseInput[];
   problems: MarkdownProblem[];
 }
 
-function judgeOp(op: AgentOp, slot: SectionSlot): JudgedOp {
-  if (op.op === "replace-block") {
-    const refused = refusedIn(slot, [op.block]);
-
-    return { op: refused.length > 0 ? null : op, problems: refused };
+/** A pass never writes what validation would flag, and never touches what a person already wrote: a block the slot refuses is out of the comparison on both sides, and reported only when the pass wrote it. A section with no known slot is compared whole. */
+export function judgeProse(
+  slot: SectionSlot | undefined,
+  live: ProseBlock[],
+  written: ProseInput[],
+): JudgedProse {
+  if (!slot) {
+    return { live, written, problems: [] };
   }
 
-  return op.op === "insert-blocks" || op.op === "set-section-prose"
-    ? judgeBlocks(op, slot)
-    : { op, problems: [] };
+  return {
+    live: live.filter((block) => allowsBlock(slot, block.type)),
+    written: written.filter((block) => allowsBlock(slot, block.type)),
+    problems: refusedWrites(slot, live, written),
+  };
 }
 
-type BlocksOp = Extract<AgentOp, { op: "insert-blocks" | "set-section-prose" }>;
-
-function judgeBlocks(op: BlocksOp, slot: SectionSlot): JudgedOp {
-  const blocks = op.blocks.filter((block) => allowsBlock(slot, block.type));
-  const kept = blocks.length > 0 ? { ...op, blocks } : null;
-
-  return { op: kept, problems: refusedIn(slot, op.blocks) };
-}
-
-function refusedIn(
+/** The refused blocks the pass wrote itself; one that only repeats a person's refused block as it stands is theirs, not the pass's. */
+function refusedWrites(
   slot: SectionSlot,
-  blocks: readonly ProseInput[],
+  live: readonly ProseBlock[],
+  written: readonly ProseInput[],
 ): MarkdownProblem[] {
-  return blocks
+  const standing = new Set(
+    live.filter((block) => !allowsBlock(slot, block.type)).map(canonical),
+  );
+
+  return written
     .filter((block) => !allowsBlock(slot, block.type))
-    .map((block) => ({
-      code: "disallowed-block",
-      slot: slot.slot,
-      message: disallowedBlockMessage(slot, block.type),
-    }));
+    .filter((block) => !standing.has(canonicalInput(slot.slot, block)))
+    .map((block) => refusal(slot, block));
+}
+
+function refusal(slot: SectionSlot, block: ProseInput): MarkdownProblem {
+  return {
+    code: "disallowed-block",
+    slot: slot.slot,
+    message: disallowedBlockMessage(slot, block.type),
+  };
+}
+
+function canonical(block: ProseBlock): string {
+  return writeProse([block]).join("\n");
+}
+
+function canonicalInput(slot: string, block: ProseInput): string {
+  return writeProse(toProseBlocks(slot, [block])).join("\n");
 }
