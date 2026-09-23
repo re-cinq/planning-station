@@ -122,12 +122,23 @@ function sectionWords(op: { title: string; paragraphs: string[] }): string[] {
   return [...titleWords(op), ...paragraphWords(op)];
 }
 
+/** A KPI the agent has only named reads as its name, not as blanks around an arrow. */
 function kpiWords({ kpi }: { kpi: KpiInput }): string[] {
-  return [`${kpi.metric}: ${kpi.baseline} → ${kpi.target} by ${kpi.deadline}`];
+  const movement =
+    kpi.baseline || kpi.target ? `: ${kpi.baseline} → ${kpi.target}` : "";
+  const deadline = kpi.deadline ? ` by ${kpi.deadline}` : "";
+
+  return [`${kpi.metric}${movement}${deadline}`];
 }
 
-function prototypeWords(op: { prototype: PrototypeInput }): string[] {
-  return [`Prototype (${op.prototype.maturity}): ${op.prototype.url}`];
+function prototypeWords({
+  prototype,
+}: {
+  prototype: PrototypeInput;
+}): string[] {
+  const url = prototype.url ? `: ${prototype.url}` : "";
+
+  return [`Prototype (${prototype.maturity})${url}`];
 }
 
 function noWords(): string[] {

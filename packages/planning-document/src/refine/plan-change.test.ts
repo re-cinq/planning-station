@@ -290,4 +290,34 @@ describe("changeWords", () => {
       ),
     ).toEqual(["Which regions count?"]);
   });
+
+  it("reads a KPI with only its metric as the metric alone, with no empty arrow or deadline", () => {
+    expect(
+      changeWords(
+        change({
+          op: "upsert-kpi",
+          kpi: {
+            kpiId: "k1",
+            metric: "checkout p95",
+            baseline: "",
+            target: "",
+            direction: "down",
+            deadline: "",
+            rationale: "",
+          },
+        }),
+      ),
+    ).toEqual(["checkout p95"]);
+  });
+
+  it("reads a prototype with no url as its maturity alone", () => {
+    expect(
+      changeWords(
+        change({
+          op: "set-prototype",
+          prototype: { maturity: "none", url: "", agreedBy: "", notes: "" },
+        }),
+      ),
+    ).toEqual(["Prototype (none)"]);
+  });
 });
