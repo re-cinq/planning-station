@@ -128,9 +128,9 @@ function guardOp(
   }
 
   if (op.op === "replace-block") {
-    const refused = refusedAmong(slot, [op.block]);
-
-    return { op: refused.length > 0 ? null : op, problems: refused };
+    return theirs.has(op.blockId)
+      ? guardInsert(besideTheirs(op), slot)
+      : guardReplace(op, slot);
   }
 
   return op.op === "insert-blocks"
@@ -138,10 +138,21 @@ function guardOp(
     : { op, problems: [] };
 }
 
-function guardInsert(
-  op: Extract<AgentOp, { op: "insert-blocks" }>,
-  slot: SectionSlot,
-): GuardedOp {
+type ReplaceOp = Extract<AgentOp, { op: "replace-block" }>;
+type InsertOp = Extract<AgentOp, { op: "insert-blocks" }>;
+
+/** A rewrite aimed at a person's refused block writes its block after that one instead, so the pass's words land and the person's stay. */
+function besideTheirs({ slot, blockId, block }: ReplaceOp): InsertOp {
+  return { op: "insert-blocks", slot, after: blockId, blocks: [block] };
+}
+
+function guardReplace(op: ReplaceOp, slot: SectionSlot): GuardedOp {
+  const refused = refusedAmong(slot, [op.block]);
+
+  return { op: refused.length > 0 ? null : op, problems: refused };
+}
+
+function guardInsert(op: InsertOp, slot: SectionSlot): GuardedOp {
   const blocks = op.blocks.filter((block) => allowsBlock(slot, block.type));
 
   return {

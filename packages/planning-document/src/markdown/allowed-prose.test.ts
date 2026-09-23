@@ -17,18 +17,31 @@ const edited = (from: string, to: string, markdown: string) => {
   return markdown.replace(from, to);
 };
 
+const passOver = (plan: BlockJson[], from: string, to: string) =>
+  opsFor(edited(from, to, planToMarkdown(plan, FEATURE)), plan);
+
+const ONE_REFUSAL = [{ code: "disallowed-block", slot: "questions" }];
+
+const BULLET_THEN_OMEGA = planWith("feature", {
+  questions: [
+    textBlock("bulletListItem", {}, "Regions?"),
+    textBlock("paragraph", {}, "Omega."),
+  ],
+});
+
 describe("markdownToOps and what a section has no place for", () => {
   it("refuses bullets written under Open questions, keeps the paragraph beside them, and reports each bullet", () => {
     const asked = planWith("feature", {
       questions: [textBlock("paragraph", {}, "Two things are open.")],
     });
-    const markdown = edited(
-      "Two things are open.",
-      "Two things are open.\n\nThey are listed here:\n\n- Which regions?\n- Which quarter?",
-      planToMarkdown(asked, FEATURE),
-    );
 
-    expect(opsFor(markdown, asked)).toMatchObject({
+    expect(
+      passOver(
+        asked,
+        "Two things are open.",
+        "Two things are open.\n\nThey are listed here:\n\n- Which regions?\n- Which quarter?",
+      ),
+    ).toMatchObject({
       ops: [
         {
           op: "insert-blocks",
@@ -77,12 +90,11 @@ describe("markdownToOps and what a section has no place for", () => {
     const asked = planWith("feature", {
       questions: [textBlock("bulletListItem", {}, "Regions?")],
     });
-    const markdown = edited(
+    const { ops } = passOver(
+      asked,
       "- Regions?",
       "Context first.\n\n- Which regions?",
-      planToMarkdown(asked, FEATURE),
     );
-    const { ops } = opsFor(markdown, asked);
 
     expect(ops.map((op) => op.op)).toEqual(["insert-blocks"]);
   });
@@ -105,13 +117,10 @@ describe("markdownToOps and what a section has no place for", () => {
       ],
     });
     const bullet = asked.find((block) => block.type === "bulletListItem");
-    const markdown = edited(
-      "- Regions?",
-      "- Regions?\n\nNew after bullet.",
-      planToMarkdown(asked, FEATURE),
-    );
 
-    expect(opsFor(markdown, asked)).toMatchObject({
+    expect(
+      passOver(asked, "- Regions?", "- Regions?\n\nNew after bullet."),
+    ).toMatchObject({
       ops: [{ op: "insert-blocks", after: bullet?.id }],
       problems: [],
     });
@@ -121,34 +130,45 @@ describe("markdownToOps and what a section has no place for", () => {
     const asked = planWith("feature", {
       questions: [textBlock("bulletListItem", {}, "Regions?")],
     });
-    const markdown = edited(
-      "- Regions?",
-      "- Regions?\n- Regions?",
-      planToMarkdown(asked, FEATURE),
-    );
 
-    expect(opsFor(markdown, asked)).toMatchObject({
+    expect(
+      passOver(asked, "- Regions?", "- Regions?\n- Regions?"),
+    ).toMatchObject({
       ops: [],
-      problems: [{ code: "disallowed-block", slot: "questions" }],
+      problems: ONE_REFUSAL,
     });
   });
 
   it("leaves a person's bullet under Open questions where it stands when the pass moves it, and reports the move", () => {
-    const asked = planWith("feature", {
-      questions: [
-        textBlock("bulletListItem", {}, "Regions?"),
-        textBlock("paragraph", {}, "Omega."),
-      ],
-    });
-    const markdown = edited(
-      "- Regions?\n\nOmega.",
-      "Omega.\n\n- Regions?",
-      planToMarkdown(asked, FEATURE),
-    );
+    const asked = BULLET_THEN_OMEGA;
 
-    expect(opsFor(markdown, asked)).toMatchObject({
+    expect(
+      passOver(asked, "- Regions?\n\nOmega.", "Omega.\n\n- Regions?"),
+    ).toMatchObject({
       ops: [],
-      problems: [{ code: "disallowed-block", slot: "questions" }],
+      problems: ONE_REFUSAL,
+    });
+  });
+
+  it("writes the pass's paragraph after a person's bullet under Open questions rather than over it, when the pass moves the bullet down", () => {
+    const asked = BULLET_THEN_OMEGA;
+    const bullet = asked.find((block) => block.type === "bulletListItem");
+
+    expect(
+      passOver(
+        asked,
+        "- Regions?\n\nOmega.",
+        "New para.\n\nOmega.\n\n- Regions?",
+      ),
+    ).toMatchObject({
+      ops: [
+        {
+          op: "insert-blocks",
+          after: bullet?.id,
+          blocks: [{ type: "paragraph" }],
+        },
+      ],
+      problems: ONE_REFUSAL,
     });
   });
 });
