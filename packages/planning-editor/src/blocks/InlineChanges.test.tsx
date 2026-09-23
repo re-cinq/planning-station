@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
-import type { PlanDocument } from "@re-cinq/planning-document";
+import type { AgentOp, PlanDocument } from "@re-cinq/planning-document";
 import { proposeChanges, readBlocks } from "@re-cinq/planning-yjs";
 
 import { PlanEditor } from "../PlanEditor.js";
@@ -32,23 +32,33 @@ const rendered = async () => {
   return { hub, screen, lastPlan: () => lastCallOf(onChange) };
 };
 
-const proposeRewrite = (hub: ReturnType<typeof createMemoryHub>) =>
+const propose = (hub: ReturnType<typeof createMemoryHub>, op: AgentOp) =>
   proposeChanges(hub.doc, {
     slot: "intent",
-    ops: [
-      {
-        op: "replace-block",
-        slot: "intent",
-        blockId: idOf(hub, SLOW),
-        block: {
-          type: "paragraph",
-          content: [{ type: "text", text: FAST, styles: {} }],
-        },
-      },
-    ],
+    ops: [op],
     uses: { questions: [], comments: [] },
     proposedBy: "planning-agent",
   });
+
+const proposeRewrite = (hub: ReturnType<typeof createMemoryHub>) =>
+  propose(hub, {
+    op: "replace-block",
+    slot: "intent",
+    blockId: idOf(hub, SLOW),
+    block: {
+      type: "paragraph",
+      content: [{ type: "text", text: FAST, styles: {} }],
+    },
+  });
+
+const cardWordsFor = async (op: AgentOp) => {
+  const { hub, screen } = await rendered();
+  propose(hub, op);
+  const card = screen.getByRole("group", { name: "Proposed change" });
+  await expect.element(card).toBeVisible();
+
+  return String(card.element().textContent);
+};
 
 const intentText = (plan?: PlanDocument) => {
   const sections = plan?.sections ?? [];
@@ -77,28 +87,31 @@ describe("a change proposed about one paragraph", () => {
     }).toEqual({ shows: true, repeats: false, under: true });
   });
 
-  it("draws a change about no paragraph of its own at the end of its section, rather than nowhere", async () => {
-    const { hub, screen } = await rendered();
-    proposeChanges(hub.doc, {
+  it("draws an added question at the end of its section, reading as the question rather than a paragraph that goes", async () => {
+    const words = await cardWordsFor({
+      op: "add-question",
       slot: "intent",
-      ops: [
-        {
-          op: "add-question",
-          slot: "intent",
-          questionId: "q-new",
-          question: "Which market first?",
-          why: "the plan names none",
-          kind: "text",
-          options: [],
-        },
-      ],
-      uses: { questions: [], comments: [] },
-      proposedBy: "planning-agent",
+      questionId: "q-new",
+      question: "Which market first?",
+      why: "the plan names none",
+      kind: "text",
+      options: [],
     });
 
-    await expect
-      .element(screen.getByRole("group", { name: "Proposed change" }))
-      .toBeVisible();
+    expect({
+      asks: words.includes("Which market first?"),
+      drops: words.includes("This paragraph goes."),
+    }).toEqual({ asks: true, drops: false });
+  });
+
+  it("does not claim a paragraph goes when set-section-text writes no paragraphs", async () => {
+    const words = await cardWordsFor({
+      op: "set-section-text",
+      slot: "intent",
+      paragraphs: [],
+    });
+
+    expect(words.includes("This paragraph goes.")).toBe(false);
   });
 
   it("writes only that paragraph when Accept is clicked", async () => {

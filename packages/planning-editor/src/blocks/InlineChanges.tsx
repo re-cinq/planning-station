@@ -75,17 +75,15 @@ function Bar({ review }: { review: ReviewableChange }) {
   );
 }
 
-/** The change as a person reads it: the words it proposes, or that this paragraph goes. */
+/** The change as a person reads it: that this paragraph goes, or the words it proposes. */
 function Words({ change }: { change: PlanChange }): ReactNode {
-  const words = changeWords(change);
-
-  return words.length > 0 ? (
-    words.map((line, index) => (
+  return change.op.op === "remove-block" ? (
+    <p className={styles.dropped}>This paragraph goes.</p>
+  ) : (
+    changeWords(change).map((line, index) => (
       <p key={index} className={styles.words}>
         {line}
       </p>
     ))
-  ) : (
-    <p className={styles.dropped}>This paragraph goes.</p>
   );
 }

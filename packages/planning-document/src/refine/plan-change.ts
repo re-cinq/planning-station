@@ -3,7 +3,12 @@ import { z } from "zod";
 import type { BlockJson } from "../blocks/block-json.js";
 import { newId } from "../lib/ids.js";
 import { shortHash } from "../lib/short-hash.js";
-import { agentOpSchema, type AgentOp } from "../ops/agent-ops.js";
+import {
+  agentOpSchema,
+  type AgentOp,
+  type KpiInput,
+  type PrototypeInput,
+} from "../ops/agent-ops.js";
 import type { ProseInput } from "../ops/prose-input.js";
 import { plainText } from "../blocks/inline-text.js";
 import { refineUsesSchema, type RefineUses } from "./refine-proposal.js";
@@ -72,24 +77,87 @@ export function blockHash(
   return block ? shortHash(JSON.stringify(block)) : "";
 }
 
-/** The words a change proposes, one line per block: none for a change that only drops a paragraph, since what goes is the paragraph it hangs under. */
+/** The words a change proposes, as the lines its preview shows: none for a removal, since what goes is the paragraph it hangs under. */
 export function changeWords(change: PlanChange): string[] {
-  const { op } = change;
+  const read = WORDS[change.op.op] as (op: AgentOp) => string[];
 
-  if (op.op === "replace-block") {
-    return [wordsOf(op.block)];
-  }
-
-  return op.op === "insert-blocks" ? op.blocks.map(wordsOf) : [];
+  return read(change.op);
 }
 
-/** A table has rows rather than one line of content, and reads as its cells in order. */
-function wordsOf(block: ProseInput): string {
-  if ("content" in block) {
-    return plainText(block.content);
+type WordsReader<Kind extends AgentOp["op"]> = (
+  op: Extract<AgentOp, { op: Kind }>,
+) => string[];
+
+const WORDS: { [Kind in AgentOp["op"]]: WordsReader<Kind> } = {
+  "set-section-text": paragraphWords,
+  "set-section-prose": blockWords,
+  "append-to-section": paragraphWords,
+  "upsert-kpi": kpiWords,
+  "set-prototype": prototypeWords,
+  "replace-block": rewriteWords,
+  "insert-blocks": blockWords,
+  "remove-block": noWords,
+  "add-section": sectionWords,
+  "set-section-title": titleWords,
+  "add-question": questionWords,
+};
+
+function paragraphWords(op: { paragraphs: string[] }): string[] {
+  return op.paragraphs;
+}
+
+function blockWords(op: { blocks: ProseInput[] }): string[] {
+  return op.blocks.flatMap(linesOf);
+}
+
+function rewriteWords(op: { block: ProseInput }): string[] {
+  return linesOf(op.block);
+}
+
+function titleWords(op: { title: string }): string[] {
+  return [op.title];
+}
+
+function sectionWords(op: { title: string; paragraphs: string[] }): string[] {
+  return [...titleWords(op), ...paragraphWords(op)];
+}
+
+/** A KPI the agent has only named reads as its name, not as blanks around an arrow. */
+function kpiWords({ kpi }: { kpi: KpiInput }): string[] {
+  const movement =
+    kpi.baseline || kpi.target ? `: ${kpi.baseline} → ${kpi.target}` : "";
+  const deadline = kpi.deadline ? ` by ${kpi.deadline}` : "";
+
+  return [`${kpi.metric}${movement}${deadline}`];
+}
+
+function prototypeWords({
+  prototype,
+}: {
+  prototype: PrototypeInput;
+}): string[] {
+  const url = prototype.url ? `: ${prototype.url}` : "";
+
+  return [`Prototype (${prototype.maturity})${url}`];
+}
+
+function noWords(): string[] {
+  return [];
+}
+
+function questionWords(op: { question: string }): string[] {
+  return [op.question];
+}
+
+/** A block's own line, then its nested children's lines, in order; a table reads as its cells in one line. */
+function linesOf(block: ProseInput): string[] {
+  if (!("content" in block)) {
+    const cells = block.rows.flat();
+
+    return [cells.map(plainText).join(" · ")];
   }
 
-  const cells = block.rows.flat();
+  const children = "children" in block ? block.children : [];
 
-  return cells.map(plainText).join(" · ");
+  return [plainText(block.content), ...children.flatMap(linesOf)];
 }
