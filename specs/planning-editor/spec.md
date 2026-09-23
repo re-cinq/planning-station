@@ -73,7 +73,7 @@ The plan editor is the React component people write a plan in: the feature's nam
 - The editor talks to the outside only through the host's PlanTransport; it waits in a connecting state until the whole document arrives as one document event with the plan meta ([validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L44), [validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L51)).
 - Every local edit goes out as an update event as it happens, and what came in from the transport is never sent back ([validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L65), [validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L58)).
 - A transport that refuses the connection shows the author its reason ([validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L73)).
-- Two people on one plan see each other's words as they type ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L206)).
+- Two people on one plan see each other's words as they type ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L227)).
 - The in-memory hub seeds its document from the plan's blocks, greets each new peer with the document and meta, relays each update to the other peers only, and stops delivering after unsubscribe ([validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L30), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L36), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L42), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L54), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L60), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L71)).
 
 ## Reference transport
@@ -86,12 +86,12 @@ The plan editor is the React component people write a plan in: the feature's nam
 
 ## Presence
 
-- The participants list, at the top of the sidebar above the outline, names everyone else on the plan with the section they are editing, and never the viewer ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L213), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L20)).
+- The participants list, at the top of the sidebar above the outline, names everyone else on the plan with the section they are editing, and never the viewer ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L234), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L20)).
 - A peer that has not announced a name is not listed, and one without a cursor yet is listed with no section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L43), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L47)).
-- A participant whose cursor is in the document is a button, and one who has not placed a cursor is plain text ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L219), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L36)).
-- Clicking a participant scrolls their cursor into view without moving the reader's own caret ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L230)).
+- A participant whose cursor is in the document is a button, and one who has not placed a cursor is plain text ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L240), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L36)).
+- Clicking a participant scrolls their cursor into view without moving the reader's own caret ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L251)).
 - A peer editing a section the agent added is listed with that section's own title, the same as a template section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L65)).
-- Each remote cursor is drawn in the editor, labelled with its owner's name ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L245)).
+- Each remote cursor is drawn in the editor, labelled with its owner's name ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L266)).
 
 ## Plan blocks
 
@@ -112,11 +112,11 @@ The plan editor is the React component people write a plan in: the feature's nam
 ## Outline
 
 - The outline lists every section, marks the ones required at the chosen phase, and shows each section's problems under it ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L12), [validated by](../../packages/planning-editor/src/outline/problems-by-slot.test.ts#L13), [validated by](../../packages/planning-editor/src/outline/problems-by-slot.test.ts#L18)).
-- The outline follows the plan's sections in document order, the agent's own included, and never marks a section the agent added as required ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L48), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L155)).
+- The outline follows the plan's sections in document order, the agent's own included, and never marks a section the agent added as required ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L67), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L155)).
 - The outline says whether the plan is ready for the phase ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L38)).
-- Once the plan is approved, the outline says who approved it and on which day instead ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L48), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L173)).
+- Once the plan is approved, the outline says who approved it and on which day instead ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L48), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L194)).
 - A host can draw its own action under the outline's sections, such as the approve button the outline gates ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L181)).
-- The editor hands every validation report to the host's onValidation, at the approval phase unless told otherwise ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L194)).
+- The editor hands every validation report to the host's onValidation, at the approval phase unless told otherwise ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L215)).
 
 ## Version diff
 
