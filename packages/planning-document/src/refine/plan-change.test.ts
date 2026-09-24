@@ -25,30 +25,27 @@ const NEW_TEXT = {
 };
 
 describe("changesFor", () => {
-  it("makes one change per op, each anchored to the block it is about", () => {
+  it("makes one change per op, each filed under the section it writes and anchored to the block it is about", () => {
     const changes = changesFor(PLAN, {
       slot: "intent",
       ops: [
-        {
-          op: "replace-block",
-          slot: "intent",
-          blockId: idOf("Checkout is slow."),
-          block: NEW_TEXT,
-        },
         {
           op: "insert-blocks",
           slot: "intent",
           after: idOf("Carts are abandoned."),
           blocks: [NEW_TEXT],
         },
+        { op: "append-to-section", slot: "scope", paragraphs: ["EU only."] },
       ],
       uses: { questions: ["q1"], comments: [] },
       proposedBy: "planning-agent",
     });
 
-    expect(changes.map((change) => [change.op.op, change.anchorId])).toEqual([
-      ["replace-block", idOf("Checkout is slow.")],
-      ["insert-blocks", idOf("Carts are abandoned.")],
+    expect(
+      changes.map((change) => [change.op.op, change.slot, change.anchorId]),
+    ).toEqual([
+      ["insert-blocks", "intent", idOf("Carts are abandoned.")],
+      ["append-to-section", "scope", null],
     ]);
   });
 

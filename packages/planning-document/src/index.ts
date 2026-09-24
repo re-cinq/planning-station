@@ -21,6 +21,7 @@ export * from "./ops/prose-input.js";
 export * from "./ops/apply-ops.js";
 export * from "./validation/problems.js";
 export * from "./validation/validate-plan.js";
+export * from "./refine/partition-pass.js";
 export * from "./refine/plan-change.js";
 export * from "./refine/section-hash.js";
 export * from "./refine/refine-proposal.js";
