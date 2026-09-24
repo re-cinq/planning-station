@@ -4,8 +4,10 @@ import {
   changesFor,
   enforceTrue,
   markUsed,
+  partitionPass,
   planChangeSchema,
   SectionChangedError,
+  type AgentOp,
   type BlockJson,
   type PassOps,
   type PlanChange,
@@ -37,20 +39,37 @@ export function staleChanges(doc: Doc): PlanChange[] {
   return changesIn(doc).filter((change) => isStale(blocks, change));
 }
 
-/** One pass's answer, cut into a change per op: each is reviewed where it lands. */
+/** One pass's answer: the sections it adds are written straight in, and the rest is cut into a change per op, each reviewed where it lands. The changes are cut after the write, so each hashes the plan as it now stands. */
 export function proposeChanges(
   doc: Doc,
   pass: PassOps,
   origin?: unknown,
 ): PlanChange[] {
-  const changes = changesFor(readBlocks(doc), pass);
+  const changes: PlanChange[] = [];
   doc.transact(() => {
+    const proposed = writeAdded(doc, pass, origin);
+    changes.push(...changesFor(readBlocks(doc), { ...pass, ops: proposed }));
     changes.forEach((change) => changeMap(doc).set(change.changeId, change));
     // The ask is answered by the pass, even when it changed nothing: left standing, the plan would say a refine is still coming for ever.
     discardRefine(doc, pass.slot, origin);
   }, origin);
 
   return changes;
+}
+
+/** The sections a pass adds, written with what the pass put in them; the inputs are marked used so the next pass does not add them again. Answers the ops that remain to propose. */
+function writeAdded(doc: Doc, pass: PassOps, origin?: unknown): AgentOp[] {
+  const { written, proposed } = partitionPass(pass.ops);
+
+  if (written.length > 0) {
+    rewriteDoc(
+      doc,
+      (blocks) => markUsed(applyOps(blocks, written), pass.uses),
+      origin,
+    );
+  }
+
+  return proposed;
 }
 
 /** Writes one change into the plan and marks what it used, unless its own paragraph moved on. */

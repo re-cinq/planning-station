@@ -20,6 +20,7 @@ import {
   applyChangeAnyway,
   changesIn,
   discardChange,
+  discardChangesIn,
   proposeChanges,
   staleChanges,
 } from "./changes.js";
@@ -76,6 +77,62 @@ describe("proposeChanges", () => {
     expect({ changes: changesIn(doc).length, text: intentText(doc) }).toEqual({
       changes: 2,
       text: ["Checkout is slow.", "Carts are abandoned."],
+    });
+  });
+
+  it("writes a section the pass adds straight in, with its body, and proposes only the edit to the section that was there", () => {
+    const doc = seeded();
+    const changes = proposeChanges(
+      doc,
+      {
+        slot: "intent",
+        ops: [
+          rewrite(doc, "Checkout p95 is 450 ms."),
+          {
+            op: "add-section",
+            slot: "custom-rollout",
+            title: "Rollout",
+            after: "intent",
+            paragraphs: [],
+          },
+          {
+            op: "insert-blocks",
+            slot: "custom-rollout",
+            after: null,
+            blocks: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: "EU first.", styles: {} }],
+              },
+            ],
+          },
+        ],
+        uses: { questions: [], comments: [] },
+        proposedBy: "planning-agent",
+      },
+      "agent",
+    );
+
+    expect({
+      headings: readBlocks(doc)
+        .filter((block) => block.type === "section-heading")
+        .map((block) => block.props["title"]),
+      text: intentText(doc),
+      changes: changes.map((change) => [change.op.op, change.slot]),
+    }).toEqual({
+      headings: [
+        "What we want and why",
+        "Rollout",
+        "Success criteria",
+        "In and out of scope",
+        "Prototype",
+        "Constraints",
+        "Who operates it",
+        "Delivery implications",
+        "Open questions",
+      ],
+      text: ["Checkout is slow.", "Carts are abandoned.", "EU first."],
+      changes: [["replace-block", "intent"]],
     });
   });
 
@@ -154,5 +211,27 @@ describe("proposeChanges", () => {
     expect(rewriting?.baseHash).toEqual(
       blockHash(readBlocks(doc), idOf(doc, "Checkout is slow.")),
     );
+  });
+});
+
+describe("discardChangesIn", () => {
+  it("drops the changes filed under one section and leaves the other section's waiting", () => {
+    const doc = seeded();
+    proposeChanges(
+      doc,
+      {
+        slot: "intent",
+        ops: [
+          rewrite(doc, "Checkout p95 is 450 ms."),
+          { op: "append-to-section", slot: "scope", paragraphs: ["EU only."] },
+        ],
+        uses: { questions: [], comments: [] },
+        proposedBy: "planning-agent",
+      },
+      "agent",
+    );
+    discardChangesIn(doc, "intent");
+
+    expect(changesIn(doc).map((change) => change.slot)).toEqual(["scope"]);
   });
 });

@@ -11,7 +11,11 @@ import {
 } from "../ops/agent-ops.js";
 import type { ProseInput } from "../ops/prose-input.js";
 import { plainText } from "../blocks/inline-text.js";
-import { refineUsesSchema, type RefineUses } from "./refine-proposal.js";
+import {
+  refineUsesSchema,
+  slotOf,
+  type RefineUses,
+} from "./refine-proposal.js";
 
 /** One change a pass proposes, about ONE block: reviewed, accepted and refused on its own, where it lands. */
 export const planChangeSchema = z.object({
@@ -37,7 +41,7 @@ export interface PassOps {
   proposedBy: string;
 }
 
-/** The pass, cut into one change per op and anchored to the blocks it is about. */
+/** The pass, cut into one change per op, each filed under the section it writes and anchored to the block it is about. */
 export function changesFor(
   blocks: readonly BlockJson[],
   pass: PassOps,
@@ -46,7 +50,7 @@ export function changesFor(
 
   return pass.ops.map((op) => ({
     changeId: newId("chg"),
-    slot: pass.slot,
+    slot: slotOf(op),
     anchorId: anchorOf(op),
     baseHash: blockHash(blocks, anchorOf(op)),
     op,
