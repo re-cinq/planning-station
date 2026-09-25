@@ -1,5 +1,6 @@
 import { encodeOptions } from "../blocks/question-options.js";
 import {
+  blocksOfType,
   isPlanBlock,
   parseBlock,
   type BlockJson,
@@ -74,7 +75,12 @@ const HANDLERS: Handlers = {
   "add-section": addSection,
   "set-section-title": setSectionTitle,
   "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
-  "add-finding": (blocks, op) => upsert(blocks, op.slot, findingBlock(op)),
+  "add-finding": (blocks, op) =>
+    upsert(
+      blocks,
+      op.slot,
+      findingBlock({ ...op, resolved: resolvedOf(blocks, op.findingId) }),
+    ),
 };
 
 /** Applies the planning agent's edits to a plan's blocks. */
@@ -195,15 +201,23 @@ function questionBlock(input: QuestionInput): BlockJson {
   });
 }
 
-function findingBlock(input: FindingInput): BlockJson {
-  const { findingId, text, why, severity } = input;
+function findingBlock(input: FindingInput & { resolved: boolean }): BlockJson {
+  const { findingId, text, why, severity, resolved } = input;
 
   return parseBlock({
     id: findingId,
     type: "finding",
-    props: { findingId, severity, why, resolved: false, used: false },
+    props: { findingId, severity, why, resolved, used: false },
     content: inlineFromText(text),
   });
+}
+
+function resolvedOf(blocks: readonly BlockJson[], findingId: string): boolean {
+  const existing = blocksOfType(blocks, "finding").find(
+    (finding) => finding.props.findingId === findingId,
+  );
+
+  return existing?.props.resolved === true;
 }
 
 function prototypeBlock(prototype: PrototypeInput): BlockJson {

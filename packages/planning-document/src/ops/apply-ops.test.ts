@@ -232,6 +232,22 @@ describe("applyOps set-section-title", () => {
   });
 });
 
+const LABELS_MISSING: AgentOp = {
+  op: "add-finding",
+  slot: "intent",
+  findingId: "f-abc123",
+  text: "Labels missing",
+  why: "FR-166 keys the card on fixed text",
+  severity: "warning",
+};
+
+const resolved = (blocks: BlockJson[], id: string): BlockJson[] =>
+  blocks.map((block) =>
+    block.id === id && block.type === "finding"
+      ? { ...block, props: { ...block.props, resolved: true } }
+      : block,
+  );
+
 describe("applyOps add-finding", () => {
   it("adds a blocker finding to the intent section", () => {
     const blocks = applied([
@@ -258,9 +274,21 @@ describe("applyOps add-finding", () => {
           resolved: false,
           used: false,
         },
-        content: [{ text: "The plan promises Danish status labels but names none" }],
+        content: [
+          { text: "The plan promises Danish status labels but names none" },
+        ],
       },
       { type: "section-actions" },
+    ]);
+  });
+
+  it("keeps a resolved finding resolved when the same findingId is re-applied", () => {
+    const firstPass = applied([LABELS_MISSING]);
+    const secondPass = applyOps(resolved(firstPass, "f-abc123"), [
+      LABELS_MISSING,
+    ]);
+    expect(blocksOfType(secondPass, "finding")).toMatchObject([
+      { id: "f-abc123", props: { resolved: true } },
     ]);
   });
 });
