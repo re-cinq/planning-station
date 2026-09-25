@@ -1,5 +1,6 @@
 import { afterEach, describe, it, expect } from "vitest";
 import { docFromBlocks } from "@re-cinq/planning-yjs";
+import { docName } from "@re-cinq/planning-document";
 import { readyFeature } from "@re-cinq/planning-document/testing";
 
 import { startTestServer, type TestServer } from "../testing/test-server.js";
@@ -182,6 +183,22 @@ describe("planningRoutes", () => {
     expect({ status: done.status, used }).toEqual({
       status: 200,
       used: true,
+    });
+  });
+
+  it("shows the agent editing intent after opening presence and setting the slot", async () => {
+    const test = await server();
+    const planId = await createdPlan(test);
+    const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
+    await call(test, `/${planId}/agent-presence`, { user });
+    const editing = await call(test, `/${planId}/agent-editing`, {
+      slot: "intent",
+    });
+    const document = test.collab.documents.get(docName({ repo: NEW_PLAN.repo, planId }));
+    const states = [...(document?.awareness?.getStates().values() ?? [])];
+    expect({ status: editing.status, states }).toEqual({
+      status: 200,
+      states: [{ user, editing: { slot: "intent" } }],
     });
   });
 
