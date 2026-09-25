@@ -53,7 +53,7 @@ const RENDERERS: { [Kind in PlanBlockKind]: Render<Kind> } = {
   finding: (block) => [
     quoted(
       "Finding",
-      ` (${block.props.findingId}, ${block.props.severity}): ${oneLine(block)}`,
+      ` (${findingTag(block.props)}): ${oneLine(block)}${whySuffix(block.props.why)}`,
     ),
   ],
 };
@@ -137,4 +137,12 @@ function oneLine(block: { content: InlineContent }): string {
 
 function resolvedMark(block: PlanBlockOf<"comment">): string {
   return block.props.resolved ? " (resolved)" : "";
+}
+
+function findingTag(props: PlanBlockOf<"finding">["props"]): string {
+  return `${props.findingId}, ${props.severity}${props.resolved ? ", resolved" : ""}`;
+}
+
+function whySuffix(why: string): string {
+  return why ? ` — ${why}` : "";
 }
