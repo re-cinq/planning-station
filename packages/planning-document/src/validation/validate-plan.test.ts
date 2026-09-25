@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { BlockJson } from "../blocks/block-json.js";
 import type { PlanMeta, PlanKind } from "../plan/plan-meta.js";
+import { applyOps } from "../ops/apply-ops.js";
 import { seedBlocks } from "../projection/seed.js";
 import { toPlanDocument } from "../projection/to-plan-document.js";
 import { templateFor } from "../template/templates.js";
@@ -85,6 +86,22 @@ describe("validatePlan", () => {
     ];
     expect(
       codes(commented, "draft").filter(([code]) => code === "disallowed-block"),
+    ).toEqual([]);
+  });
+
+  it("allows a finding in a section whose template never mentions findings", () => {
+    const withFinding = applyOps(seedBlocks(templateFor("feature")), [
+      {
+        op: "add-finding",
+        slot: "intent",
+        findingId: "f-1",
+        text: "The plan promises Danish status labels but names none",
+        why: "FR-166 keys the card on fixed text",
+        severity: "blocker",
+      },
+    ]);
+    expect(
+      codes(withFinding, "draft").filter(([code]) => code === "disallowed-block"),
     ).toEqual([]);
   });
 

@@ -10,6 +10,7 @@ export const ALWAYS_ALLOWED = [
   "question",
   "answer",
   "comment",
+  "finding",
 ] as const;
 
 /** Margin notes: they lead a section in this order. */
