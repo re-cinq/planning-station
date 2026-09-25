@@ -24,7 +24,7 @@ The sync library is the plan's server side, registered inside the host's own hap
 
 - A plan is approved only when it passes validation at the approval phase; otherwise the caller is told what is still missing ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L113), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L121)).
 - Approval records who approved which version, and reopening a plan takes it back to a draft with no approval ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L121), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L130)).
-- The host hears of every approval through `onApproved`, after the store has it, and hears nothing of a refused one, so it can start its own work from the approved plan ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L139), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L150), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L157)).
+- The host hears of every approval through `onApproved`, after the store has it, and hears nothing of a refused one, so it can start its own work from the approved plan ([validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L139), [validated by](../../packages/planning-sync/src/core/planning-service.test.ts#L150), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L216)).
 
 ## Collaboration
 
@@ -35,17 +35,17 @@ The sync library is the plan's server side, registered inside the host's own hap
 
 ## Agent writes
 
-- The planning agent's ops go into the live document, and what it wrote is still there for the next reader ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L52), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L62)).
-- An agent write changes the plan's content only; its workflow status is left alone ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L73)).
-- When the agent could not answer a person's Refine, the host fails it with the reason, and the next reader sees the failed refine; a failure for a section nobody asked about writes nothing ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L83), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L95)).
+- The planning agent's ops go into the live document, and what it wrote is still there for the next reader ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L69), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L79)).
+- An agent write changes the plan's content only; its workflow status is left alone ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L90)).
+- When the agent could not answer a person's Refine, the host fails it with the reason, and the next reader sees the failed refine; a failure for a section nobody asked about writes nothing ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L141), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L153)).
 
 ## Routes
 
-- Creating a plan answers 201 with its document name, and reading one answers its sections and version ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L62), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L71)).
-- Approving over the route approves the plan, and an incomplete plan is refused with 409 ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L99), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L87)).
-- The versions of a plan are listed in the order they were written ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L111)).
-- The agent's ops have their own route, which answers the plan they wrote ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L135)).
-- Errors answer as RFC 9457 problem details: 404 for an unknown plan, 401 when the host's own check refuses the caller, 400 for a payload that is not a plan ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L77), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L119), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L127)).
+- Creating a plan answers 201 with its document name, and reading one answers its sections and version ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L79), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L88)).
+- Approving over the route approves the plan, and an incomplete plan is refused with 409 ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L116), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L104)).
+- The versions of a plan are listed in the order they were written ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L128)).
+- The agent's ops have their own route, which answers the plan they wrote ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L152)).
+- Errors answer as RFC 9457 problem details: 404 for an unknown plan, 401 when the host's own check refuses the caller, 400 for a payload that is not a plan ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L94), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L136), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L144)).
 
 ## Refine proposals
 

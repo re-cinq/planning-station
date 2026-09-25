@@ -1,7 +1,6 @@
 import type { Document, Hocuspocus } from "@hocuspocus/server";
 import {
   blockHash,
-  docName,
   enforceTrue,
   SectionChangedError,
   toPlanDocument,
@@ -26,6 +25,13 @@ import {
   type SectionBase,
 } from "@re-cinq/planning-yjs";
 
+import {
+  createAgentPresence,
+  type AgentPresence,
+  type EditingRequest,
+  type PresenceRequest,
+} from "./agent-presence.js";
+import { openPlanConnection, transactOn } from "./plan-connection.js";
 import type { PlanningService } from "./planning-service.js";
 
 export const AGENT_ORIGIN = "planning-agent";
@@ -37,7 +43,13 @@ export interface OpsRequest {
   /** The section as the agent read it; the write is refused when it changed since. */
   base?: SectionBase;
   /** The block as the agent read it; the write is refused when that block changed since. */
-  expect?: { blockId: string; hash: string };
+  expect?: BlockBase;
+}
+
+/** One block as the agent read it: its id and the hash it had then. */
+export interface BlockBase {
+  blockId: string;
+  hash: string;
 }
 
 export interface ProposalRequest {
@@ -79,21 +91,6 @@ export interface AgentWriter {
   closePresence(request: { planId: string }): Promise<void>;
 }
 
-export interface PresenceUser {
-  name: string;
-  color: string;
-}
-
-export interface PresenceRequest {
-  planId: string;
-  user: PresenceUser;
-}
-
-export interface EditingRequest {
-  planId: string;
-  slot: string | null;
-}
-
 /** Why the agent could not answer the Refine a person asked for one section. */
 export interface FailRequest {
   planId: string;
@@ -113,106 +110,37 @@ export interface AgentWriterOptions {
   collab: Hocuspocus;
 }
 
-type PresenceConnection = Awaited<
-  ReturnType<Hocuspocus["openDirectConnection"]>
->;
+interface WriterContext extends AgentWriterOptions {
+  presence: AgentPresence;
+}
 
 export function createAgentWriter(options: AgentWriterOptions): AgentWriter {
-  const presences = new Map<string, PresenceConnection>();
+  const presence = createAgentPresence(options);
 
   return {
-    applyOps: (request) => write(options, presences, request),
+    applyOps: (request) => write({ ...options, presence }, request),
     propose: (request) => propose(options, request),
     proposePass: (request) => pass(options, request),
     proposeChanges: (request) => changes(options, request),
     failRefine: (request) => fail(options, request),
     finishRefine: (request) => finish(options, request),
-    openPresence: (request) => openPresence(options, presences, request),
-    setEditing: (request) => setEditing(presences, request),
-    closePresence: (request) => closePresence(presences, request),
+    openPresence: (request) => presence.open(request),
+    setEditing: (request) => presence.setEditing(request),
+    closePresence: (request) => presence.close(request),
   };
 }
 
-async function openPresence(
-  options: AgentWriterOptions,
-  presences: Map<string, PresenceConnection>,
-  { planId, user }: PresenceRequest,
-): Promise<void> {
-  const { json } = await options.service.readPlan(planId);
-  const name = docName({ repo: json.repo, planId: json.id });
-  const connection = await options.collab.openDirectConnection(name);
-
-  enforceTrue(
-    connection.document !== null,
-    Error,
-    `no document to broadcast presence on for plan ${planId}`,
-  );
-  presences.set(planId, connection);
-  connection.document?.awareness?.setLocalState({
-    user,
-    editing: { slot: null },
-  });
-}
-
-async function setEditing(
-  presences: Map<string, PresenceConnection>,
-  { planId, slot }: EditingRequest,
-): Promise<void> {
-  const connection = presences.get(planId);
-  connection?.document?.awareness?.setLocalStateField("editing", { slot });
-}
-
-async function closePresence(
-  presences: Map<string, PresenceConnection>,
-  { planId }: { planId: string },
-): Promise<void> {
-  const connection = presences.get(planId);
-  if (!connection) return;
-
-  connection.document?.awareness?.setLocalState(null);
-  await connection.disconnect();
-  presences.delete(planId);
-}
-
-async function fail(
-  options: AgentWriterOptions,
-  { planId, ...failure }: FailRequest,
-): Promise<RefineProposal | undefined> {
-  const { json } = await options.service.readPlan(planId);
-
-  return inDocument(options, json, (document) =>
-    failRefine(document, failure, AGENT_ORIGIN),
-  );
-}
-
-async function finish(
-  options: AgentWriterOptions,
-  { planId, ...request }: FinishRefineRequest,
-): Promise<void> {
-  const { json } = await options.service.readPlan(planId);
-
-  await inDocument(options, json, (document) =>
-    finishRefine(document, request, AGENT_ORIGIN),
-  );
-}
-
 async function write(
-  options: AgentWriterOptions,
-  presences: Map<string, PresenceConnection>,
+  context: WriterContext,
   request: OpsRequest,
 ): Promise<PlanDocument> {
-  const { json } = await options.service.readPlan(request.planId);
-  const blocks = await inDocument(
-    options,
-    json,
-    (document) => {
-      enforceBase(document, request.base);
-      enforceBlock(document, request.expect);
+  const { json } = await context.service.readPlan(request.planId);
+  const blocks = await inHeldOrFreshDocument(context, json, (document) => {
+    enforceBase(document, request.base);
+    enforceBlock(document, request.expect);
 
-      return applyOpsToDoc(document, request.ops, AGENT_ORIGIN);
-    },
-    presences,
-  );
+    return applyOpsToDoc(document, request.ops, AGENT_ORIGIN);
+  });
 
   return toPlanDocument(blocks, json);
 }
@@ -254,16 +182,35 @@ async function changes(
   );
 }
 
+async function fail(
+  options: AgentWriterOptions,
+  { planId, ...failure }: FailRequest,
+): Promise<RefineProposal | undefined> {
+  const { json } = await options.service.readPlan(planId);
+
+  return inDocument(options, json, (document) =>
+    failRefine(document, failure, AGENT_ORIGIN),
+  );
+}
+
+async function finish(
+  options: AgentWriterOptions,
+  { planId, ...request }: FinishRefineRequest,
+): Promise<void> {
+  const { json } = await options.service.readPlan(planId);
+
+  await inDocument(options, json, (document) =>
+    finishRefine(document, request, AGENT_ORIGIN),
+  );
+}
+
 function enforceBase(document: Document, base?: SectionBase): void {
   if (base) {
     enforceSectionUnchanged(document, base);
   }
 }
 
-function enforceBlock(
-  document: Document,
-  expect?: { blockId: string; hash: string },
-): void {
+function enforceBlock(document: Document, expect?: BlockBase): void {
   if (!expect) return;
 
   enforceTrue(
@@ -273,44 +220,26 @@ function enforceBlock(
   );
 }
 
+async function inHeldOrFreshDocument<Result>(
+  context: WriterContext,
+  meta: PlanMeta,
+  work: (document: Document) => Result,
+): Promise<Result> {
+  const held = context.presence.heldConnection(meta.id);
+
+  return held ? transactOn(held, work) : inDocument(context, meta, work);
+}
+
 async function inDocument<Result>(
   options: AgentWriterOptions,
   meta: PlanMeta,
   work: (document: Document) => Result,
-  presences?: Map<string, PresenceConnection>,
 ): Promise<Result> {
-  const held = presences?.get(meta.id);
-
-  return held
-    ? inHeldDocument(held, work)
-    : inFreshDocument(options, meta, work);
-}
-
-async function inHeldDocument<Result>(
-  connection: PresenceConnection,
-  work: (document: Document) => Result,
-): Promise<Result> {
-  const results: Result[] = [];
-
-  await connection.transact((document) => results.push(work(document)));
-
-  return results[0] as Result;
-}
-
-async function inFreshDocument<Result>(
-  options: AgentWriterOptions,
-  meta: PlanMeta,
-  work: (document: Document) => Result,
-): Promise<Result> {
-  const name = docName({ repo: meta.repo, planId: meta.id });
-  const connection = await options.collab.openDirectConnection(name);
-  const results: Result[] = [];
+  const connection = await openPlanConnection(options.collab, meta);
 
   try {
-    await connection.transact((document) => results.push(work(document)));
+    return await transactOn(connection, work);
   } finally {
     await connection.disconnect();
   }
-
-  return results[0] as Result;
 }

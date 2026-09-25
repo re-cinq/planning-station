@@ -151,13 +151,13 @@ const ROUTES: readonly RouteSpec[] = [
     path: "/{planId}/agent-presence",
     status: 200,
     run: async ({ writer }, request) => {
-      const planId_ = planId(request);
+      const id = planId(request);
       await writer.openPresence({
-        planId: planId_,
+        planId: id,
         ...agentPresenceSchema.parse(request.payload),
       });
 
-      return { planId: planId_ };
+      return { planId: id };
     },
   },
   {
@@ -165,10 +165,10 @@ const ROUTES: readonly RouteSpec[] = [
     path: "/{planId}/agent-presence",
     status: 200,
     run: async ({ writer }, request) => {
-      const planId_ = planId(request);
-      await writer.closePresence({ planId: planId_ });
+      const id = planId(request);
+      await writer.closePresence({ planId: id });
 
-      return { planId: planId_ };
+      return { planId: id };
     },
   },
   {

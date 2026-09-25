@@ -175,10 +175,10 @@ describe("finishRefine", () => {
       uses: { questions: ["q-1"], comments: [] },
     });
 
+    const question = readBlocks(doc).find((block) => block.type === "question");
     expect({
       ask: proposalsIn(doc).find((proposal) => proposal.slot === "intent"),
-      used: readBlocks(doc).find((block) => block.type === "question")
-        ?.props.used,
+      used: question?.props.used,
     }).toEqual({ ask: undefined, used: true });
   });
 });

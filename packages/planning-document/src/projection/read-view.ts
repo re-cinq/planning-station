@@ -1,7 +1,8 @@
 import { type BlockJson, isPlanBlock } from "../blocks/block-json.js";
+import { blockHash } from "../blocks/block-hash.js";
 import { plainText } from "../blocks/inline-text.js";
-import { blockHash } from "../refine/plan-change.js";
 import { NOT_CONTENT } from "../template/slots.js";
+import type { Section } from "../plan/plan-document.js";
 import { partitionSections } from "./partition.js";
 
 export interface ReadBlock {
@@ -25,13 +26,24 @@ export interface ReadView {
 /** The plan as a person reads it: one section per slot, with its own blocks and their content only. */
 export function readView(blocks: readonly BlockJson[]): ReadView {
   return {
-    sections: partitionSections(blocks).map((section) => ({
-      slot: section.slot,
-      title: section.title,
-      blocks: section.blocks
-        .filter((block) => !NOT_CONTENT.includes(block.type))
-        .map((block) => readBlock(blocks, block)),
-    })),
+    sections: partitionSections(blocks).map((section) =>
+      readSection(blocks, section),
+    ),
+  };
+}
+
+function readSection(
+  blocks: readonly BlockJson[],
+  section: Section,
+): ReadSection {
+  const content = section.blocks.filter(
+    (block) => !NOT_CONTENT.includes(block.type),
+  );
+
+  return {
+    slot: section.slot,
+    title: section.title,
+    blocks: content.map((block) => readBlock(blocks, block)),
   };
 }
 

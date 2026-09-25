@@ -1,9 +1,13 @@
 import { afterEach, describe, it, expect } from "vitest";
 import { docFromBlocks } from "@re-cinq/planning-yjs";
-import { docName } from "@re-cinq/planning-document";
+import { enforceTrue } from "@re-cinq/planning-document";
 import { readyFeature } from "@re-cinq/planning-document/testing";
 
-import { startTestServer, type TestServer } from "../testing/test-server.js";
+import {
+  presenceStates,
+  startTestServer,
+  type TestServer,
+} from "../testing/test-server.js";
 
 const NEW_PLAN = {
   repo: "acme/shop",
@@ -39,8 +43,20 @@ const createdPlan = async (test: TestServer) => {
   return String((created.body as { meta: { id: string } }).meta.id);
 };
 
+interface WireSection {
+  slot: string;
+  blocks: { type: string; props?: { used?: boolean } }[];
+}
+
 const sectionsOf = (body: unknown) =>
-  (body as { sections: { slot: string }[] }).sections;
+  (body as { sections: WireSection[] }).sections;
+
+const sectionIn = (body: unknown, slot: string) => {
+  const section = sectionsOf(body).find((candidate) => candidate.slot === slot);
+  enforceTrue(section, Error, `no ${slot} section in the plan`);
+
+  return section;
+};
 
 const readyPlan = async (test: TestServer) => {
   const planId = await createdPlan(test);
@@ -174,13 +190,9 @@ describe("planningRoutes", () => {
       uses: { questions: ["q-1"], comments: [] },
     });
     const read = await call(test, `/${planId}`);
-    const question = sectionsOf((read.body as { json: unknown }).json).find(
-      (section) => section.slot === "intent",
-    );
-    const used = (
-      question as { blocks: { type: string; props: { used?: boolean } }[] }
-    )?.blocks.find((block) => block.type === "question")?.props.used;
-    expect({ status: done.status, used }).toEqual({
+    const intent = sectionIn((read.body as { json: unknown }).json, "intent");
+    const question = intent.blocks.find((block) => block.type === "question");
+    expect({ status: done.status, used: question?.props?.used }).toEqual({
       status: 200,
       used: true,
     });
@@ -194,8 +206,7 @@ describe("planningRoutes", () => {
     const editing = await call(test, `/${planId}/agent-editing`, {
       slot: "intent",
     });
-    const document = test.collab.documents.get(docName({ repo: NEW_PLAN.repo, planId }));
-    const states = [...(document?.awareness?.getStates().values() ?? [])];
+    const states = presenceStates(test.collab, { repo: NEW_PLAN.repo, planId });
     expect({ status: editing.status, states }).toEqual({
       status: 200,
       states: [{ user, editing: { slot: "intent" } }],

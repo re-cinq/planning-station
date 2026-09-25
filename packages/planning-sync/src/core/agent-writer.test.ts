@@ -1,11 +1,12 @@
 import { afterEach, describe, it, expect } from "vitest";
 import {
-  docName,
+  enforceTrue,
   inlineFromText,
   readView,
   SectionChangedError,
   type AgentOp,
   type PlanDocument,
+  type ReadBlock,
 } from "@re-cinq/planning-document";
 import {
   readyFeature,
@@ -19,7 +20,11 @@ import {
 } from "@re-cinq/planning-yjs";
 import { applyUpdate, Doc } from "yjs";
 
-import { startTestServer, type TestServer } from "../testing/test-server.js";
+import {
+  presenceStates,
+  startTestServer,
+  type TestServer,
+} from "../testing/test-server.js";
 
 const NEW_PLAN = {
   repo: "acme/shop",
@@ -99,12 +104,7 @@ describe("createAgentWriter", () => {
       actor: "planning-agent",
       ops: [INTENT],
     });
-    const reloaded = new Doc();
-    applyUpdate(reloaded, (await test.service.loadState(planId)) ?? NO_STATE);
-    const intentBlock = readView(readBlocks(reloaded))
-      .sections.find((section) => section.slot === "intent")
-      ?.blocks[0];
-    if (!intentBlock) throw new Error("intent block missing from written plan");
+    const intentBlock = await firstIntentBlock(test, planId);
     await test.writer.applyOps({
       planId,
       actor: "ana",
@@ -159,9 +159,10 @@ describe("createAgentWriter", () => {
 
   it("writes one version for three ops made while presence is open", async () => {
     const { test, planId } = await startPlan();
-    const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
-    await test.writer.openPresence({ planId, user });
+    await test.writer.openPresence({ planId, user: AGENT_USER });
+
     const before = (await test.store.listVersions(planId)).length;
+
     for (const text of ["One.", "Two.", "Three."]) {
       await test.writer.applyOps({
         planId,
@@ -169,22 +170,37 @@ describe("createAgentWriter", () => {
         ops: [{ op: "append-to-section", slot: "intent", paragraphs: [text] }],
       });
     }
+
     await test.writer.closePresence({ planId });
+
     const after = (await test.store.listVersions(planId)).length;
     expect(after - before).toEqual(1);
   });
 
   it("broadcasts the agent's name and color when it opens presence on the plan", async () => {
     const { test, planId } = await startPlan();
-    const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
-    await test.writer.openPresence({ planId, user });
-    const name = docName({ repo: NEW_PLAN.repo, planId });
-    const document = test.collab.documents.get(name);
-    expect([...(document?.awareness?.getStates().values() ?? [])]).toEqual([
-      { user, editing: { slot: null } },
-    ]);
+    await test.writer.openPresence({ planId, user: AGENT_USER });
+
+    expect(
+      presenceStates(test.collab, { repo: NEW_PLAN.repo, planId }),
+    ).toEqual([{ user: AGENT_USER, editing: { slot: null } }]);
   });
 });
 
 const CRASHED = "the agent crashed before its first turn";
 const NO_STATE = new Uint8Array();
+const AGENT_USER = { name: "Planning agent", color: "hsl(200 65% 45%)" };
+
+async function firstIntentBlock(
+  test: TestServer,
+  planId: string,
+): Promise<ReadBlock> {
+  const reloaded = new Doc();
+  applyUpdate(reloaded, (await test.service.loadState(planId)) ?? NO_STATE);
+  const { sections } = readView(readBlocks(reloaded));
+  const intent = sections.find((section) => section.slot === "intent");
+  const [block] = intent?.blocks ?? [];
+  enforceTrue(block, Error, "intent block missing from written plan");
+
+  return block;
+}
