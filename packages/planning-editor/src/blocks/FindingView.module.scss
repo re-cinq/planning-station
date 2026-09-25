@@ -1,0 +1,29 @@
+.finding {
+  width: 100%;
+  margin-bottom: var(--ps-space-inline);
+  padding: var(--ps-space-inline) calc(1.5 * var(--ps-space-inline));
+  background: var(--ps-bg-page);
+  border-left: 3px solid var(--ps-warning);
+  border-radius: var(--ps-radius);
+  line-height: var(--ps-lh-note);
+}
+
+.finding[data-severity="blocker"] {
+  border-left-color: var(--ps-danger);
+}
+
+.finding[data-resolved="true"] {
+  color: var(--ps-fg-muted);
+  border-left-color: var(--ps-rule);
+}
+
+.text {
+  min-height: 1.5em;
+  font-size: var(--ps-fs-hint);
+}
+
+.why {
+  margin: var(--ps-space-hint) 0 0;
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-label);
+}

@@ -9,6 +9,7 @@ type UnlabelledBlock =
   | "section-panel"
   | "section-actions"
   | "comment"
+  | "finding"
   | "question"
   | "mockup";
 
