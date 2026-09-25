@@ -1,4 +1,8 @@
-import { isPlanBlock, type BlockJson } from "../blocks/block-json.js";
+import {
+  blocksOfType,
+  isPlanBlock,
+  type BlockJson,
+} from "../blocks/block-json.js";
 import { plainText } from "../blocks/inline-text.js";
 import type { Section } from "../plan/plan-document.js";
 import {
@@ -156,6 +160,20 @@ function countMessage(
     ? `"${slot.title}" needs at least ${min} ${block}`
     : `"${slot.title}" allows at most ${max ?? min} ${block}`;
 }
+
+export const unresolvedFindings: Check = ({ plan: { sections }, phase }) =>
+  isAtLeast(phase, "approval")
+    ? sections.flatMap(({ slot, blocks }) =>
+        blocksOfType(blocks, "finding")
+          .filter((finding) => !finding.props.resolved)
+          .map((finding) => ({
+            code: "unresolved-finding" as const,
+            slot,
+            blockId: finding.id,
+            message: `finding "${plainText(finding.content)}" is unresolved`,
+          })),
+      )
+    : [];
 
 interface SectionWithSlot {
   section: Section;

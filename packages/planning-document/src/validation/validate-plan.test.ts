@@ -105,6 +105,24 @@ describe("validatePlan", () => {
     ).toEqual([]);
   });
 
+  it("reports an unresolved finding in intent as a blocker at approval", () => {
+    const withFinding = applyOps(READY_FEATURE, [
+      {
+        op: "add-finding",
+        slot: "intent",
+        findingId: "f-abc123",
+        text: "The plan promises Danish status labels but names none",
+        why: "FR-166 keys the card on fixed text",
+        severity: "blocker",
+      },
+    ]);
+    const report = validatePlan(plan(withFinding), "approval");
+    expect(
+      report.problems.filter((problem) => problem.code === "unresolved-finding"),
+    ).toMatchObject([{ code: "unresolved-finding", slot: "intent", blockId: "f-abc123" }]);
+    expect(report.passed).toBe(false);
+  });
+
   it("reports missing-section for a plan without the kpis heading at draft", () => {
     expect(codes([heading("intent", "What we want and why")], "draft")).toEqual(
       [["missing-section", "kpis"]],

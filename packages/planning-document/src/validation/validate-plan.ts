@@ -8,6 +8,7 @@ import {
   missingSections,
   sectionOrder,
   unknownSections,
+  unresolvedFindings,
 } from "./section-checks.js";
 import { prototypeMinimum } from "./prototype-check.js";
 
@@ -19,6 +20,7 @@ const CHECKS: readonly Check[] = [
   emptyRequiredSections,
   blockRequirements,
   prototypeMinimum,
+  unresolvedFindings,
 ];
 
 export function validatePlan(
