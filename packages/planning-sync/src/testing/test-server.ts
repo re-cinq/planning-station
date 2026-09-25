@@ -1,4 +1,6 @@
 import Hapi from "@hapi/hapi";
+import type { Hocuspocus } from "@hocuspocus/server";
+import { docName } from "@re-cinq/planning-document";
 
 import type { AgentWriter } from "../core/agent-writer.js";
 import type {
@@ -17,6 +19,7 @@ export interface TestServer {
   service: PlanningService;
   writer: AgentWriter;
   store: PlanStore;
+  collab: Hocuspocus;
   close(): Promise<void>;
 }
 
@@ -33,7 +36,7 @@ export async function startTestServer(
 ): Promise<TestServer> {
   const store = options.store ?? createMemoryPlanStore();
   const server = Hapi.server({ port: 0, host: "127.0.0.1" });
-  const { service, writer } = registerPlanningSync(server, {
+  const planning = registerPlanningSync(server, {
     ...options,
     store,
     authenticator: options.authenticator ?? nameTokenAuthenticator(),
@@ -43,8 +46,7 @@ export async function startTestServer(
 
   return {
     ...urlsOf(server.info.uri),
-    service,
-    writer,
+    ...planning,
     store,
     close: () => server.stop(),
   };
@@ -67,4 +69,15 @@ export function nameTokenAuthenticator(): CollabAuthenticator {
 
 function asRole(role: string | undefined): PlanRole {
   return role === "read" ? "read" : "write";
+}
+
+/** Who the live document for one plan is showing as present, as each viewer broadcast it. */
+export function presenceStates(
+  collab: Hocuspocus,
+  plan: { repo: string; planId: string },
+): unknown[] {
+  const document = collab.documents.get(docName(plan));
+  const states = document?.awareness.getStates();
+
+  return [...(states?.values() ?? [])];
 }

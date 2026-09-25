@@ -36,7 +36,7 @@ inside its existing process.
 - The editor package ships an in-memory hub that relays updates between the peers on one page, for tests and the proof of concept ([validated by](../packages/planning-editor/src/session/memory-hub.test.ts#L42)).
 - The editor package ships a transport that wraps one `HocuspocusProvider`, and nothing else in the editor knows a network exists ([validated by](../packages/planning-editor/src/transports/plan-provider.test.ts#L56)).
 - `PlanStore` is the one persistence port: the sync package ships an in-memory store, and a host's own store is checked against the same contract ([validated by](../packages/planning-sync/src/memory/memory-plan-store.test.ts#L10)).
-- `@re-cinq/planning-sync` registers its routes and its collaboration socket on the host's own hapi server, so the host keeps one process and one port ([validated by](../packages/planning-sync/src/hapi/routes.test.ts#L62), [validated by](../packages/planning-sync/src/core/collab-server.test.ts#L97)).
+- `@re-cinq/planning-sync` registers its routes and its collaboration socket on the host's own hapi server, so the host keeps one process and one port ([validated by](../packages/planning-sync/src/hapi/routes.test.ts#L79), [validated by](../packages/planning-sync/src/core/collab-server.test.ts#L97)).
 - The host decides who may open a plan, through the `CollabAuthenticator` port; the library verifies no tokens itself ([validated by](../packages/planning-sync/src/core/collab-server.test.ts#L118)).
 
 ## Implementation phases

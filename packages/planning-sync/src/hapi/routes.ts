@@ -30,7 +30,7 @@ export interface RouteOptions {
 }
 
 interface RouteSpec {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   path: string;
   status: number;
   run: (api: PlanningApi, request: Request) => Promise<object>;
@@ -56,6 +56,9 @@ const agentEditsSchema = z.object({
   base: z
     .object({ slot: z.string().min(1), hash: z.string().min(1) })
     .optional(),
+  expect: z
+    .object({ blockId: z.string().min(1), hash: z.string().min(1) })
+    .optional(),
 });
 
 const proposalSchema = z.object({
@@ -65,6 +68,17 @@ const proposalSchema = z.object({
   ops: agentOpsSchema,
   uses: refineUsesSchema.default({ questions: [], comments: [] }),
 });
+
+const finishRefineSchema = z.object({
+  slot: z.string().min(1),
+  uses: refineUsesSchema,
+});
+
+const agentPresenceSchema = z.object({
+  user: z.object({ name: z.string().min(1), color: z.string().min(1) }),
+});
+
+const agentEditingSchema = z.object({ slot: z.string().min(1) });
 
 const ROUTES: readonly RouteSpec[] = [
   {
@@ -120,6 +134,53 @@ const ROUTES: readonly RouteSpec[] = [
         planId: planId(request),
         ...agentEditsSchema.parse(request.payload),
       }),
+  },
+  {
+    method: "POST",
+    path: "/{planId}/refine-done",
+    status: 200,
+    run: async ({ writer }, request) => {
+      const body = finishRefineSchema.parse(request.payload);
+      await writer.finishRefine({ planId: planId(request), ...body });
+
+      return { slot: body.slot };
+    },
+  },
+  {
+    method: "POST",
+    path: "/{planId}/agent-presence",
+    status: 200,
+    run: async ({ writer }, request) => {
+      const id = planId(request);
+      await writer.openPresence({
+        planId: id,
+        ...agentPresenceSchema.parse(request.payload),
+      });
+
+      return { planId: id };
+    },
+  },
+  {
+    method: "DELETE",
+    path: "/{planId}/agent-presence",
+    status: 200,
+    run: async ({ writer }, request) => {
+      const id = planId(request);
+      await writer.closePresence({ planId: id });
+
+      return { planId: id };
+    },
+  },
+  {
+    method: "POST",
+    path: "/{planId}/agent-editing",
+    status: 200,
+    run: async ({ writer }, request) => {
+      const body = agentEditingSchema.parse(request.payload);
+      await writer.setEditing({ planId: planId(request), ...body });
+
+      return { slot: body.slot };
+    },
   },
   {
     method: "POST",

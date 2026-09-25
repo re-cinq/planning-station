@@ -1,8 +1,13 @@
 import { afterEach, describe, it, expect } from "vitest";
 import { docFromBlocks } from "@re-cinq/planning-yjs";
+import { enforceTrue } from "@re-cinq/planning-document";
 import { readyFeature } from "@re-cinq/planning-document/testing";
 
-import { startTestServer, type TestServer } from "../testing/test-server.js";
+import {
+  presenceStates,
+  startTestServer,
+  type TestServer,
+} from "../testing/test-server.js";
 
 const NEW_PLAN = {
   repo: "acme/shop",
@@ -38,8 +43,20 @@ const createdPlan = async (test: TestServer) => {
   return String((created.body as { meta: { id: string } }).meta.id);
 };
 
+interface WireSection {
+  slot: string;
+  blocks: { type: string; props?: { used?: boolean } }[];
+}
+
 const sectionsOf = (body: unknown) =>
-  (body as { sections: { slot: string }[] }).sections;
+  (body as { sections: WireSection[] }).sections;
+
+const sectionIn = (body: unknown, slot: string) => {
+  const section = sectionsOf(body).find((candidate) => candidate.slot === slot);
+  enforceTrue(section, Error, `no ${slot} section in the plan`);
+
+  return section;
+};
 
 const readyPlan = async (test: TestServer) => {
   const planId = await createdPlan(test);
@@ -151,6 +168,48 @@ describe("planningRoutes", () => {
         { type: "paragraph" },
         { type: "section-actions" },
       ],
+    });
+  });
+
+  it("marks q-1 used after refine-done on intent", async () => {
+    const test = await server();
+    const planId = await createdPlan(test);
+    await call(test, `/${planId}/agent-edits`, {
+      actor: "planning-agent",
+      ops: [
+        {
+          op: "add-question",
+          slot: "intent",
+          questionId: "q-1",
+          question: "Who is this for?",
+        },
+      ],
+    });
+    const done = await call(test, `/${planId}/refine-done`, {
+      slot: "intent",
+      uses: { questions: ["q-1"], comments: [] },
+    });
+    const read = await call(test, `/${planId}`);
+    const intent = sectionIn((read.body as { json: unknown }).json, "intent");
+    const question = intent.blocks.find((block) => block.type === "question");
+    expect({ status: done.status, used: question?.props?.used }).toEqual({
+      status: 200,
+      used: true,
+    });
+  });
+
+  it("shows the agent editing intent after opening presence and setting the slot", async () => {
+    const test = await server();
+    const planId = await createdPlan(test);
+    const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
+    await call(test, `/${planId}/agent-presence`, { user });
+    const editing = await call(test, `/${planId}/agent-editing`, {
+      slot: "intent",
+    });
+    const states = presenceStates(test.collab, { repo: NEW_PLAN.repo, planId });
+    expect({ status: editing.status, states }).toEqual({
+      status: 200,
+      states: [{ user, editing: { slot: "intent" } }],
     });
   });
 

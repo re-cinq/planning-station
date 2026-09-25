@@ -215,6 +215,24 @@ export function discardRefine(doc: Doc, slot: string, origin?: unknown): void {
   doc.transact(() => proposalMap(doc).delete(slot), origin);
 }
 
+/** What direct live edits answered: the section they answered for, and what they used. */
+export interface FinishRequest {
+  slot: string;
+  uses: RefineUses;
+}
+
+/** Marks what the direct edits used and clears the section's ask, in one transaction. */
+export function finishRefine(
+  doc: Doc,
+  request: FinishRequest,
+  origin?: unknown,
+): void {
+  doc.transact(() => {
+    rewriteDoc(doc, (blocks) => markUsed(blocks, request.uses), origin);
+    proposalMap(doc).delete(request.slot);
+  }, origin);
+}
+
 /** Writes the proposal into its section and marks what it used, unless the section changed after asking. */
 export function acceptRefine(
   doc: Doc,

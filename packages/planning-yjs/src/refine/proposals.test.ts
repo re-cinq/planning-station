@@ -20,6 +20,7 @@ import {
   askRefine,
   discardRefine,
   failRefine,
+  finishRefine,
   NoProposalError,
   proposalsIn,
   proposePass,
@@ -155,6 +156,28 @@ describe("refine proposals", () => {
   it("throws NoProposalError when scope is accepted before the agent answered", () => {
     const { doc } = askedByAna();
     expect(() => acceptRefine(doc, "scope")).toThrow(NoProposalError);
+  });
+});
+
+describe("finishRefine", () => {
+  it("clears the ask and marks q-1 used after direct live edits answer intent", () => {
+    const doc = docFromBlocks(
+      planWith("feature", {
+        intent: [textBlock("question", { questionId: "q-1" }, "Which tier?")],
+      }),
+    );
+    askRefine(doc, { slot: "intent", askedBy: "Ana" });
+
+    finishRefine(doc, {
+      slot: "intent",
+      uses: { questions: ["q-1"], comments: [] },
+    });
+
+    const question = readBlocks(doc).find((block) => block.type === "question");
+    expect({
+      ask: proposalsIn(doc).find((proposal) => proposal.slot === "intent"),
+      used: question?.props.used,
+    }).toEqual({ ask: undefined, used: true });
   });
 });
 
