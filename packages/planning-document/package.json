@@ -1,6 +1,6 @@
 {
   "name": "@re-cinq/planning-document",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "The plan document contract: JSON schema, templates, projection and validation.",
   "license": "Apache-2.0",
   "type": "module",

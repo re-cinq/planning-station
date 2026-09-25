@@ -49,6 +49,7 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 - Projecting the blocks gives a plan document the schema accepts, with its sections and derived views ([validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L40), [validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L49)).
 - The round trip holds both ways: blocks to plan to blocks, and plan to blocks to plan ([validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L58), [validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L64)).
 - A new plan is seeded with its title, then one heading, one panel and one actions block per template section, in template order, with generated ids ([validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L71), [validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L87), [validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L94)).
+- The read view an agent edits against lists each section's slot, title and blocks, each block with its id, type, plain text, the hash of its content and, for a plan block, its props; a section's own heading, panel and actions never appear in it ([validated by lists the seeded paragraph under the intent section](../../packages/planning-document/src/projection/read-view.test.ts#L8)).
 
 ## Agent edits
 

@@ -3,11 +3,7 @@ import { describe, it, expect } from "vitest";
 import { blockHash } from "../blocks/block-hash.js";
 import { inlineFromText } from "../blocks/inline-text.js";
 import { planWith, textBlock } from "../testing/plans.js";
-import {
-  changesFor,
-  changeWords,
-  type PlanChange,
-} from "./plan-change.js";
+import { changesFor, changeWords, type PlanChange } from "./plan-change.js";
 
 const PLAN = planWith("feature", {
   intent: [

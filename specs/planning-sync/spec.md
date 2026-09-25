@@ -38,6 +38,9 @@ The sync library is the plan's server side, registered inside the host's own hap
 - The planning agent's ops go into the live document, and what it wrote is still there for the next reader ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L69), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L79)).
 - An agent write changes the plan's content only; its workflow status is left alone ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L90)).
 - When the agent could not answer a person's Refine, the host fails it with the reason, and the next reader sees the failed refine; a failure for a section nobody asked about writes nothing ([validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L141), [validated by](../../packages/planning-sync/src/core/agent-writer.test.ts#L153)).
+- An agent write may name the block it read and the hash it read it at; when a person changed that block since, the write is refused with SectionChangedError naming the block, so the agent reads again instead of writing over their words ([validated by refuses a per-block write when that block changed since the agent read it](../../packages/planning-sync/src/core/agent-writer.test.ts#L100)).
+- While the agent is present on a plan it holds one connection to the document: its writes go through that connection and the store's debounce folds them into one version, instead of one version per op ([validated by writes one version for three ops made while presence is open](../../packages/planning-sync/src/core/agent-writer.test.ts#L160)).
+- Opening the agent's presence sets an awareness state on the plan's document — its name and color, and the section it edits, none at first — so every client lists it beside the people on the plan; closing it clears the state and releases the connection ([validated by broadcasts the agent's name and color when it opens presence on the plan](../../packages/planning-sync/src/core/agent-writer.test.ts#L180)).
 
 ## Routes
 
@@ -46,6 +49,8 @@ The sync library is the plan's server side, registered inside the host's own hap
 - The versions of a plan are listed in the order they were written ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L128)).
 - The agent's ops have their own route, which answers the plan they wrote ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L152)).
 - Errors answer as RFC 9457 problem details: 404 for an unknown plan, 401 when the host's own check refuses the caller, 400 for a payload that is not a plan ([validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L94), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L136), [validated by](../../packages/planning-sync/src/hapi/routes.test.ts#L144)).
+- A Refine the agent answered with live edits is finished over its own route, which marks the questions and comments it used and clears the ask ([validated by marks q-1 used after refine-done on intent](../../packages/planning-sync/src/hapi/routes.test.ts#L174)).
+- The agent's presence is opened, moved to the section it edits, and closed over routes of its own, and the section shows in its awareness state ([validated by shows the agent editing intent after opening presence and setting the slot](../../packages/planning-sync/src/hapi/routes.test.ts#L201)).
 
 ## Refine proposals
 

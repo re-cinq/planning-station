@@ -41,6 +41,7 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 - When the agent could not answer, the ask turns failed with the reason, keeping who asked, when, and the section hash it was asked against ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L253)).
 - A failure that arrives after the agent's proposal leaves the proposal alone, and a failure for a section nobody asked about writes nothing; either way the caller is told what the section holds ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L270), [validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L280)).
 - Asking again replaces a failed refine with a fresh ask ([validated by](../../packages/planning-yjs/src/refine/proposals.test.ts#L289)).
+- A Refine answered by direct live edits, not a proposal, is finished in one transaction: the inputs it used are marked and the ask is cleared, so the section stops saying the agent is refining it ([validated by clears the ask and marks q-1 used after direct live edits answer intent](../../packages/planning-yjs/src/refine/proposals.test.ts#L163)).
 
 ## Changes, one paragraph at a time
 

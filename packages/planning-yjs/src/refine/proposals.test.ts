@@ -163,9 +163,7 @@ describe("finishRefine", () => {
   it("clears the ask and marks q-1 used after direct live edits answer intent", () => {
     const doc = docFromBlocks(
       planWith("feature", {
-        intent: [
-          textBlock("question", { questionId: "q-1" }, "Which tier?"),
-        ],
+        intent: [textBlock("question", { questionId: "q-1" }, "Which tier?")],
       }),
     );
     askRefine(doc, { slot: "intent", askedBy: "Ana" });
