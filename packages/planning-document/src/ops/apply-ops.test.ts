@@ -282,6 +282,22 @@ describe("applyOps add-finding", () => {
     ]);
   });
 
+  it("places the finding before the section's existing paragraph", () => {
+    const withProse = planWith("feature", {
+      intent: [textBlock("paragraph", {}, "Checkout is slow.")],
+    });
+    const blocks = applied([LABELS_MISSING], withProse);
+    const intent = planOf(blocks).sections.find(
+      (section) => section.slot === "intent",
+    );
+    expect(intent?.blocks.map((block) => block.type)).toEqual([
+      "section-panel",
+      "finding",
+      "paragraph",
+      "section-actions",
+    ]);
+  });
+
   it("keeps a resolved finding resolved when the same findingId is re-applied", () => {
     const firstPass = applied([LABELS_MISSING]);
     const secondPass = applyOps(resolved(firstPass, "f-abc123"), [
