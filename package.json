@@ -1,0 +1,53 @@
+{
+  "name": "@re-cinq/planning-sync",
+  "version": "0.8.0",
+  "description": "The plan's server side: a PlanStore port, an in-memory store, the collaboration server and a hapi adapter.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./memory": {
+      "types": "./dist/memory/index.d.ts",
+      "default": "./dist/memory/index.js"
+    },
+    "./hapi": {
+      "types": "./dist/hapi/index.d.ts",
+      "default": "./dist/hapi/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    }
+  },
+  "peerDependencies": {
+    "@hapi/hapi": "^21.4.0",
+    "yjs": "^13.6.27"
+  },
+  "peerDependenciesMeta": {
+    "@hapi/hapi": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@hocuspocus/server": "^4.7.0",
+    "@re-cinq/planning-document": "git+https://github.com/re-cinq/planning-station.git#planning-document-dist-v0.8.0",
+    "@re-cinq/planning-yjs": "git+https://github.com/re-cinq/planning-station.git#planning-yjs-dist-v0.8.0",
+    "ws": "^8.21.3",
+    "y-protocols": "^1.0.7",
+    "zod": "^4.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/re-cinq/planning-station.git",
+    "directory": "packages/planning-sync"
+  }
+}
