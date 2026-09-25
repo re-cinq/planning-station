@@ -1,4 +1,5 @@
 import Hapi from "@hapi/hapi";
+import type { Hocuspocus } from "@hocuspocus/server";
 
 import type { AgentWriter } from "../core/agent-writer.js";
 import type {
@@ -17,6 +18,7 @@ export interface TestServer {
   service: PlanningService;
   writer: AgentWriter;
   store: PlanStore;
+  collab: Hocuspocus;
   close(): Promise<void>;
 }
 
@@ -33,7 +35,7 @@ export async function startTestServer(
 ): Promise<TestServer> {
   const store = options.store ?? createMemoryPlanStore();
   const server = Hapi.server({ port: 0, host: "127.0.0.1" });
-  const { service, writer } = registerPlanningSync(server, {
+  const { service, writer, collab } = registerPlanningSync(server, {
     ...options,
     store,
     authenticator: options.authenticator ?? nameTokenAuthenticator(),
@@ -46,6 +48,7 @@ export async function startTestServer(
     service,
     writer,
     store,
+    collab,
     close: () => server.stop(),
   };
 }

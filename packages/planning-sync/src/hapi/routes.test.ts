@@ -154,6 +154,37 @@ describe("planningRoutes", () => {
     });
   });
 
+  it("marks q-1 used after refine-done on intent", async () => {
+    const test = await server();
+    const planId = await createdPlan(test);
+    await call(test, `/${planId}/agent-edits`, {
+      actor: "planning-agent",
+      ops: [
+        {
+          op: "add-question",
+          slot: "intent",
+          questionId: "q-1",
+          question: "Who is this for?",
+        },
+      ],
+    });
+    const done = await call(test, `/${planId}/refine-done`, {
+      slot: "intent",
+      uses: { questions: ["q-1"], comments: [] },
+    });
+    const read = await call(test, `/${planId}`);
+    const question = sectionsOf((read.body as { json: unknown }).json).find(
+      (section) => section.slot === "intent",
+    );
+    const used = (
+      question as { blocks: { type: string; props: { used?: boolean } }[] }
+    )?.blocks.find((block) => block.type === "question")?.props.used;
+    expect({ status: done.status, used }).toEqual({
+      status: 200,
+      used: true,
+    });
+  });
+
   it("tells the host's onApproved which plan the route approved", async () => {
     const approved: string[] = [];
     running = await startTestServer({

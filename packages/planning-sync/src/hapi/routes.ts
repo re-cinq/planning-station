@@ -69,6 +69,11 @@ const proposalSchema = z.object({
   uses: refineUsesSchema.default({ questions: [], comments: [] }),
 });
 
+const finishRefineSchema = z.object({
+  slot: z.string().min(1),
+  uses: refineUsesSchema,
+});
+
 const ROUTES: readonly RouteSpec[] = [
   {
     method: "POST",
@@ -123,6 +128,17 @@ const ROUTES: readonly RouteSpec[] = [
         planId: planId(request),
         ...agentEditsSchema.parse(request.payload),
       }),
+  },
+  {
+    method: "POST",
+    path: "/{planId}/refine-done",
+    status: 200,
+    run: async ({ writer }, request) => {
+      const body = finishRefineSchema.parse(request.payload);
+      await writer.finishRefine({ planId: planId(request), ...body });
+
+      return { slot: body.slot };
+    },
   },
   {
     method: "POST",

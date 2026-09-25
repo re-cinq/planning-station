@@ -1,5 +1,6 @@
 import { afterEach, describe, it, expect } from "vitest";
 import {
+  docName,
   inlineFromText,
   readView,
   SectionChangedError,
@@ -154,6 +155,17 @@ describe("createAgentWriter", () => {
     expect(
       await test.writer.failRefine({ planId, slot: "intent", reason: CRASHED }),
     ).toBeUndefined();
+  });
+
+  it("broadcasts the agent's name and color when it opens presence on the plan", async () => {
+    const { test, planId } = await startPlan();
+    const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
+    await test.writer.openPresence({ planId, user });
+    const name = docName({ repo: NEW_PLAN.repo, planId });
+    const document = test.collab.documents.get(name);
+    expect([...(document?.awareness?.getStates().values() ?? [])]).toEqual([
+      { user, editing: { slot: null } },
+    ]);
   });
 });
 

@@ -17,6 +17,7 @@ import {
   applyOpsToDoc,
   enforceSectionUnchanged,
   failRefine,
+  finishRefine,
   proposeChanges,
   proposePass,
   proposeRefine,
@@ -68,6 +69,29 @@ export interface AgentWriter {
   proposeChanges(request: PassRequest): Promise<PlanChange[]>;
   /** The agent could not answer a person's Refine: the ask shows as failed, with the reason, until someone asks again. Resolves to what the section holds afterwards; a proposal already there is kept. */
   failRefine(request: FailRequest): Promise<RefineProposal | undefined>;
+  /** Marks what a direct edit used and clears the section's ask. */
+  finishRefine(request: FinishRefineRequest): Promise<void>;
+  /** Announces the agent's presence on the plan, broadcast to every viewer. */
+  openPresence(request: PresenceRequest): Promise<void>;
+  /** Updates which section the agent is currently working. */
+  setEditing(request: EditingRequest): Promise<void>;
+  /** Withdraws the agent's presence from the plan. */
+  closePresence(request: { planId: string }): Promise<void>;
+}
+
+export interface PresenceUser {
+  name: string;
+  color: string;
+}
+
+export interface PresenceRequest {
+  planId: string;
+  user: PresenceUser;
+}
+
+export interface EditingRequest {
+  planId: string;
+  slot: string | null;
 }
 
 /** Why the agent could not answer the Refine a person asked for one section. */
@@ -77,19 +101,77 @@ export interface FailRequest {
   reason: string;
 }
 
+/** What a direct live edit answered: the section it answered for, and what it used. */
+export interface FinishRefineRequest {
+  planId: string;
+  slot: string;
+  uses: RefineUses;
+}
+
 export interface AgentWriterOptions {
   service: PlanningService;
   collab: Hocuspocus;
 }
 
+type PresenceConnection = Awaited<
+  ReturnType<Hocuspocus["openDirectConnection"]>
+>;
+
 export function createAgentWriter(options: AgentWriterOptions): AgentWriter {
+  const presences = new Map<string, PresenceConnection>();
+
   return {
     applyOps: (request) => write(options, request),
     propose: (request) => propose(options, request),
     proposePass: (request) => pass(options, request),
     proposeChanges: (request) => changes(options, request),
     failRefine: (request) => fail(options, request),
+    finishRefine: (request) => finish(options, request),
+    openPresence: (request) => openPresence(options, presences, request),
+    setEditing: (request) => setEditing(presences, request),
+    closePresence: (request) => closePresence(presences, request),
   };
+}
+
+async function openPresence(
+  options: AgentWriterOptions,
+  presences: Map<string, PresenceConnection>,
+  { planId, user }: PresenceRequest,
+): Promise<void> {
+  const { json } = await options.service.readPlan(planId);
+  const name = docName({ repo: json.repo, planId: json.id });
+  const connection = await options.collab.openDirectConnection(name);
+
+  enforceTrue(
+    connection.document !== null,
+    Error,
+    `no document to broadcast presence on for plan ${planId}`,
+  );
+  presences.set(planId, connection);
+  connection.document?.awareness?.setLocalState({
+    user,
+    editing: { slot: null },
+  });
+}
+
+async function setEditing(
+  presences: Map<string, PresenceConnection>,
+  { planId, slot }: EditingRequest,
+): Promise<void> {
+  const connection = presences.get(planId);
+  connection?.document?.awareness?.setLocalStateField("editing", { slot });
+}
+
+async function closePresence(
+  presences: Map<string, PresenceConnection>,
+  { planId }: { planId: string },
+): Promise<void> {
+  const connection = presences.get(planId);
+  if (!connection) return;
+
+  connection.document?.awareness?.setLocalState(null);
+  await connection.disconnect();
+  presences.delete(planId);
 }
 
 async function fail(
@@ -100,6 +182,17 @@ async function fail(
 
   return inDocument(options, json, (document) =>
     failRefine(document, failure, AGENT_ORIGIN),
+  );
+}
+
+async function finish(
+  options: AgentWriterOptions,
+  { planId, ...request }: FinishRefineRequest,
+): Promise<void> {
+  const { json } = await options.service.readPlan(planId);
+
+  await inDocument(options, json, (document) =>
+    finishRefine(document, request, AGENT_ORIGIN),
   );
 }
 
