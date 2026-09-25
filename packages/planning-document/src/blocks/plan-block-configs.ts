@@ -9,6 +9,7 @@ export const PROTOTYPE_MATURITIES = [
 ] as const;
 export const MOCKUP_FORMATS = ["svg", "mermaid", "html"] as const;
 export const QUESTION_KINDS = ["text", "choice"] as const;
+export const FINDING_SEVERITIES = ["blocker", "warning"] as const;
 
 export const PLAN_BLOCK_CONFIGS = {
   "plan-title": {
@@ -91,6 +92,17 @@ export const PLAN_BLOCK_CONFIGS = {
     type: "answer",
     content: "inline",
     propSchema: { questionId: { default: "" } },
+  },
+  finding: {
+    type: "finding",
+    content: "inline",
+    propSchema: {
+      findingId: { default: "" },
+      severity: { default: "warning", values: FINDING_SEVERITIES },
+      why: { default: "" },
+      resolved: { default: false },
+      used: { default: false },
+    },
   },
 } as const;
 

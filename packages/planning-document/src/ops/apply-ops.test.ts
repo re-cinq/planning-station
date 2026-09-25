@@ -232,6 +232,39 @@ describe("applyOps set-section-title", () => {
   });
 });
 
+describe("applyOps add-finding", () => {
+  it("adds a blocker finding to the intent section", () => {
+    const blocks = applied([
+      {
+        op: "add-finding",
+        slot: "intent",
+        findingId: "f-abc123",
+        text: "The plan promises Danish status labels but names none",
+        why: "FR-166 keys the card on fixed text",
+        severity: "blocker",
+      },
+    ]);
+    const intent = planOf(blocks).sections.find(
+      (section) => section.slot === "intent",
+    );
+    expect(intent?.blocks.slice(-2)).toMatchObject([
+      {
+        id: "f-abc123",
+        type: "finding",
+        props: {
+          findingId: "f-abc123",
+          severity: "blocker",
+          why: "FR-166 keys the card on fixed text",
+          resolved: false,
+          used: false,
+        },
+        content: [{ text: "The plan promises Danish status labels but names none" }],
+      },
+      { type: "section-actions" },
+    ]);
+  });
+});
+
 describe("applyOps add-question", () => {
   it("asks q-flag in scope, before the section's actions", () => {
     const blocks = applied([

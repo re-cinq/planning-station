@@ -11,6 +11,7 @@ import { actionsBlock, panelBlock } from "../projection/seed.js";
 import { isCustomSlot } from "../template/templates.js";
 import type {
   AgentOp,
+  FindingInput,
   KpiInput,
   PrototypeInput,
   QuestionInput,
@@ -73,6 +74,7 @@ const HANDLERS: Handlers = {
   "add-section": addSection,
   "set-section-title": setSectionTitle,
   "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
+  "add-finding": (blocks, op) => upsert(blocks, op.slot, findingBlock(op)),
 };
 
 /** Applies the planning agent's edits to a plan's blocks. */
@@ -137,6 +139,7 @@ function upsert(
 const ENTITY_KEYS: Partial<Record<string, (block: BlockJson) => string>> = {
   kpi: (block) => propOf(block, "kpiId"),
   question: (block) => propOf(block, "questionId"),
+  finding: (block) => propOf(block, "findingId"),
   prototype: () => PROTOTYPE_SLOT,
 };
 
@@ -189,6 +192,17 @@ function questionBlock(input: QuestionInput): BlockJson {
     type: "question",
     props: { questionId, why, kind, options: encodeOptions(options) },
     content: inlineFromText(question),
+  });
+}
+
+function findingBlock(input: FindingInput): BlockJson {
+  const { findingId, text, why, severity } = input;
+
+  return parseBlock({
+    id: findingId,
+    type: "finding",
+    props: { findingId, severity, why, resolved: false, used: false },
+    content: inlineFromText(text),
   });
 }
 

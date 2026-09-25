@@ -50,6 +50,12 @@ const RENDERERS: { [Kind in PlanBlockKind]: Render<Kind> } = {
       ` by ${block.props.author}${resolvedMark(block)}: ${oneLine(block)}`,
     ),
   ],
+  finding: (block) => [
+    quoted(
+      "Finding",
+      ` (${block.props.findingId}, ${block.props.severity}): ${oneLine(block)}`,
+    ),
+  ],
 };
 
 /** Prose is written as the Markdown it reads as: lists, subheadings, quotes, code, tables, marks and links. */
