@@ -121,7 +121,7 @@ export function createAgentWriter(options: AgentWriterOptions): AgentWriter {
   const presences = new Map<string, PresenceConnection>();
 
   return {
-    applyOps: (request) => write(options, request),
+    applyOps: (request) => write(options, presences, request),
     propose: (request) => propose(options, request),
     proposePass: (request) => pass(options, request),
     proposeChanges: (request) => changes(options, request),
@@ -198,15 +198,21 @@ async function finish(
 
 async function write(
   options: AgentWriterOptions,
+  presences: Map<string, PresenceConnection>,
   request: OpsRequest,
 ): Promise<PlanDocument> {
   const { json } = await options.service.readPlan(request.planId);
-  const blocks = await inDocument(options, json, (document) => {
-    enforceBase(document, request.base);
-    enforceBlock(document, request.expect);
+  const blocks = await inDocument(
+    options,
+    json,
+    (document) => {
+      enforceBase(document, request.base);
+      enforceBlock(document, request.expect);
 
-    return applyOpsToDoc(document, request.ops, AGENT_ORIGIN);
-  });
+      return applyOpsToDoc(document, request.ops, AGENT_ORIGIN);
+    },
+    presences,
+  );
 
   return toPlanDocument(blocks, json);
 }
@@ -268,6 +274,30 @@ function enforceBlock(
 }
 
 async function inDocument<Result>(
+  options: AgentWriterOptions,
+  meta: PlanMeta,
+  work: (document: Document) => Result,
+  presences?: Map<string, PresenceConnection>,
+): Promise<Result> {
+  const held = presences?.get(meta.id);
+
+  return held
+    ? inHeldDocument(held, work)
+    : inFreshDocument(options, meta, work);
+}
+
+async function inHeldDocument<Result>(
+  connection: PresenceConnection,
+  work: (document: Document) => Result,
+): Promise<Result> {
+  const results: Result[] = [];
+
+  await connection.transact((document) => results.push(work(document)));
+
+  return results[0] as Result;
+}
+
+async function inFreshDocument<Result>(
   options: AgentWriterOptions,
   meta: PlanMeta,
   work: (document: Document) => Result,

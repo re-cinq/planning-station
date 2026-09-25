@@ -157,6 +157,23 @@ describe("createAgentWriter", () => {
     ).toBeUndefined();
   });
 
+  it("writes one version for three ops made while presence is open", async () => {
+    const { test, planId } = await startPlan();
+    const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
+    await test.writer.openPresence({ planId, user });
+    const before = (await test.store.listVersions(planId)).length;
+    for (const text of ["One.", "Two.", "Three."]) {
+      await test.writer.applyOps({
+        planId,
+        actor: "planning-agent",
+        ops: [{ op: "append-to-section", slot: "intent", paragraphs: [text] }],
+      });
+    }
+    await test.writer.closePresence({ planId });
+    const after = (await test.store.listVersions(planId)).length;
+    expect(after - before).toEqual(1);
+  });
+
   it("broadcasts the agent's name and color when it opens presence on the plan", async () => {
     const { test, planId } = await startPlan();
     const user = { name: "Planning agent", color: "hsl(200 65% 45%)" };
