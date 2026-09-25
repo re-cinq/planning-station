@@ -3,13 +3,14 @@ import { describe, it, expect } from "vitest";
 import { templateFor } from "@re-cinq/planning-document";
 
 import {
+  colorClaims,
   presenceLabel,
   presenceUsers,
   type AwarenessState,
 } from "./presence-users.js";
 
 const ANA_STATE: AwarenessState = {
-  user: { name: "Ana", color: "#d33682" },
+  user: { id: "ana", name: "Ana", color: "#d33682", joinedAt: 10 },
   editing: { slot: "kpis" },
 };
 
@@ -25,6 +26,7 @@ describe("presenceUsers", () => {
     expect(presenceUsers(both, 1)).toEqual([
       {
         clientId: 2,
+        id: "ana",
         name: "Ana",
         color: "#d33682",
         slot: "kpis",
@@ -50,12 +52,39 @@ describe("presenceUsers", () => {
       { name: "Ana", slot: null },
     ]);
   });
+
+  it("keys a peer that announced no id by its client id", () => {
+    const anonymous = states([[4, { user: { name: "Ana" } }]]);
+    expect(presenceUsers(anonymous, 1)).toMatchObject([{ id: "4" }]);
+  });
+});
+
+describe("colorClaims", () => {
+  it("claims Ana's announced color, the viewer's own included, and skips a client with no user", () => {
+    const all = states([
+      [1, { user: { id: "ben", name: "Ben", joinedAt: 20 } }],
+      [2, ANA_STATE],
+      [3, {}],
+    ]);
+    expect(colorClaims(all)).toEqual([
+      { clientId: 1, userId: "ben", joinedAt: 20, color: undefined },
+      { clientId: 2, userId: "ana", joinedAt: 10, color: "#d33682" },
+    ]);
+  });
+
+  it("puts a peer that announced no join time after everyone who did", () => {
+    const legacy = states([[5, { user: { name: "Old" } }]]);
+    expect(colorClaims(legacy)).toMatchObject([
+      { userId: "5", joinedAt: Number.MAX_SAFE_INTEGER },
+    ]);
+  });
 });
 
 describe("presenceLabel", () => {
   const template = templateFor("feature");
   const ana = {
     clientId: 2,
+    id: "ana",
     name: "Ana",
     color: "#d33682",
     slot: "kpis",

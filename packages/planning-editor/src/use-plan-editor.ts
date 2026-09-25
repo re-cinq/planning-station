@@ -12,6 +12,8 @@ import {
   projectBlocks,
   type PlanBlockNoteEditor,
 } from "./schema/block-bridge.js";
+import { PALETTE } from "./presence/palette.js";
+import { peerCursor } from "./presence/peer-cursor.js";
 import { planSchema } from "./schema/plan-schema.js";
 import type { PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
@@ -56,8 +58,9 @@ function useCollaborativeEditor(
       extensions: [templateGuard, changeWidgets(doc, hosts)],
       collaboration: {
         fragment: doc.getXmlFragment(PLAN_FRAGMENT),
-        user: { ...user },
+        user: { ...user, color: PALETTE[0]!, joinedAt: Date.now() },
         provider: session,
+        renderCursor: peerCursor,
       },
     }),
     [session],

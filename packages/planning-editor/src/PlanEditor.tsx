@@ -25,7 +25,7 @@ import styles from "./PlanEditor.module.scss";
 import type { PlanBlockNoteEditor } from "./schema/block-bridge.js";
 import { Participants } from "./presence/Participants.js";
 import { scrollToCursor } from "./presence/scroll-to-cursor.js";
-import { useTrackEditing } from "./presence/use-presence.js";
+import { useSharedPresence } from "./presence/use-presence.js";
 import type { PlanTransport, PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
 import { SessionNotice } from "./session/SessionNotice.js";
@@ -153,7 +153,7 @@ function PlanWorkspace({
   const { editor, plan, hosts } = usePlanEditor(props);
   const live = editing(session, editor, hosts);
   const report = usePlanValidation(plan, validationPhase, onValidation);
-  useTrackEditing(editor, session.awareness);
+  useSharedPresence(editor, session.awareness);
 
   return (
     <PlanActionsContext value={{ user, onRefine, doc: session.doc }}>

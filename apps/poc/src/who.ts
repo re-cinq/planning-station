@@ -1,11 +1,11 @@
 import type { PlanUser } from "@re-cinq/planning-editor";
 
 const PEOPLE: readonly PlanUser[] = [
-  { id: "ana", name: "Ana", color: "#d33682" },
-  { id: "ben", name: "Ben", color: "#268bd2" },
-  { id: "cleo", name: "Cleo", color: "#859900" },
-  { id: "dara", name: "Dara", color: "#b58900" },
-  { id: "esra", name: "Esra", color: "#6c71c4" },
+  { id: "ana", name: "Ana" },
+  { id: "ben", name: "Ben" },
+  { id: "cleo", name: "Cleo" },
+  { id: "dara", name: "Dara" },
+  { id: "esra", name: "Esra" },
 ];
 
 const KEY = "planning-poc-who";

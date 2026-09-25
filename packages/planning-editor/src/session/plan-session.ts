@@ -37,9 +37,18 @@ interface Replica {
   awareness: Awareness;
 }
 
+/** The editor clears a person's cursor when they click outside it; here it stays, so what they selected stays shared until they select elsewhere or leave the plan. */
+class SelectionKeepingAwareness extends Awareness {
+  override setLocalStateField(field: string, value: unknown): void {
+    if (field !== "cursor" || value !== null) {
+      super.setLocalStateField(field, value);
+    }
+  }
+}
+
 export function createPlanSession(transport: PlanTransport): PlanSession {
   const doc = new Doc();
-  const replica = { doc, awareness: new Awareness(doc) };
+  const replica = { doc, awareness: new SelectionKeepingAwareness(doc) };
   const store = createStore({ status: "connecting", meta: null });
   forwardLocalChanges(replica, transport);
   const unsubscribe = transport.subscribe((event) =>

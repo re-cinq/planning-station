@@ -19,8 +19,8 @@ The plan editor is the React component people write a plan in: the feature's nam
 
 - The feature's name is the plan's only level 1 heading, and every section heading sits under it at level 2 ([validated by](../../packages/planning-editor/src/blocks/PlanTitleView.test.tsx#L19), [validated by](../../packages/planning-editor/src/blocks/PlanTitleView.test.tsx#L33)).
 - Editing that heading renames the plan, so the name is changed where it is read ([validated by](../../packages/planning-editor/src/blocks/PlanTitleView.test.tsx#L26)).
-- Everything between two section headings is the section's own ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L123)).
-- A section the planning agent added renders under the title its heading carries, with a hint saying the agent added it ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L148)).
+- Everything between two section headings is the section's own ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L75)).
+- A section the planning agent added renders under the title its heading carries, with a hint saying the agent added it ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L100)).
 
 ## Under each section
 
@@ -57,16 +57,16 @@ The plan editor is the React component people write a plan in: the feature's nam
 - A user cannot delete a section heading or add a second one; the template's sections stay in place ([validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L35), [validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L49)).
 - A user cannot delete a section's panel or its actions either, so every section keeps its tools ([validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L69), [validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L75)).
 - A user cannot move a section heading; a heading taken out and put back elsewhere is refused ([validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L83)).
-- The side menu offers no add or drag handle on the title, a section heading, its panel or its actions, so nothing in the plan's skeleton can be dragged or deleted from it ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L173)).
+- The side menu offers no add or drag handle on the title, a section heading, its panel or its actions, so nothing in the plan's skeleton can be dragged or deleted from it ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L125)).
 - Only the title may sit above the first section heading; a block placed between them is refused, so the plan always projects ([validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L59)).
 - A user can delete any ordinary block inside a section ([validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L41)).
 - The host can change the section headings by marking its transaction with bypassTemplate and a reason ([validated by](../../packages/planning-editor/src/template/template-guard.test.ts#L96)).
 
 ## Editing
 
-- The editor shows every section of the plan's template in order, each with its hint for the author ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L109), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L116)).
-- Typing hands the host a projected plan document with the new text in its section ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L123)).
-- A read-only editor cannot be edited ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L133)).
+- The editor shows every section of the plan's template in order, each with its hint for the author ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L61), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L68)).
+- Typing hands the host a projected plan document with the new text in its section ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L75)).
+- A read-only editor cannot be edited ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L85)).
 - A block's add and drag buttons sit level with the middle of its first line of text, however much spacing the block opens with ([validated by](../../packages/planning-editor/src/menu/PlanSideMenu.test.tsx#L16), [validated by](../../packages/planning-editor/src/menu/PlanSideMenu.test.tsx#L24)).
 - A block with no line of text keeps its add and drag buttons at its top edge ([validated by](../../packages/planning-editor/src/menu/PlanSideMenu.test.tsx#L32)).
 
@@ -75,7 +75,7 @@ The plan editor is the React component people write a plan in: the feature's nam
 - The editor talks to the outside only through the host's PlanTransport; it waits in a connecting state until the whole document arrives as one document event with the plan meta ([validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L44), [validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L51)).
 - Every local edit goes out as an update event as it happens, and what came in from the transport is never sent back ([validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L65), [validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L58)).
 - A transport that refuses the connection shows the author its reason ([validated by](../../packages/planning-editor/src/session/plan-session.test.ts#L73)).
-- Two people on one plan see each other's words as they type ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L227)).
+- Two people on one plan see each other's words as they type ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L179)).
 - The in-memory hub seeds its document from the plan's blocks, greets each new peer with the document and meta, relays each update to the other peers only, and stops delivering after unsubscribe ([validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L30), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L36), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L42), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L54), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L60), [validated by](../../packages/planning-editor/src/session/memory-hub.test.ts#L71)).
 
 ## Reference transport
@@ -88,13 +88,22 @@ The plan editor is the React component people write a plan in: the feature's nam
 
 ## Presence
 
-- The participants list, at the top of the sidebar above the outline, names everyone else on the plan with the section they are editing, and never the viewer ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L234), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L20)).
-- A viewer alone on the plan gets no participants list at all, not an empty one ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L240)).
-- A peer that has not announced a name is not listed, and one without a cursor yet is listed with no section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L43), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L47)).
-- A participant whose cursor is in the document is a button, and one who has not placed a cursor is plain text ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L247), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L36)).
-- Clicking a participant scrolls their cursor into view without moving the reader's own caret ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L258)).
-- A peer editing a section the agent added is listed with that section's own title, the same as a template section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L65)).
-- Each remote cursor is drawn in the editor, labelled with its owner's name ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L273)).
+- The participants list, at the top of the sidebar above the outline, names everyone else on the plan with the section they are editing, and never the viewer ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L55), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L21)).
+- A viewer alone on the plan gets no participants list at all, not an empty one ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L61)).
+- A peer that has not announced a name is not listed, and one without a cursor yet is listed with no section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L45), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L49)).
+- A participant whose cursor is in the document is a button, and one who has not placed a cursor is plain text ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L71), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L38)).
+- Clicking a participant scrolls their cursor into view without moving the reader's own caret ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L82)).
+- A peer editing a section the agent added is listed with that section's own title, the same as a template section ([validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L94)).
+- Each remote cursor is drawn in the editor, labelled with its owner's name ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L97)).
+- The editor, not the host, picks each person's color: the host names who is editing, and the color comes from a palette of 50, each dark enough for white label text ([validated by](../../packages/planning-editor/src/presence/palette.test.ts#L24), [validated by](../../packages/planning-editor/src/presence/palette.test.ts#L31)).
+- No two people on a plan share a color: people take the palette's colors in the order they joined, so the first ones get the most distinct, and everyone's screen settles on the same colors ([validated by](../../packages/planning-editor/src/presence/palette.test.ts#L39), [validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L106)).
+- A person on two tabs keeps one color, and a peer is told apart by the id their editor announces, or by their connection when they announced none ([validated by](../../packages/planning-editor/src/presence/palette.test.ts#L52), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L56)).
+- Two people who joined at the same moment are ordered by their connection, and a peer that announced no join time comes after everyone who did ([validated by](../../packages/planning-editor/src/presence/palette.test.ts#L64), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L75)).
+- Nobody is recolored when someone leaves: a person keeps the color they announce unless someone who joined before them holds it, and a color from outside the palette is replaced ([validated by](../../packages/planning-editor/src/presence/palette.test.ts#L75), [validated by](../../packages/planning-editor/src/presence/palette.test.ts#L86), [validated by](../../packages/planning-editor/src/presence/palette.test.ts#L94), [validated by](../../packages/planning-editor/src/presence/presence-users.test.ts#L63)).
+- Past 50 people on one plan, colors start again from the first ([validated by](../../packages/planning-editor/src/presence/palette.test.ts#L101)).
+- A remote cursor is drawn in the color its owner has in the participants list ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L116)).
+- Text a peer selects is highlighted in their color for everyone else on the plan ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L126)).
+- A selection stays highlighted after its owner clicks outside the editor, until they select elsewhere, and goes when they leave the plan ([validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L137), [validated by](../../packages/planning-editor/src/PlanPresence.test.tsx#L146)).
 
 ## Plan blocks
 
@@ -107,8 +116,8 @@ The plan editor is the React component people write a plan in: the feature's nam
 
 ## Slash menu
 
-- Typing / offers only the blocks the current section allows, and choosing one inserts it ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L140), [validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L38)).
-- A section the agent added gets the slash menu of prose and questions ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L164), [validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L60)).
+- Typing / offers only the blocks the current section allows, and choosing one inserts it ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L92), [validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L38)).
+- A section the agent added gets the slash menu of prose and questions ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L116), [validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L60)).
 - No section, the agent's own included, offers a section heading, a panel, actions or a title, so the menu cannot add structure ([validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L44)).
 - The section is the one whose heading precedes the cursor, including inside nested list items ([validated by](../../packages/planning-editor/src/menu/section-context.test.ts#L27), [validated by](../../packages/planning-editor/src/menu/section-context.test.ts#L31), [validated by](../../packages/planning-editor/src/menu/section-context.test.ts#L35)).
 - An answer attaches to the nearest question above the cursor in the same section, and is offered only once there is one ([validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L73), [validated by](../../packages/planning-editor/src/menu/menu-items.test.ts#L83), [validated by](../../packages/planning-editor/src/menu/section-context.test.ts#L41), [validated by](../../packages/planning-editor/src/menu/section-context.test.ts#L45)).
@@ -116,11 +125,11 @@ The plan editor is the React component people write a plan in: the feature's nam
 ## Outline
 
 - The outline lists every section, marks the ones required at the chosen phase, and shows each section's problems under it ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L12), [validated by](../../packages/planning-editor/src/outline/problems-by-slot.test.ts#L13), [validated by](../../packages/planning-editor/src/outline/problems-by-slot.test.ts#L18)).
-- The outline follows the plan's sections in document order, the agent's own included, and never marks a section the agent added as required ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L67), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L155)).
+- The outline follows the plan's sections in document order, the agent's own included, and never marks a section the agent added as required ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L67), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L107)).
 - The outline says whether the plan is ready for the phase ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L38)).
-- Once the plan is approved, the outline says who approved it and on which day instead ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L48), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L194)).
-- A host can draw its own action under the outline's sections, such as the approve button the outline gates ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L181)).
-- The editor hands every validation report to the host's onValidation, at the approval phase unless told otherwise ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L215)).
+- Once the plan is approved, the outline says who approved it and on which day instead ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L48), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L146)).
+- A host can draw its own action under the outline's sections, such as the approve button the outline gates ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L133)).
+- The editor hands every validation report to the host's onValidation, at the approval phase unless told otherwise ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L167)).
 
 ## Version diff
 

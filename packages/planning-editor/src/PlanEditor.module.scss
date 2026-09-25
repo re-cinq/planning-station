@@ -14,6 +14,12 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+// A peer's selection wrapping over lines reads as one highlight, not a stack of boxes.
+.editor :global(.ProseMirror-yjs-selection) {
+  border-radius: var(--ps-radius);
+  box-decoration-break: clone;
+}
+
 .sidebar {
   position: sticky;
   top: var(--ps-space-layout);
