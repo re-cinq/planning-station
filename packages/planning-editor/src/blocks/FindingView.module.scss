@@ -1,20 +1,39 @@
+@use "../styles/margin-note";
+
 .finding {
-  width: 100%;
-  margin-bottom: var(--ps-space-inline);
-  padding: var(--ps-space-inline) calc(1.5 * var(--ps-space-inline));
-  background: var(--ps-bg-page);
+  @include margin-note.card;
+
   border-left: 3px solid var(--ps-warning);
-  border-radius: var(--ps-radius);
-  line-height: var(--ps-lh-note);
 }
 
 .finding[data-severity="blocker"] {
   border-left-color: var(--ps-danger);
 }
 
-.finding[data-resolved="true"] {
+.finding[data-resolved] {
+  display: flex;
+  gap: var(--ps-space-inline);
+  align-items: baseline;
   color: var(--ps-fg-muted);
+  background: transparent;
   border-left-color: var(--ps-rule);
+}
+
+.finding[data-resolved] .who {
+  display: none;
+}
+
+// Nested to outrank BlockNote's `.bn-default-styles p` reset.
+.finding .who {
+  @include margin-note.byline;
+}
+
+.label {
+  font-weight: var(--ps-fw-label);
+}
+
+.why {
+  color: var(--ps-fg-muted);
 }
 
 .text {
@@ -22,8 +41,20 @@
   font-size: var(--ps-fs-hint);
 }
 
-.why {
-  margin: var(--ps-space-hint) 0 0;
-  color: var(--ps-fg-muted);
-  font-size: var(--ps-fs-label);
+.finding[data-resolved] .text {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  @include margin-note.actions;
+}
+
+.finding[data-resolved] .actions {
+  flex: none;
+  margin-top: 0;
 }

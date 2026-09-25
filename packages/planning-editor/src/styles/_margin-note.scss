@@ -1,0 +1,44 @@
+// What every note in the margin shares, a comment's or a finding's: the card,
+// the byline above its text and the text buttons under it.
+
+@mixin card {
+  width: 100%;
+  margin-bottom: var(--ps-space-inline);
+  padding: var(--ps-space-inline) calc(1.5 * var(--ps-space-inline));
+  background: var(--ps-bg-page);
+  border-radius: var(--ps-radius);
+  line-height: var(--ps-lh-note);
+}
+
+@mixin byline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ps-space-inline);
+  align-items: baseline;
+  margin: 0 0 var(--ps-space-hint);
+  font-size: var(--ps-fs-label);
+}
+
+@mixin actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-list);
+  align-items: center;
+  margin-top: var(--ps-space-hint);
+
+  button {
+    padding: 0;
+    color: var(--ps-accent);
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: var(--ps-fs-label);
+    font-weight: var(--ps-fw-label);
+    cursor: pointer;
+  }
+
+  button:hover {
+    color: var(--ps-accent-hover);
+    text-decoration: underline;
+  }
+}

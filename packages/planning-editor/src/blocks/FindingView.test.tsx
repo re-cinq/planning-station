@@ -31,9 +31,12 @@ describe("FindingView", () => {
 
     await userEvent.click(card.getByRole("button", { name: "Resolve" }));
 
-    expect(findingsIn(lastPlan())?.[0]).toMatchObject({
-      props: { findingId: "f1", resolved: true },
+    expect({
+      finding: findingsIn(lastPlan())?.[0],
+      resolved: card.element().getAttribute("data-resolved"),
+    }).toMatchObject({
+      finding: { props: { findingId: "f1", resolved: true } },
+      resolved: "true",
     });
-    expect(card.element().getAttribute("data-resolved")).toBe("true");
   });
 });

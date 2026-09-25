@@ -12,30 +12,52 @@ export interface FindingViewProps {
   contentRef?: (node: HTMLElement | null) => void;
 }
 
-/** A finding raised on the plan; resolving it folds its severity marker to muted. */
+type ToggleProps = Omit<FindingViewProps, "contentRef"> & { resolved: boolean };
+
+/** A finding raised on the plan; once resolved it folds to one muted line. */
 export function FindingView({ block, editor, contentRef }: FindingViewProps) {
   const severity = String(block.props["severity"] ?? "");
   const resolved = block.props["resolved"] === true;
 
   return (
-    <div
+    <aside
       className={styles.finding}
+      data-kind="finding"
       data-severity={severity}
-      data-resolved={resolved}
-      aria-label={`Finding · ${severity}`}
+      data-resolved={resolved || undefined}
+      aria-label={labelOf(severity)}
     >
+      <Byline severity={severity} why={String(block.props["why"] ?? "")} />
       <div className={styles.text} ref={contentRef} />
-      <p className={styles.why}>{String(block.props["why"] ?? "")}</p>
       {editor.isEditable && (
-        <button
-          type="button"
-          onClick={() =>
-            editor.updateBlock(block, { props: { resolved: !resolved } })
-          }
-        >
-          {resolved ? "Reopen" : "Resolve"}
-        </button>
+        <ResolveToggle block={block} editor={editor} resolved={resolved} />
       )}
+    </aside>
+  );
+}
+
+function Byline({ severity, why }: { severity: string; why: string }) {
+  return (
+    <p className={styles.who} contentEditable={false}>
+      <span className={styles.label}>{labelOf(severity)}</span>
+      {why && <span className={styles.why}>{why}</span>}
+    </p>
+  );
+}
+
+function ResolveToggle({ block, editor, resolved }: ToggleProps) {
+  const toggle = () =>
+    editor.updateBlock(block, { props: { resolved: !resolved } });
+
+  return (
+    <div className={styles.actions} contentEditable={false}>
+      <button type="button" onClick={toggle}>
+        {resolved ? "Reopen" : "Resolve"}
+      </button>
     </div>
   );
+}
+
+function labelOf(severity: string): string {
+  return `Finding · ${severity}`;
 }
