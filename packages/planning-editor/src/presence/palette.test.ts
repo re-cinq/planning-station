@@ -91,6 +91,19 @@ describe("assignColors", () => {
     expect(colors.get("cleo")).toBe(PALETTE[1]);
   });
 
+  it("gives Cleo, arriving with a clock behind Ana's and Ben's, the third color and leaves theirs alone", () => {
+    const colors = assignColors([
+      peer(1, "ana", { joinedAt: 10, color: PALETTE[0] }),
+      peer(2, "ben", { joinedAt: 20, color: PALETTE[1] }),
+      peer(3, "cleo", { joinedAt: 5 }),
+    ]);
+    expect(Object.fromEntries(colors)).toEqual({
+      ana: PALETTE[0],
+      ben: PALETTE[1],
+      cleo: PALETTE[2],
+    });
+  });
+
   it("replaces a color outside the palette with the first free one", () => {
     const colors = assignColors([
       peer(1, "ana", { color: "hsl(120 65% 45%)" }),

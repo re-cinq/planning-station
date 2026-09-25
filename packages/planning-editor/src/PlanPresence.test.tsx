@@ -43,7 +43,11 @@ const selectionIn = (region: Element) =>
 
 const selectCheckout = async (ana: Locator) => {
   await userEvent.click(ana.getByText("Checkout"));
+  await expect
+    .poll(() => ana.element().contains(document.activeElement))
+    .toBeTruthy();
   await userEvent.keyboard("{End}{Shift>}{Home}{/Shift}");
+  await expect.poll(() => String(document.getSelection())).toBe("Checkout");
 };
 
 const channelsOf = (hex: string) =>

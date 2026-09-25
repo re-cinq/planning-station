@@ -3,10 +3,9 @@ import type { Awareness } from "y-protocols/awareness";
 
 import { slotAt, type MenuBlock } from "../menu/section-context.js";
 import type { PlanBlockNoteEditor } from "../schema/block-bridge.js";
-import { assignColors } from "./palette.js";
 import { paintPeers } from "./peer-cursor.js";
 import {
-  colorClaims,
+  ownColorChange,
   presenceUsers,
   type AwarenessState,
   type PresenceUser,
@@ -32,10 +31,10 @@ export function useSharedPresence(
 /** Announces the color this client settles on with everyone else here, so no two people share one. */
 function useOwnColor(awareness: Awareness): void {
   useOnAwareness(awareness, () => {
-    const own = ownUser(awareness);
-    const color = own && settledColor(awareness, own.id);
+    const color = ownColorChange(awareness.getStates(), awareness.clientID);
+    const own = (awareness.getLocalState() as AwarenessState | null)?.user;
 
-    if (own && color && color !== own.color) {
+    if (color) {
       awareness.setLocalStateField("user", { ...own, color });
     }
   });
@@ -67,18 +66,6 @@ function useOnAwareness(awareness: Awareness, listener: () => void): void {
 
     return () => awareness.off("change", run);
   }, [awareness]);
-}
-
-function ownUser(
-  awareness: Awareness,
-): { id: string; color?: unknown } | undefined {
-  const user = (awareness.getLocalState() as AwarenessState | null)?.user;
-
-  return user && { ...user, id: String(user.id ?? awareness.clientID) };
-}
-
-function settledColor(awareness: Awareness, id: string): string | undefined {
-  return assignColors(colorClaims(awareness.getStates())).get(id);
 }
 
 function useTrackEditing(

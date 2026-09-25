@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 
 import { templateFor } from "@re-cinq/planning-document";
 
+import { PALETTE } from "./palette.js";
 import {
   colorClaims,
+  ownColorChange,
   presenceLabel,
   presenceUsers,
   type AwarenessState,
@@ -56,6 +58,28 @@ describe("presenceUsers", () => {
   it("keys a peer that announced no id by its client id", () => {
     const anonymous = states([[4, { user: { name: "Ana" } }]]);
     expect(presenceUsers(anonymous, 1)).toMatchObject([{ id: "4" }]);
+  });
+});
+
+describe("ownColorChange", () => {
+  it("moves the viewer, who joined after Ana, off her color onto the second", () => {
+    const both = states([
+      [2, ANA_STATE],
+      [1, { user: { id: "ben", name: "Ben", joinedAt: 20, color: "#d33682" } }],
+    ]);
+    expect(ownColorChange(both, 1)).toBe(PALETTE[1]);
+  });
+
+  it("settles a viewer that announced an empty id, keyed by its client id", () => {
+    const alone = states([[1, { user: { id: "", name: "Ben" } }]]);
+    expect(ownColorChange(alone, 1)).toBe(PALETTE[0]);
+  });
+
+  it("asks for no change once the viewer holds its settled color", () => {
+    const settled = states([
+      [1, { user: { id: "ben", name: "Ben", color: PALETTE[0] } }],
+    ]);
+    expect(ownColorChange(settled, 1)).toBeUndefined();
   });
 });
 

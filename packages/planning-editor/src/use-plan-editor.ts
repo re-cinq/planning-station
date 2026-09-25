@@ -12,7 +12,6 @@ import {
   projectBlocks,
   type PlanBlockNoteEditor,
 } from "./schema/block-bridge.js";
-import { PALETTE } from "./presence/palette.js";
 import { peerCursor } from "./presence/peer-cursor.js";
 import { planSchema } from "./schema/plan-schema.js";
 import type { PlanUser } from "./session/plan-events.js";
@@ -58,7 +57,8 @@ function useCollaborativeEditor(
       extensions: [templateGuard, changeWidgets(doc, hosts)],
       collaboration: {
         fragment: doc.getXmlFragment(PLAN_FRAGMENT),
-        user: { ...user, color: PALETTE[0]!, joinedAt: Date.now() },
+        // No color until the editor settles one, so a newcomer never claims a color someone here holds.
+        user: { ...user, color: "", joinedAt: Date.now() },
         provider: session,
         renderCursor: peerCursor,
       },

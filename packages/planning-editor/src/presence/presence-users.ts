@@ -1,6 +1,6 @@
 import { findSectionSlot, type PlanTemplate } from "@re-cinq/planning-document";
 
-import { PALETTE, type ColorClaim } from "./palette.js";
+import { assignColors, PALETTE, type ColorClaim } from "./palette.js";
 
 export interface PresenceUser {
   clientId: number;
@@ -69,6 +69,17 @@ function toClaim(clientId: number, user: AnnouncedUser): ColorClaim {
         : Number.MAX_SAFE_INTEGER,
     color: typeof user.color === "string" ? user.color : undefined,
   };
+}
+
+/** The color the viewer should announce now, or nothing when it already announces it. */
+export function ownColorChange(
+  states: ReadonlyMap<number, AwarenessState>,
+  selfId: number,
+): string | undefined {
+  const own = states.get(selfId)?.user;
+  const color = own && assignColors(colorClaims(states)).get(idOf(selfId, own));
+
+  return color === own?.color ? undefined : color;
 }
 
 function idOf(clientId: number, user: AnnouncedUser): string {

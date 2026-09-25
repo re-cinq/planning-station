@@ -65,7 +65,7 @@ export function assignColors(
 ): Map<string, string> {
   const colors = new Map<string, string>();
 
-  for (const claim of [...claims].sort(byArrival)) {
+  for (const claim of [...claims].sort(holdersFirst)) {
     if (!colors.has(claim.userId)) {
       colors.set(claim.userId, pick(claim.color, [...colors.values()]));
     }
@@ -74,8 +74,17 @@ export function assignColors(
   return colors;
 }
 
-function byArrival(first: ColorClaim, second: ColorClaim): number {
-  return first.joinedAt - second.joinedAt || first.clientId - second.clientId;
+// Whoever already holds a palette color settles before a newcomer, so a newcomer's clock never recolors the plan.
+function holdersFirst(first: ColorClaim, second: ColorClaim): number {
+  return (
+    Number(holdsColor(second)) - Number(holdsColor(first)) ||
+    first.joinedAt - second.joinedAt ||
+    first.clientId - second.clientId
+  );
+}
+
+function holdsColor({ color }: ColorClaim): boolean {
+  return color !== undefined && PALETTE.includes(color);
 }
 
 function pick(announced: string | undefined, taken: readonly string[]): string {

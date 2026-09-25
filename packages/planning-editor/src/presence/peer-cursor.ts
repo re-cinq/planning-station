@@ -36,8 +36,9 @@ function peerVariable(id: string): string {
   return `--ps-peer-${[...id].map(cssSafe).join("")}`;
 }
 
+// Everything but letters, digits and "-" becomes "_<code>_", "_" included, so no two ids share a variable.
 function cssSafe(char: string): string {
-  return /[\w-]/.test(char) ? char : `_${char.charCodeAt(0)}`;
+  return /[a-zA-Z0-9-]/.test(char) ? char : `_${char.codePointAt(0)}_`;
 }
 
 function element(className: string, style?: string): HTMLElement {
