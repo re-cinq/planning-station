@@ -1,6 +1,9 @@
 import type { Document, Hocuspocus } from "@hocuspocus/server";
 import {
+  blockHash,
   docName,
+  enforceTrue,
+  SectionChangedError,
   toPlanDocument,
   type AgentOp,
   type PlanChange,
@@ -17,6 +20,7 @@ import {
   proposeChanges,
   proposePass,
   proposeRefine,
+  readBlocks,
   type PassOutcome,
   type SectionBase,
 } from "@re-cinq/planning-yjs";
@@ -31,6 +35,8 @@ export interface OpsRequest {
   ops: readonly AgentOp[];
   /** The section as the agent read it; the write is refused when it changed since. */
   base?: SectionBase;
+  /** The block as the agent read it; the write is refused when that block changed since. */
+  expect?: { blockId: string; hash: string };
 }
 
 export interface ProposalRequest {
@@ -104,6 +110,7 @@ async function write(
   const { json } = await options.service.readPlan(request.planId);
   const blocks = await inDocument(options, json, (document) => {
     enforceBase(document, request.base);
+    enforceBlock(document, request.expect);
 
     return applyOpsToDoc(document, request.ops, AGENT_ORIGIN);
   });
@@ -152,6 +159,19 @@ function enforceBase(document: Document, base?: SectionBase): void {
   if (base) {
     enforceSectionUnchanged(document, base);
   }
+}
+
+function enforceBlock(
+  document: Document,
+  expect?: { blockId: string; hash: string },
+): void {
+  if (!expect) return;
+
+  enforceTrue(
+    blockHash(readBlocks(document), expect.blockId) === expect.hash,
+    SectionChangedError,
+    `block ${expect.blockId} changed after the agent read it`,
+  );
 }
 
 async function inDocument<Result>(

@@ -1,10 +1,21 @@
 import { afterEach, describe, it, expect } from "vitest";
-import type { AgentOp, PlanDocument } from "@re-cinq/planning-document";
+import {
+  inlineFromText,
+  readView,
+  SectionChangedError,
+  type AgentOp,
+  type PlanDocument,
+} from "@re-cinq/planning-document";
 import {
   readyFeature,
   writtenBlocks,
 } from "@re-cinq/planning-document/testing";
-import { askRefine, docFromBlocks, proposalsIn } from "@re-cinq/planning-yjs";
+import {
+  askRefine,
+  docFromBlocks,
+  proposalsIn,
+  readBlocks,
+} from "@re-cinq/planning-yjs";
 import { applyUpdate, Doc } from "yjs";
 
 import { startTestServer, type TestServer } from "../testing/test-server.js";
@@ -78,6 +89,52 @@ describe("createAgentWriter", () => {
       ops: [INTENT],
     });
     expect(await test.store.getMeta(planId)).toMatchObject({ status: "draft" });
+  });
+
+  it("refuses a per-block write when that block changed since the agent read it", async () => {
+    const { test, planId } = await startPlan();
+    await test.writer.applyOps({
+      planId,
+      actor: "planning-agent",
+      ops: [INTENT],
+    });
+    const reloaded = new Doc();
+    applyUpdate(reloaded, (await test.service.loadState(planId)) ?? NO_STATE);
+    const intentBlock = readView(readBlocks(reloaded))
+      .sections.find((section) => section.slot === "intent")
+      ?.blocks[0];
+    if (!intentBlock) throw new Error("intent block missing from written plan");
+    await test.writer.applyOps({
+      planId,
+      actor: "ana",
+      ops: [
+        {
+          op: "replace-block",
+          slot: "intent",
+          blockId: intentBlock.id,
+          block: { type: "paragraph", content: inlineFromText("Ana's edit.") },
+        },
+      ],
+    });
+
+    await expect(
+      test.writer.applyOps({
+        planId,
+        actor: "planning-agent",
+        ops: [
+          {
+            op: "replace-block",
+            slot: "intent",
+            blockId: intentBlock.id,
+            block: {
+              type: "paragraph",
+              content: inlineFromText("The agent's stale edit."),
+            },
+          },
+        ],
+        expect: { blockId: intentBlock.id, hash: intentBlock.hash },
+      }),
+    ).rejects.toThrow(SectionChangedError);
   });
 
   it("fails the Refine ana asked for the intent, and the next reader sees why", async () => {

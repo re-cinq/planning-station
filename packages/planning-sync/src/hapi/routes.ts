@@ -56,6 +56,9 @@ const agentEditsSchema = z.object({
   base: z
     .object({ slot: z.string().min(1), hash: z.string().min(1) })
     .optional(),
+  expect: z
+    .object({ blockId: z.string().min(1), hash: z.string().min(1) })
+    .optional(),
 });
 
 const proposalSchema = z.object({
