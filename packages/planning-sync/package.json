@@ -1,6 +1,6 @@
 {
   "name": "@re-cinq/planning-sync",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "The plan's server side: a PlanStore port, an in-memory store, the collaboration server and a hapi adapter.",
   "license": "Apache-2.0",
   "type": "module",
@@ -42,8 +42,8 @@
   },
   "dependencies": {
     "@hocuspocus/server": "^4.7.0",
-    "@re-cinq/planning-document": "^0.6.0",
-    "@re-cinq/planning-yjs": "^0.6.0",
+    "@re-cinq/planning-document": "^0.7.0",
+    "@re-cinq/planning-yjs": "^0.7.0",
     "ws": "^8.21.3",
     "y-protocols": "^1.0.7",
     "zod": "^4.6.0"

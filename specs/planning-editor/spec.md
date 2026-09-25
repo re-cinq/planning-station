@@ -103,6 +103,7 @@ The plan editor is the React component people write a plan in: the feature's nam
 - A prototype with a link offers a way out to it, in a new tab ([validated by](../../packages/planning-editor/src/blocks/PlanBlockView.test.tsx#L52)).
 - A read-only plan shows its fields, but nobody can change them ([validated by](../../packages/planning-editor/src/blocks/PlanBlockView.test.tsx#L59)).
 - A mockup renders only through the host's renderMockup adapter, never as raw markup injected by the editor ([validated by](../../packages/planning-editor/src/blocks/PlanBlockView.test.tsx#L64)).
+- A finding a validation pass raised shows as a card that stands apart from a comment, labelled `Finding · <severity>` with its text and why; anyone editing resolves it, which marks the block resolved and folds the card to one line, or reopens it ([validated by](../../packages/planning-editor/src/blocks/FindingView.test.tsx#L25)).
 
 ## Slash menu
 

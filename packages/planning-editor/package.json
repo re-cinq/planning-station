@@ -1,6 +1,6 @@
 {
   "name": "@re-cinq/planning-editor",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "The collaborative plan editor: a React component on BlockNote, template-guarded and themed by CSS variables.",
   "license": "Apache-2.0",
   "type": "module",
@@ -43,8 +43,8 @@
     "@blocknote/react": "^0.54.2",
     "@floating-ui/react": "^0.27.20",
     "@hocuspocus/provider": "^4.7.0",
-    "@re-cinq/planning-document": "^0.6.0",
-    "@re-cinq/planning-yjs": "^0.6.0",
+    "@re-cinq/planning-document": "^0.7.0",
+    "@re-cinq/planning-yjs": "^0.7.0",
     "prosemirror-model": "^1.25.11",
     "prosemirror-state": "^1.4.4",
     "prosemirror-view": "^1.42.4",
