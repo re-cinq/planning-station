@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 
 import type { BlockJson } from "../blocks/block-json.js";
 import type { PlanMeta, PlanKind } from "../plan/plan-meta.js";
-import { applyOps } from "../ops/apply-ops.js";
 import { seedBlocks } from "../projection/seed.js";
 import { toPlanDocument } from "../projection/to-plan-document.js";
 import { templateFor } from "../template/templates.js";
@@ -50,6 +49,15 @@ const READY_FEATURE: BlockJson[] = [
   paragraph("Team checkout."),
 ];
 
+const DANISH_LABELS = block(
+  "finding",
+  { findingId: "f-abc123", severity: "blocker" },
+  {
+    id: "f-abc123",
+    text: "The plan promises Danish status labels but names none",
+  },
+);
+
 const UNTIL_PROTOTYPE = 8;
 
 describe("validatePlan", () => {
@@ -90,37 +98,25 @@ describe("validatePlan", () => {
   });
 
   it("allows a finding in a section whose template never mentions findings", () => {
-    const withFinding = applyOps(seedBlocks(templateFor("feature")), [
-      {
-        op: "add-finding",
-        slot: "intent",
-        findingId: "f-1",
-        text: "The plan promises Danish status labels but names none",
-        why: "FR-166 keys the card on fixed text",
-        severity: "blocker",
-      },
-    ]);
+    const withFinding = [
+      heading("intent", "What we want and why"),
+      DANISH_LABELS,
+    ];
     expect(
-      codes(withFinding, "draft").filter(([code]) => code === "disallowed-block"),
+      codes(withFinding, "draft").filter(
+        ([code]) => code === "disallowed-block",
+      ),
     ).toEqual([]);
   });
 
   it("reports an unresolved finding in intent as a blocker at approval", () => {
-    const withFinding = applyOps(READY_FEATURE, [
-      {
-        op: "add-finding",
-        slot: "intent",
-        findingId: "f-abc123",
-        text: "The plan promises Danish status labels but names none",
-        why: "FR-166 keys the card on fixed text",
-        severity: "blocker",
-      },
-    ]);
-    const report = validatePlan(plan(withFinding), "approval");
-    expect(
-      report.problems.filter((problem) => problem.code === "unresolved-finding"),
-    ).toMatchObject([{ code: "unresolved-finding", slot: "intent", blockId: "f-abc123" }]);
-    expect(report.passed).toBe(false);
+    const withFinding = READY_FEATURE.toSpliced(1, 0, DANISH_LABELS);
+    expect(validatePlan(plan(withFinding), "approval")).toMatchObject({
+      passed: false,
+      problems: [
+        { code: "unresolved-finding", slot: "intent", blockId: "f-abc123" },
+      ],
+    });
   });
 
   it("reports missing-section for a plan without the kpis heading at draft", () => {

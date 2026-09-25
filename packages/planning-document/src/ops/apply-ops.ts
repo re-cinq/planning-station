@@ -62,6 +62,14 @@ const setSectionTitle: Handler<"set-section-title"> = (blocks, op) =>
       : block,
   );
 
+/** A finding raised again keeps the resolution people already gave it. */
+const addFinding: Handler<"add-finding"> = (blocks, op) =>
+  upsert(
+    blocks,
+    op.slot,
+    findingBlock({ ...op, resolved: isResolved(blocks, op.findingId) }),
+  );
+
 const HANDLERS: Handlers = {
   "set-section-text": setSectionText,
   "set-section-prose": setSectionProse,
@@ -75,12 +83,7 @@ const HANDLERS: Handlers = {
   "add-section": addSection,
   "set-section-title": setSectionTitle,
   "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
-  "add-finding": (blocks, op) =>
-    upsert(
-      blocks,
-      op.slot,
-      findingBlock({ ...op, resolved: resolvedOf(blocks, op.findingId) }),
-    ),
+  "add-finding": addFinding,
 };
 
 /** Applies the planning agent's edits to a plan's blocks. */
@@ -212,7 +215,7 @@ function findingBlock(input: FindingInput & { resolved: boolean }): BlockJson {
   });
 }
 
-function resolvedOf(blocks: readonly BlockJson[], findingId: string): boolean {
+function isResolved(blocks: readonly BlockJson[], findingId: string): boolean {
   const existing = blocksOfType(blocks, "finding").find(
     (finding) => finding.props.findingId === findingId,
   );

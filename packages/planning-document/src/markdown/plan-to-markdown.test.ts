@@ -1,18 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import type { BlockJson } from "../blocks/block-json.js";
 import { applyOps } from "../ops/apply-ops.js";
 import { templateFor } from "../template/templates.js";
+import { resolveFinding } from "../testing/findings.js";
 import { planWith, readyFeature, textBlock } from "../testing/plans.js";
 import { richFeature } from "../testing/rich-prose.js";
 import { planToMarkdown } from "./plan-to-markdown.js";
-
-const resolvedFinding = (blocks: BlockJson[], id: string): BlockJson[] =>
-  blocks.map((block) =>
-    block.id === id && block.type === "finding"
-      ? { ...block, props: { ...block.props, resolved: true } }
-      : block,
-  );
 
 const FEATURE = templateFor("feature");
 
@@ -184,7 +177,7 @@ describe("planToMarkdown", () => {
         severity: "blocker",
       },
     ]);
-    const blocks = resolvedFinding(withFinding, "f-abc123");
+    const blocks = resolveFinding(withFinding, "f-abc123");
     expect(planToMarkdown(blocks, FEATURE)).toContain(
       "> **Finding** (f-abc123, blocker, resolved): The plan promises Danish status labels but names none — FR-166 keys the card on fixed text",
     );

@@ -8,8 +8,8 @@ import {
   missingSections,
   sectionOrder,
   unknownSections,
-  unresolvedFindings,
 } from "./section-checks.js";
+import { unresolvedFindings } from "./finding-check.js";
 import { prototypeMinimum } from "./prototype-check.js";
 
 const CHECKS: readonly Check[] = [
