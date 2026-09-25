@@ -10,10 +10,15 @@ export const ALWAYS_ALLOWED = [
   "question",
   "answer",
   "comment",
+  "finding",
 ] as const;
 
 /** Margin notes: they lead a section in this order. */
-export const MARGIN_NOTES: readonly string[] = ["comment", "section-panel"];
+export const MARGIN_NOTES: readonly string[] = [
+  "comment",
+  "section-panel",
+  "finding",
+];
 
 /** Closes every section, under what people wrote. */
 export const SECTION_ACTIONS = "section-actions";

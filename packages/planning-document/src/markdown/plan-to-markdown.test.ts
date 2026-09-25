@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import { applyOps } from "../ops/apply-ops.js";
 import { templateFor } from "../template/templates.js";
+import { resolveFinding } from "../testing/findings.js";
 import { planWith, readyFeature, textBlock } from "../testing/plans.js";
 import { richFeature } from "../testing/rich-prose.js";
 import { planToMarkdown } from "./plan-to-markdown.js";
@@ -163,6 +164,23 @@ describe("planToMarkdown", () => {
       "> **Question** (q-market): Which market first?",
       "> **Answer**: Germany",
     ]);
+  });
+
+  it("quotes a resolved finding with its severity and why", () => {
+    const withFinding = applyOps(planWith("feature", {}), [
+      {
+        op: "add-finding",
+        slot: "intent",
+        findingId: "f-abc123",
+        text: "The plan promises Danish status labels but names none",
+        why: "FR-166 keys the card on fixed text",
+        severity: "blocker",
+      },
+    ]);
+    const blocks = resolveFinding(withFinding, "f-abc123");
+    expect(planToMarkdown(blocks, FEATURE)).toContain(
+      "> **Finding** (f-abc123, blocker, resolved): The plan promises Danish status labels but names none — FR-166 keys the card on fixed text",
+    );
   });
 
   it("escapes a paragraph that would read as a heading", () => {

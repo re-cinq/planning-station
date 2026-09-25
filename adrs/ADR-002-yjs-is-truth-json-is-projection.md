@@ -24,7 +24,7 @@ drift.
 - Blocks seed only an empty document; seeding one that already holds a plan throws `SeededDocError`, so the JSON is never written back over a live plan ([validated by](../packages/planning-yjs/src/convert/plan-doc.test.ts#L53)).
 - Workflow state (status, approval, version number) is not in Yjs; the editor receives it as `meta` next to the document ([validated by](../packages/planning-editor/src/session/plan-session.test.ts#L51)).
 
-- The agent writes through semantic, id-stable ops, so a KPI it sends twice is updated and keeps its block instead of being regenerated ([validated by](../packages/planning-document/src/ops/apply-ops.test.ts#L97), [validated by](../packages/planning-document/src/ops/apply-ops.test.ts#L132)).
+- The agent writes through semantic, id-stable ops, so a KPI it sends twice is updated and keeps its block instead of being regenerated ([validated by](../packages/planning-document/src/ops/apply-ops.test.ts#L104), [validated by](../packages/planning-document/src/ops/apply-ops.test.ts#L139)).
 - Such a write goes into the live document and replaces only the blocks that changed, so a person writing elsewhere in the plan is undisturbed ([validated by](../packages/planning-yjs/src/convert/apply-ops.test.ts#L70), [validated by](../packages/planning-yjs/src/convert/apply-ops.test.ts#L81)).
 
 ## Implementation phases

@@ -1,5 +1,6 @@
 import { encodeOptions } from "../blocks/question-options.js";
 import {
+  blocksOfType,
   isPlanBlock,
   parseBlock,
   type BlockJson,
@@ -11,6 +12,7 @@ import { actionsBlock, panelBlock } from "../projection/seed.js";
 import { isCustomSlot } from "../template/templates.js";
 import type {
   AgentOp,
+  FindingInput,
   KpiInput,
   PrototypeInput,
   QuestionInput,
@@ -60,6 +62,14 @@ const setSectionTitle: Handler<"set-section-title"> = (blocks, op) =>
       : block,
   );
 
+/** A finding raised again keeps the resolution people already gave it. */
+const addFinding: Handler<"add-finding"> = (blocks, op) =>
+  upsert(
+    blocks,
+    op.slot,
+    findingBlock({ ...op, resolved: isResolved(blocks, op.findingId) }),
+  );
+
 const HANDLERS: Handlers = {
   "set-section-text": setSectionText,
   "set-section-prose": setSectionProse,
@@ -73,6 +83,7 @@ const HANDLERS: Handlers = {
   "add-section": addSection,
   "set-section-title": setSectionTitle,
   "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
+  "add-finding": addFinding,
 };
 
 /** Applies the planning agent's edits to a plan's blocks. */
@@ -137,6 +148,7 @@ function upsert(
 const ENTITY_KEYS: Partial<Record<string, (block: BlockJson) => string>> = {
   kpi: (block) => propOf(block, "kpiId"),
   question: (block) => propOf(block, "questionId"),
+  finding: (block) => propOf(block, "findingId"),
   prototype: () => PROTOTYPE_SLOT,
 };
 
@@ -190,6 +202,25 @@ function questionBlock(input: QuestionInput): BlockJson {
     props: { questionId, why, kind, options: encodeOptions(options) },
     content: inlineFromText(question),
   });
+}
+
+function findingBlock(input: FindingInput & { resolved: boolean }): BlockJson {
+  const { findingId, text, why, severity, resolved } = input;
+
+  return parseBlock({
+    id: findingId,
+    type: "finding",
+    props: { findingId, severity, why, resolved, used: false },
+    content: inlineFromText(text),
+  });
+}
+
+function isResolved(blocks: readonly BlockJson[], findingId: string): boolean {
+  const existing = blocksOfType(blocks, "finding").find(
+    (finding) => finding.props.findingId === findingId,
+  );
+
+  return existing?.props.resolved === true;
 }
 
 function prototypeBlock(prototype: PrototypeInput): BlockJson {

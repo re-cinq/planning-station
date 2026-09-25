@@ -8,6 +8,7 @@ import {
   textBlock,
   writtenBlocks,
 } from "../testing/plans.js";
+import { resolveFinding } from "../testing/findings.js";
 import { toPlanDocument } from "../projection/to-plan-document.js";
 import { agentOpSchema, type AgentOp } from "./agent-ops.js";
 import { applyOps } from "./apply-ops.js";
@@ -29,6 +30,12 @@ const LATENCY: AgentOp = {
 
 const planOf = (blocks: BlockJson[]) =>
   toPlanDocument(blocks, planMeta("feature"));
+
+const blocksIn = (blocks: BlockJson[], slot: string) => {
+  const { sections } = planOf(blocks);
+
+  return sections.find((section) => section.slot === slot)?.blocks ?? [];
+};
 
 const applied = (ops: AgentOp[], blocks = SEEDED) => applyOps(blocks, ops);
 
@@ -232,6 +239,61 @@ describe("applyOps set-section-title", () => {
   });
 });
 
+const DANISH_LABELS: AgentOp = {
+  op: "add-finding",
+  slot: "intent",
+  findingId: "f-abc123",
+  text: "The plan promises Danish status labels but names none",
+  why: "FR-166 keys the card on fixed text",
+  severity: "blocker",
+};
+
+describe("applyOps add-finding", () => {
+  it("adds a blocker finding to the intent section", () => {
+    const intent = blocksIn(applied([DANISH_LABELS]), "intent");
+    expect(intent.slice(-2)).toMatchObject([
+      {
+        id: "f-abc123",
+        type: "finding",
+        props: {
+          findingId: "f-abc123",
+          severity: "blocker",
+          why: "FR-166 keys the card on fixed text",
+          resolved: false,
+          used: false,
+        },
+        content: [
+          { text: "The plan promises Danish status labels but names none" },
+        ],
+      },
+      { type: "section-actions" },
+    ]);
+  });
+
+  it("places the finding before the section's existing paragraph", () => {
+    const withProse = planWith("feature", {
+      intent: [textBlock("paragraph", {}, "Checkout is slow.")],
+    });
+    const intent = blocksIn(applied([DANISH_LABELS], withProse), "intent");
+    expect(intent.map((block) => block.type)).toEqual([
+      "section-panel",
+      "finding",
+      "paragraph",
+      "section-actions",
+    ]);
+  });
+
+  it("keeps a resolved finding resolved when the same findingId is re-applied", () => {
+    const firstPass = applied([DANISH_LABELS]);
+    const secondPass = applyOps(resolveFinding(firstPass, "f-abc123"), [
+      DANISH_LABELS,
+    ]);
+    expect(blocksOfType(secondPass, "finding")).toMatchObject([
+      { id: "f-abc123", props: { resolved: true } },
+    ]);
+  });
+});
+
 describe("applyOps add-question", () => {
   it("asks q-flag in scope, before the section's actions", () => {
     const blocks = applied([
@@ -245,10 +307,7 @@ describe("applyOps add-question", () => {
         options: ["beta", "canary"],
       },
     ]);
-    const scope = planOf(blocks).sections.find(
-      (section) => section.slot === "scope",
-    );
-    expect(scope?.blocks.slice(-2)).toMatchObject([
+    expect(blocksIn(blocks, "scope").slice(-2)).toMatchObject([
       {
         id: "q-flag",
         type: "question",

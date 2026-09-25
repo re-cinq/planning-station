@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  FINDING_SEVERITIES,
   KPI_DIRECTIONS,
   PROTOTYPE_MATURITIES,
   QUESTION_KINDS,
@@ -34,6 +35,14 @@ export const questionInputSchema = z.object({
   why: z.string().default(""),
   kind: z.enum(QUESTION_KINDS).default("text"),
   options: z.array(z.string()).default([]),
+});
+
+export const findingInputSchema = z.object({
+  slot: z.string().min(1),
+  findingId: z.string().min(1),
+  text: z.string().min(1),
+  why: z.string().default(""),
+  severity: z.enum(FINDING_SEVERITIES).default("warning"),
 });
 
 /** What the planning agent writes: semantic, id-stable edits of a section. */
@@ -86,6 +95,7 @@ export const agentOpSchema = z.discriminatedUnion("op", [
     title: z.string().min(1),
   }),
   z.object({ op: z.literal("add-question"), ...questionInputSchema.shape }),
+  z.object({ op: z.literal("add-finding"), ...findingInputSchema.shape }),
 ]);
 
 export const agentOpsSchema = z.array(agentOpSchema);
@@ -93,4 +103,5 @@ export const agentOpsSchema = z.array(agentOpSchema);
 export type KpiInput = z.infer<typeof kpiInputSchema>;
 export type PrototypeInput = z.infer<typeof prototypeInputSchema>;
 export type QuestionInput = z.infer<typeof questionInputSchema>;
+export type FindingInput = z.infer<typeof findingInputSchema>;
 export type AgentOp = z.infer<typeof agentOpSchema>;

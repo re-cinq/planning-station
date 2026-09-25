@@ -1,10 +1,7 @@
+@use "../styles/margin-note";
+
 .comment {
-  width: 100%;
-  margin-bottom: var(--ps-space-inline);
-  padding: var(--ps-space-inline) calc(1.5 * var(--ps-space-inline));
-  background: var(--ps-bg-page);
-  border-radius: var(--ps-radius);
-  line-height: var(--ps-lh-note);
+  @include margin-note.card;
 }
 
 .comment[data-reply] {
@@ -27,12 +24,7 @@
 
 // Nested to outrank BlockNote's `.bn-default-styles p` reset.
 .comment .who {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--ps-space-inline);
-  align-items: baseline;
-  margin: 0 0 var(--ps-space-hint);
-  font-size: var(--ps-fs-label);
+  @include margin-note.byline;
 }
 
 .author {
@@ -54,27 +46,7 @@
 }
 
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ps-space-list);
-  align-items: center;
-  margin-top: var(--ps-space-hint);
-}
-
-.actions button {
-  padding: 0;
-  color: var(--ps-accent);
-  background: none;
-  border: 0;
-  font: inherit;
-  font-size: var(--ps-fs-label);
-  font-weight: var(--ps-fw-label);
-  cursor: pointer;
-}
-
-.actions button:hover {
-  color: var(--ps-accent-hover);
-  text-decoration: underline;
+  @include margin-note.actions;
 }
 
 .reply {

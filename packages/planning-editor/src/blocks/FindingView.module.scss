@@ -1,0 +1,60 @@
+@use "../styles/margin-note";
+
+.finding {
+  @include margin-note.card;
+
+  border-left: 3px solid var(--ps-warning);
+}
+
+.finding[data-severity="blocker"] {
+  border-left-color: var(--ps-danger);
+}
+
+.finding[data-resolved] {
+  display: flex;
+  gap: var(--ps-space-inline);
+  align-items: baseline;
+  color: var(--ps-fg-muted);
+  background: transparent;
+  border-left-color: var(--ps-rule);
+}
+
+.finding[data-resolved] .who {
+  display: none;
+}
+
+// Nested to outrank BlockNote's `.bn-default-styles p` reset.
+.finding .who {
+  @include margin-note.byline;
+}
+
+.label {
+  font-weight: var(--ps-fw-label);
+}
+
+.why {
+  color: var(--ps-fg-muted);
+}
+
+.text {
+  min-height: 1.5em;
+  font-size: var(--ps-fs-hint);
+}
+
+.finding[data-resolved] .text {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.actions {
+  @include margin-note.actions;
+}
+
+.finding[data-resolved] .actions {
+  flex: none;
+  margin-top: 0;
+}

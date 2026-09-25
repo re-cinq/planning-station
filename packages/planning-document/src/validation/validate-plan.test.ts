@@ -49,6 +49,15 @@ const READY_FEATURE: BlockJson[] = [
   paragraph("Team checkout."),
 ];
 
+const DANISH_LABELS = block(
+  "finding",
+  { findingId: "f-abc123", severity: "blocker" },
+  {
+    id: "f-abc123",
+    text: "The plan promises Danish status labels but names none",
+  },
+);
+
 const UNTIL_PROTOTYPE = 8;
 
 describe("validatePlan", () => {
@@ -86,6 +95,28 @@ describe("validatePlan", () => {
     expect(
       codes(commented, "draft").filter(([code]) => code === "disallowed-block"),
     ).toEqual([]);
+  });
+
+  it("allows a finding in a section whose template never mentions findings", () => {
+    const withFinding = [
+      heading("intent", "What we want and why"),
+      DANISH_LABELS,
+    ];
+    expect(
+      codes(withFinding, "draft").filter(
+        ([code]) => code === "disallowed-block",
+      ),
+    ).toEqual([]);
+  });
+
+  it("reports an unresolved finding in intent as a blocker at approval", () => {
+    const withFinding = READY_FEATURE.toSpliced(1, 0, DANISH_LABELS);
+    expect(validatePlan(plan(withFinding), "approval")).toMatchObject({
+      passed: false,
+      problems: [
+        { code: "unresolved-finding", slot: "intent", blockId: "f-abc123" },
+      ],
+    });
   });
 
   it("reports missing-section for a plan without the kpis heading at draft", () => {

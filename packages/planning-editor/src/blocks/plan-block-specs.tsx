@@ -2,6 +2,7 @@ import { createReactBlockSpec } from "@blocknote/react";
 import { PLAN_BLOCK_CONFIGS } from "@re-cinq/planning-document";
 
 import { CommentView } from "./CommentView.js";
+import { FindingView } from "./FindingView.js";
 import { MockupView } from "./MockupView.js";
 import { PlanBlockView } from "./PlanBlockView.js";
 import { PlanTitleView } from "./PlanTitleView.js";
@@ -29,6 +30,9 @@ export const PLAN_BLOCK_SPECS = {
   )(),
   comment: createReactBlockSpec(PLAN_BLOCK_CONFIGS.comment, {
     render: CommentView,
+  })(),
+  finding: createReactBlockSpec(PLAN_BLOCK_CONFIGS.finding, {
+    render: FindingView,
   })(),
   kpi: createReactBlockSpec(PLAN_BLOCK_CONFIGS.kpi, view)(),
   prototype: createReactBlockSpec(PLAN_BLOCK_CONFIGS.prototype, view)(),

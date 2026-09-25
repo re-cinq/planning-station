@@ -40,7 +40,7 @@ export function partitionSections(blocks: readonly BlockJson[]): Section[] {
     }, []);
 }
 
-/** A section's blocks in place: comments, its panel, what people wrote, its actions. */
+/** A section's blocks in place: its margin notes, what people wrote, its actions. */
 export function sectionOrder(blocks: readonly BlockJson[]): BlockJson[] {
   const ofKind = (kind: string) =>
     blocks.filter((block) => block.type === kind);

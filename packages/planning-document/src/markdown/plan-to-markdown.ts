@@ -50,6 +50,12 @@ const RENDERERS: { [Kind in PlanBlockKind]: Render<Kind> } = {
       ` by ${block.props.author}${resolvedMark(block)}: ${oneLine(block)}`,
     ),
   ],
+  finding: (block) => [
+    quoted(
+      "Finding",
+      ` (${findingTag(block.props)}): ${oneLine(block)}${whySuffix(block.props.why)}`,
+    ),
+  ],
 };
 
 /** Prose is written as the Markdown it reads as: lists, subheadings, quotes, code, tables, marks and links. */
@@ -131,4 +137,12 @@ function oneLine(block: { content: InlineContent }): string {
 
 function resolvedMark(block: PlanBlockOf<"comment">): string {
   return block.props.resolved ? " (resolved)" : "";
+}
+
+function findingTag(props: PlanBlockOf<"finding">["props"]): string {
+  return `${props.findingId}, ${props.severity}${props.resolved ? ", resolved" : ""}`;
+}
+
+function whySuffix(why: string): string {
+  return why ? ` — ${why}` : "";
 }

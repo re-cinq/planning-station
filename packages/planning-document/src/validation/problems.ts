@@ -14,6 +14,7 @@ export const PROBLEM_CODES = [
   "too-many-blocks",
   "disallowed-block",
   "prototype-below-minimum",
+  "unresolved-finding",
 ] as const;
 
 export type ProblemCode = (typeof PROBLEM_CODES)[number];

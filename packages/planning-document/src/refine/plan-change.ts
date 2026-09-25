@@ -104,6 +104,7 @@ const WORDS: { [Kind in AgentOp["op"]]: WordsReader<Kind> } = {
   "add-section": sectionWords,
   "set-section-title": titleWords,
   "add-question": questionWords,
+  "add-finding": findingWords,
 };
 
 function paragraphWords(op: { paragraphs: string[] }): string[] {
@@ -151,6 +152,10 @@ function noWords(): string[] {
 
 function questionWords(op: { question: string }): string[] {
   return [op.question];
+}
+
+function findingWords(op: { text: string }): string[] {
+  return [op.text];
 }
 
 /** A block's own line, then its nested children's lines, in order; a table reads as its cells in one line. */
