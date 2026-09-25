@@ -9,21 +9,13 @@ import {
 import { writtenBlocks } from "@re-cinq/planning-document/testing";
 
 import { PlanEditor, type PlanEditorProps } from "./PlanEditor.js";
-import { createMemoryHub } from "./session/memory-hub.js";
 import {
-  ANA,
-  BEN,
+  CHECKOUT_PLAN as SEED,
   editingAna,
+  FIRST_TITLE,
   lastCallOf,
-  planSeed,
-  textBlock,
+  renderPair,
 } from "./testing/fixtures.js";
-
-const SEED = planSeed("performance", {
-  intent: [textBlock("paragraph", {}, "Checkout")],
-  kpis: [textBlock("paragraph", {}, "Targets")],
-});
-const FIRST_TITLE = "What we want and why";
 
 const firstHeading = { name: FIRST_TITLE };
 
@@ -58,46 +50,6 @@ const renderPlan = async (extra: Partial<PlanEditorProps> = {}) => {
   await expect.element(screen.getByRole("heading", firstHeading)).toBeVisible();
 
   return { screen, lastPlan };
-};
-
-const LONG_SEED = planSeed("performance", {
-  intent: [
-    ...[...Array(60).keys()].map((line) =>
-      textBlock("paragraph", {}, `Line ${line}`),
-    ),
-    textBlock("paragraph", {}, "Last line"),
-  ],
-});
-
-const cursorIn = (region: Element) =>
-  region.querySelector(".bn-collaboration-cursor__caret");
-
-const blockOf = (element: Element | null) =>
-  element?.closest(".bn-block-content")?.textContent ?? "";
-
-const isOnScreen = (element: Element | null) => {
-  const rect = element?.getBoundingClientRect();
-
-  return Boolean(rect && rect.top >= 0 && rect.bottom <= window.innerHeight);
-};
-
-const renderPair = async (seed = SEED) => {
-  const hub = createMemoryHub(seed);
-  const screen = await render(
-    <>
-      <section aria-label="Ana's editor">
-        <PlanEditor transport={hub.connect()} user={ANA} showOutline={false} />
-      </section>
-      <section aria-label="Ben's editor">
-        <PlanEditor transport={hub.connect()} user={BEN} showOutline={false} />
-      </section>
-    </>,
-  );
-  const ana = screen.getByRole("region", { name: "Ana's editor" });
-  const ben = screen.getByRole("region", { name: "Ben's editor" });
-  await expect.element(ben.getByRole("heading", firstHeading)).toBeVisible();
-
-  return { ana, ben };
 };
 
 const headingTitles = (container: HTMLElement) =>
@@ -225,57 +177,9 @@ describe("PlanEditor", () => {
   });
 
   it("shows Ben the words Ana types into the intent", async () => {
-    const { ana, ben } = await renderPair();
+    const { ana, ben } = await renderPair(SEED);
     await userEvent.click(ana.getByText("Checkout"));
     await userEvent.keyboard("{End} under 200 ms");
     await expect.element(ben.getByText(/Checkout under 200 ms/)).toBeVisible();
-  });
-
-  it("lists Ana in Ben's participants with the section she is editing", async () => {
-    const { ana, ben } = await renderPair();
-    await userEvent.click(ana.getByText("Checkout"));
-    await expect.element(ben.getByText(`Ana in ${FIRST_TITLE}`)).toBeVisible();
-  });
-
-  it("renders no participants list when Ana is alone on the plan", async () => {
-    const { screen } = await renderPlan();
-    expect(
-      screen.getByRole("list", { name: "Participants" }).elements(),
-    ).toEqual([]);
-  });
-
-  it("lists Ana as plain text until she places her cursor, then as a button", async () => {
-    const { ana, ben } = await renderPair();
-    const participants = ben.getByRole("list", { name: "Participants" });
-    await expect.element(participants.getByText("Ana")).toBeVisible();
-    expect(participants.getByRole("button").elements()).toEqual([]);
-    await userEvent.click(ana.getByText("Checkout"));
-    await expect
-      .element(participants.getByRole("button", { name: /^Ana in/ }))
-      .toBeVisible();
-  });
-
-  it("scrolls Ben's view to Ana's cursor when he clicks her name, keeping focus where it was", async () => {
-    const { ana, ben } = await renderPair(LONG_SEED);
-    await userEvent.click(ana.getByText("Last line"));
-    const cursor = () => cursorIn(ben.element());
-    await expect.poll(() => blockOf(cursor())).toContain("Last line");
-    const offScreenBefore = !isOnScreen(cursor());
-    const focused = document.activeElement;
-    await userEvent.click(ben.getByRole("button", { name: /^Ana in/ }));
-    await expect.poll(() => isOnScreen(cursor())).toBeTruthy();
-    expect({
-      offScreenBefore,
-      focusKept: document.activeElement === focused,
-    }).toEqual({ offScreenBefore: true, focusKept: true });
-  });
-
-  it("draws Ana's cursor labelled with her name in Ben's editor", async () => {
-    const { ana, ben } = await renderPair();
-    await userEvent.click(ana.getByText("Checkout"));
-    await userEvent.keyboard("{End}!");
-    await expect
-      .element(ben.getByText("Ana", { exact: true }))
-      .toBeInTheDocument();
   });
 });

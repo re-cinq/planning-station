@@ -1,9 +1,9 @@
 import type { PlanMeta } from "@re-cinq/planning-document";
 
+/** Who is editing; the editor picks their color, unique among everyone on the plan. */
 export interface PlanUser {
   id: string;
   name: string;
-  color: string;
 }
 
 export type TransportStatus = "connecting" | "disconnected" | "denied";

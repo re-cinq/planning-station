@@ -1,7 +1,11 @@
 import { findSectionSlot, type PlanTemplate } from "@re-cinq/planning-document";
 
+import { assignColors, PALETTE, type ColorClaim } from "./palette.js";
+
 export interface PresenceUser {
   clientId: number;
+  /** The person, shared by all their tabs; a peer that announced none is its client. */
+  id: string;
   name: string;
   color: string;
   slot: string | null;
@@ -10,8 +14,10 @@ export interface PresenceUser {
 }
 
 interface AnnouncedUser {
+  id?: unknown;
   name?: unknown;
   color?: unknown;
+  joinedAt?: unknown;
 }
 
 export interface AwarenessState {
@@ -36,11 +42,48 @@ function toPresence(
 ): PresenceUser {
   return {
     clientId,
+    id: idOf(clientId, user),
     name: String(user.name ?? "Someone"),
-    color: String(user.color ?? "gray"),
+    color: String(user.color ?? PALETTE[0]),
     slot: slotOf(editing),
     hasCursor: cursor != null,
   };
+}
+
+/** Everyone's claim on a color, the viewer's own included, so every client settles on the same assignment. */
+export function colorClaims(
+  states: ReadonlyMap<number, AwarenessState>,
+): ColorClaim[] {
+  return [...states].flatMap(([clientId, { user }]) =>
+    user ? [toClaim(clientId, user)] : [],
+  );
+}
+
+function toClaim(clientId: number, user: AnnouncedUser): ColorClaim {
+  return {
+    clientId,
+    userId: idOf(clientId, user),
+    joinedAt:
+      typeof user.joinedAt === "number"
+        ? user.joinedAt
+        : Number.MAX_SAFE_INTEGER,
+    color: typeof user.color === "string" ? user.color : undefined,
+  };
+}
+
+/** The color the viewer should announce now, or nothing when it already announces it. */
+export function ownColorChange(
+  states: ReadonlyMap<number, AwarenessState>,
+  selfId: number,
+): string | undefined {
+  const own = states.get(selfId)?.user;
+  const color = own && assignColors(colorClaims(states)).get(idOf(selfId, own));
+
+  return color === own?.color ? undefined : color;
+}
+
+function idOf(clientId: number, user: AnnouncedUser): string {
+  return typeof user.id === "string" && user.id ? user.id : String(clientId);
 }
 
 function slotOf(editing: AwarenessState["editing"]): string | null {

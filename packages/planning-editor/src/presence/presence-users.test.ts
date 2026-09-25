@@ -2,14 +2,17 @@ import { describe, it, expect } from "vitest";
 
 import { templateFor } from "@re-cinq/planning-document";
 
+import { PALETTE } from "./palette.js";
 import {
+  colorClaims,
+  ownColorChange,
   presenceLabel,
   presenceUsers,
   type AwarenessState,
 } from "./presence-users.js";
 
 const ANA_STATE: AwarenessState = {
-  user: { name: "Ana", color: "#d33682" },
+  user: { id: "ana", name: "Ana", color: "#d33682", joinedAt: 10 },
   editing: { slot: "kpis" },
 };
 
@@ -25,6 +28,7 @@ describe("presenceUsers", () => {
     expect(presenceUsers(both, 1)).toEqual([
       {
         clientId: 2,
+        id: "ana",
         name: "Ana",
         color: "#d33682",
         slot: "kpis",
@@ -50,12 +54,61 @@ describe("presenceUsers", () => {
       { name: "Ana", slot: null },
     ]);
   });
+
+  it("keys a peer that announced no id by its client id", () => {
+    const anonymous = states([[4, { user: { name: "Ana" } }]]);
+    expect(presenceUsers(anonymous, 1)).toMatchObject([{ id: "4" }]);
+  });
+});
+
+describe("ownColorChange", () => {
+  it("moves the viewer, who joined after Ana, off her color onto the second", () => {
+    const both = states([
+      [2, ANA_STATE],
+      [1, { user: { id: "ben", name: "Ben", joinedAt: 20, color: "#d33682" } }],
+    ]);
+    expect(ownColorChange(both, 1)).toBe(PALETTE[1]);
+  });
+
+  it("settles a viewer that announced an empty id, keyed by its client id", () => {
+    const alone = states([[1, { user: { id: "", name: "Ben" } }]]);
+    expect(ownColorChange(alone, 1)).toBe(PALETTE[0]);
+  });
+
+  it("asks for no change once the viewer holds its settled color", () => {
+    const settled = states([
+      [1, { user: { id: "ben", name: "Ben", color: PALETTE[0] } }],
+    ]);
+    expect(ownColorChange(settled, 1)).toBeUndefined();
+  });
+});
+
+describe("colorClaims", () => {
+  it("claims Ana's announced color, the viewer's own included, and skips a client with no user", () => {
+    const all = states([
+      [1, { user: { id: "ben", name: "Ben", joinedAt: 20 } }],
+      [2, ANA_STATE],
+      [3, {}],
+    ]);
+    expect(colorClaims(all)).toEqual([
+      { clientId: 1, userId: "ben", joinedAt: 20, color: undefined },
+      { clientId: 2, userId: "ana", joinedAt: 10, color: "#d33682" },
+    ]);
+  });
+
+  it("puts a peer that announced no join time after everyone who did", () => {
+    const legacy = states([[5, { user: { name: "Old" } }]]);
+    expect(colorClaims(legacy)).toMatchObject([
+      { userId: "5", joinedAt: Number.MAX_SAFE_INTEGER },
+    ]);
+  });
 });
 
 describe("presenceLabel", () => {
   const template = templateFor("feature");
   const ana = {
     clientId: 2,
+    id: "ana",
     name: "Ana",
     color: "#d33682",
     slot: "kpis",

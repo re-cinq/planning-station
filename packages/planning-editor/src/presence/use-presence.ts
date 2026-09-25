@@ -1,25 +1,74 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Awareness } from "y-protocols/awareness";
 
 import { slotAt, type MenuBlock } from "../menu/section-context.js";
 import type { PlanBlockNoteEditor } from "../schema/block-bridge.js";
-import { presenceUsers, type PresenceUser } from "./presence-users.js";
+import { paintPeers } from "./peer-cursor.js";
+import {
+  ownColorChange,
+  presenceUsers,
+  type AwarenessState,
+  type PresenceUser,
+} from "./presence-users.js";
 
 export function usePresence(awareness: Awareness): PresenceUser[] {
   const [users, setUsers] = useState(() => readUsers(awareness));
-
-  useEffect(() => {
-    const update = () => setUsers(readUsers(awareness));
-    awareness.on("change", update);
-    update();
-
-    return () => awareness.off("change", update);
-  }, [awareness]);
+  useOnAwareness(awareness, () => setUsers(readUsers(awareness)));
 
   return users;
 }
 
-export function useTrackEditing(
+/** Everything this client shares with the others on the plan: where it is editing, its color, and theirs on its screen. */
+export function useSharedPresence(
+  editor: PlanBlockNoteEditor,
+  awareness: Awareness,
+): void {
+  useTrackEditing(editor, awareness);
+  useOwnColor(awareness);
+  usePeerColors(editor, awareness);
+}
+
+/** Announces the color this client settles on with everyone else here, so no two people share one. */
+function useOwnColor(awareness: Awareness): void {
+  useOnAwareness(awareness, () => {
+    const color = ownColorChange(awareness.getStates(), awareness.clientID);
+    const own = (awareness.getLocalState() as AwarenessState | null)?.user;
+
+    if (color) {
+      awareness.setLocalStateField("user", { ...own, color });
+    }
+  });
+}
+
+/** Keeps every peer's caret in the color they announce now. */
+function usePeerColors(
+  editor: PlanBlockNoteEditor,
+  awareness: Awareness,
+): void {
+  useOnAwareness(awareness, () => {
+    const root = editor.domElement;
+
+    if (root) {
+      paintPeers(root, readUsers(awareness));
+    }
+  });
+}
+
+/** Runs now and on every awareness change, until the awareness or listener goes. */
+function useOnAwareness(awareness: Awareness, listener: () => void): void {
+  const latest = useRef(listener);
+  latest.current = listener;
+
+  useEffect(() => {
+    const run = () => latest.current();
+    awareness.on("change", run);
+    run();
+
+    return () => awareness.off("change", run);
+  }, [awareness]);
+}
+
+function useTrackEditing(
   editor: PlanBlockNoteEditor,
   awareness: Awareness,
 ): void {

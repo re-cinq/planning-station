@@ -24,7 +24,7 @@ export interface PlanActions {
   onRefine?: (request: RefineRequest) => Promise<void>;
 }
 
-const NOBODY: PlanUser = { id: "", name: "Someone", color: "currentColor" };
+const NOBODY: PlanUser = { id: "", name: "Someone" };
 
 export const PlanActionsContext = createContext<PlanActions>({ user: NOBODY });
 
