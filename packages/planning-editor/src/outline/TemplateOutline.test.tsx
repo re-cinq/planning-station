@@ -35,6 +35,36 @@ describe("TemplateOutline", () => {
       .toBeVisible();
   });
 
+  it("marks Success criteria as holding 2 settled inputs no refine has used", async () => {
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        settled={new Map([["kpis", 2]])}
+      />,
+    );
+    await expect
+      .element(
+        screen
+          .getByRole("listitem", { name: "Success criteria", exact: true })
+          .getByText("2 settled inputs waiting for a refine"),
+      )
+      .toBeVisible();
+  });
+
+  it("says one settled input in the singular", async () => {
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        settled={new Map([["kpis", 1]])}
+      />,
+    );
+    await expect
+      .element(screen.getByText("1 settled input waiting for a refine"))
+      .toBeVisible();
+  });
+
   it("says a passing plan is ready for approval", async () => {
     const screen = await render(
       <TemplateOutline

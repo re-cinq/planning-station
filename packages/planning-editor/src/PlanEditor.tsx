@@ -2,6 +2,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import type { Doc } from "yjs";
 import { BlockNoteView } from "@blocknote/ariakit";
 import {
+  settledBySlot,
   templateFor,
   validatePlan,
   type PlanDocument,
@@ -20,6 +21,8 @@ import { InlineChanges } from "./blocks/InlineChanges.js";
 import type { ChangeHosts } from "./blocks/change-hosts.js";
 import { PlanSideMenu } from "./menu/PlanSideMenu.js";
 import { PlanSlashMenu } from "./menu/PlanSlashMenu.js";
+import { readBlocks } from "@re-cinq/planning-yjs";
+
 import { TemplateOutline } from "./outline/TemplateOutline.js";
 import styles from "./PlanEditor.module.scss";
 import type { PlanBlockNoteEditor } from "./schema/block-bridge.js";
@@ -234,15 +237,33 @@ function ParticipantsPane({
 function OutlinePane({
   meta,
   outlineFooter,
+  doc,
   ...outline
 }: Pick<
   LayoutProps,
-  "meta" | "template" | "report" | "sections" | "outlineFooter"
+  "meta" | "template" | "report" | "sections" | "outlineFooter" | "doc"
 >) {
+  const settled = useSettledBySlot(doc, outline.sections);
+
   return (
-    <TemplateOutline {...outline} approval={meta.approval}>
+    <TemplateOutline {...outline} settled={settled} approval={meta.approval}>
       {outlineFooter}
     </TemplateOutline>
+  );
+}
+
+// Read from the document rather than the projection, because `used` lives on the comment and question blocks themselves. Recomputed when the sections change, which is what an edit or a refine produces.
+function useSettledBySlot(
+  doc: Doc,
+  sections: LayoutProps["sections"],
+): ReadonlyMap<string, number> {
+  return useMemo(
+    () =>
+      settledBySlot(
+        readBlocks(doc),
+        sections.map((section) => section.slot),
+      ),
+    [doc, sections],
   );
 }
 

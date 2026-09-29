@@ -125,9 +125,10 @@ The plan editor is the React component people write a plan in: the feature's nam
 ## Outline
 
 - The outline lists every section, marks the ones required at the chosen phase, and shows each section's problems under it ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L12), [validated by](../../packages/planning-editor/src/outline/problems-by-slot.test.ts#L13), [validated by](../../packages/planning-editor/src/outline/problems-by-slot.test.ts#L18)).
-- The outline follows the plan's sections in document order, the agent's own included, and never marks a section the agent added as required ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L67), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L107)).
-- The outline says whether the plan is ready for the phase ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L38)).
-- Once the plan is approved, the outline says who approved it and on which day instead ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L48), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L146)).
+- The outline follows the plan's sections in document order, the agent's own included, and never marks a section the agent added as required ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L97), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L107)).
+- The outline says whether the plan is ready for the phase ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L68)).
+- The outline marks each section holding settled input no refine has used, and counts it, so a decision reached in a comment is not mistaken for one written into the plan ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L38), [validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L55)).
+- Once the plan is approved, the outline says who approved it and on which day instead ([validated by](../../packages/planning-editor/src/outline/TemplateOutline.test.tsx#L78), [validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L146)).
 - A host can draw its own action under the outline's sections, such as the approve button the outline gates ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L133)).
 - The editor hands every validation report to the host's onValidation, at the approval phase unless told otherwise ([validated by](../../packages/planning-editor/src/PlanEditor.test.tsx#L167)).
 

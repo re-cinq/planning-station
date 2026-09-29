@@ -61,6 +61,18 @@ export function settledCount(inputs: RefineInputs): number {
   return inputs.answered.length + inputs.resolved.length;
 }
 
+/** Per section, the settled input no refine has used yet. Resolving a thread or answering a question decides it, but only a refine writes it in — so a section can read as handled while nothing has been written from it. Sections with none are left out. */
+export function settledBySlot(
+  blocks: readonly BlockJson[],
+  slots: readonly string[],
+): ReadonlyMap<string, number> {
+  return new Map(
+    slots
+      .map((slot) => [slot, settledCount(refineInputs(blocks, slot))] as const)
+      .filter(([, settled]) => settled > 0),
+  );
+}
+
 /** The ids a proposal built from these inputs uses, so accepting it can mark them. */
 export function usesOf(inputs: RefineInputs): RefineUses {
   return {

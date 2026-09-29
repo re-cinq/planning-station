@@ -25,6 +25,11 @@
   color: var(--ps-fg-muted);
 }
 
+// Not an error — the plan is fine, it just has decided input nobody has written in yet.
+.settled {
+  color: var(--ps-warning);
+}
+
 .problems {
   margin: 0;
   padding-left: var(--ps-space-list);

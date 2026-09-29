@@ -4,6 +4,7 @@ import { planWith, textBlock } from "../testing/plans.js";
 import {
   markUsed,
   refineInputs,
+  settledBySlot,
   settledCount,
   usesOf,
 } from "./refine-inputs.js";
@@ -91,5 +92,18 @@ describe("markUsed", () => {
       .filter((block) => block.props.used)
       .map((block) => block.id);
     expect(used).toEqual([CACHE.id, TARGET.id]);
+  });
+});
+
+describe("settledBySlot", () => {
+  it("counts 2 settled inputs in kpis and leaves out intent and scope, which have none", () => {
+    expect([...settledBySlot(PLAN, ["intent", "kpis", "scope"])]).toEqual([
+      ["kpis", 2],
+    ]);
+  });
+
+  it("leaves out kpis once an earlier refine used q-target and c1", () => {
+    const used = markUsed(PLAN, { questions: ["q-target"], comments: ["c1"] });
+    expect([...settledBySlot(used, ["intent", "kpis"])]).toEqual([]);
   });
 });
