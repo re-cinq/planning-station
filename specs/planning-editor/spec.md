@@ -45,11 +45,12 @@ The plan editor is the React component people write a plan in: the feature's nam
 
 ## A change under its paragraph
 
-- The agent's answer is read where it lands: each proposed change is drawn under the paragraph it is about, showing the words it would put there and not repeating the ones already above it ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L73)).
+- The agent's answer is read where it lands: each proposed change is drawn under the paragraph it is about, showing the words it would put there and not repeating the ones already above it, unless it takes them out ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L73)).
 - A change about no paragraph of its own — a question the agent asks — hangs at the end of its section, before the section's own actions, and reads as its question ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L90)).
-- Only a change that drops a paragraph says the paragraph goes; a change that rewrites a section with nothing warns that the section is cleared; any other change reads as its words ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L90), [validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L107)).
-- Accepting writes that one paragraph and leaves the rest of the plan alone ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L120)).
-- Discarding takes the card away and leaves the paragraph as it was ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L129)).
+- A change that takes words out and writes none repeats them as they read now, struck through under a caption, so its card reads on its own — stacked under another card, at the end of its section, or read aloud: a removal shows its paragraph's words, a table as its cells on one line, and a change that rewrites a section with nothing shows every line of prose it clears ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L143), [validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L157), [validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L108)).
+- When there is nothing to take out, the card says the paragraph or the section is empty; any other change reads as its words and takes nothing out ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L180), [validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L90)).
+- Accepting writes that one paragraph and leaves the rest of the plan alone ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L121)).
+- Discarding takes the card away and leaves the paragraph as it was ([validated by](../../packages/planning-editor/src/blocks/InlineChanges.test.tsx#L130)).
 
 ## Template guard
 

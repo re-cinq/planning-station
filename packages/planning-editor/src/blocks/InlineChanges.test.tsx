@@ -5,7 +5,7 @@ import type { AgentOp, PlanDocument } from "@re-cinq/planning-document";
 import { proposeChanges, readBlocks } from "@re-cinq/planning-yjs";
 
 import { PlanEditor } from "../PlanEditor.js";
-import { createMemoryHub } from "../session/memory-hub.js";
+import { createMemoryHub, type PlanSeed } from "../session/memory-hub.js";
 import { ANA, lastCallOf, planSeed, textBlock } from "../testing/fixtures.js";
 
 const SLOW = "Checkout is slow.";
@@ -21,8 +21,8 @@ const idOf = (hub: ReturnType<typeof createMemoryHub>, text: string) =>
     JSON.stringify(block.content).includes(text),
   )?.id ?? "";
 
-const rendered = async () => {
-  const hub = createMemoryHub(SEED);
+const rendered = async (seed = SEED) => {
+  const hub = createMemoryHub(seed);
   const onChange = vi.fn<(plan: PlanDocument) => void>();
   const screen = await render(
     <PlanEditor transport={hub.connect()} user={ANA} onChange={onChange} />,
@@ -51,13 +51,13 @@ const proposeRewrite = (hub: ReturnType<typeof createMemoryHub>) =>
     },
   });
 
-const cardWordsFor = async (op: AgentOp) => {
-  const { hub, screen } = await rendered();
+const cardFor = async (op: AgentOp, seed = SEED) => {
+  const { hub, screen } = await rendered(seed);
   propose(hub, op);
   const card = screen.getByRole("group", { name: "Proposed change" });
   await expect.element(card).toBeVisible();
 
-  return String(card.element().textContent);
+  return card.element();
 };
 
 const intentText = (plan?: PlanDocument) => {
@@ -87,8 +87,8 @@ describe("a change proposed about one paragraph", () => {
     }).toEqual({ shows: true, repeats: false, under: true });
   });
 
-  it("draws an added question at the end of its section, reading as the question rather than a paragraph that goes", async () => {
-    const words = await cardWordsFor({
+  it("draws an added question at the end of its section, reading as the question and taking nothing out", async () => {
+    const card = await cardFor({
       op: "add-question",
       slot: "intent",
       questionId: "q-new",
@@ -99,22 +99,23 @@ describe("a change proposed about one paragraph", () => {
     });
 
     expect({
-      asks: words.includes("Which market first?"),
-      drops: words.includes("This paragraph goes."),
-    }).toEqual({ asks: true, drops: false });
+      asks: String(card.textContent).includes("Which market first?"),
+      struck: struckIn(card),
+      removes: /Removes|Clears/.test(String(card.textContent)),
+    }).toEqual({ asks: true, struck: [], removes: false });
   });
 
-  it("warns that the section is cleared, not that a paragraph goes, when set-section-text writes no paragraphs", async () => {
-    const words = await cardWordsFor({
+  it("repeats every line of prose a cleared section loses, struck through under a caption, when set-section-text writes no paragraphs", async () => {
+    const card = await cardFor({
       op: "set-section-text",
       slot: "intent",
       paragraphs: [],
     });
 
     expect({
-      paragraphGoes: words.includes("This paragraph goes."),
-      sectionCleared: words.includes("This section is cleared."),
-    }).toEqual({ paragraphGoes: false, sectionCleared: true });
+      caption: String(card.textContent).includes("Clears this section:"),
+      struck: struckIn(card),
+    }).toEqual({ caption: true, struck: [SLOW, CARTS] });
   });
 
   it("writes only that paragraph when Accept is clicked", async () => {
@@ -138,4 +139,75 @@ describe("a change proposed about one paragraph", () => {
       .toBe(0);
     await expect.element(screen.getByText(SLOW)).toBeVisible();
   });
+
+  it("repeats the words of the paragraph a removal takes out, struck through under a caption, and nothing of the one it keeps", async () => {
+    const card = await cardFor({
+      op: "remove-block",
+      slot: "intent",
+      blockId: `paragraph-${CARTS}`,
+    });
+
+    expect({
+      caption: String(card.textContent).includes("Removes this paragraph:"),
+      struck: struckIn(card),
+      keeps: String(card.textContent).includes(SLOW),
+    }).toEqual({ caption: true, struck: [CARTS], keeps: false });
+  });
+
+  it("reads a removed table as its cells on one struck line", async () => {
+    const card = await cardFor(
+      { op: "remove-block", slot: "intent", blockId: "t-markets" },
+      planSeed("feature", {
+        intent: [
+          textBlock("paragraph", {}, SLOW),
+          {
+            id: "t-markets",
+            type: "table",
+            props: {},
+            children: [],
+            content: {
+              type: "tableContent",
+              rows: [{ cells: ["Market", "p95"] }, { cells: ["DE", "200 ms"] }],
+            },
+          },
+        ],
+      }),
+    );
+
+    expect(struckIn(card)).toEqual(["Market · p95 · DE · 200 ms"]);
+  });
+
+  it.each<{ says: string; op: AgentOp; seed: PlanSeed }>([
+    {
+      says: "Removes an empty paragraph.",
+      op: { op: "remove-block", slot: "intent", blockId: "paragraph-" },
+      seed: planSeed("feature", {
+        intent: [
+          textBlock("paragraph", {}, SLOW),
+          textBlock("paragraph", {}, ""),
+        ],
+      }),
+    },
+    {
+      says: "Clears an empty section.",
+      op: { op: "set-section-text", slot: "intent", paragraphs: [] },
+      seed: planSeed("feature", { scope: [textBlock("paragraph", {}, SLOW)] }),
+    },
+  ])(
+    "says $says when what it takes out has no words",
+    async ({ says, op, seed }) => {
+      const card = await cardFor(op, seed);
+
+      expect({
+        says: String(card.textContent).includes(says),
+        struck: struckIn(card),
+      }).toEqual({ says: true, struck: [] });
+    },
+  );
 });
+
+function struckIn(card: Element): string[] {
+  return [...card.querySelectorAll("del")].map((line) =>
+    String(line.textContent),
+  );
+}

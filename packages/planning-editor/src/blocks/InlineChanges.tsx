@@ -46,7 +46,7 @@ function ChangeCard({ review }: { review: ReviewableChange }) {
       className={styles.change}
       contentEditable={false}
     >
-      <Words change={review.change} />
+      <Words change={review.change} removes={review.removes} />
       {review.stale && <Moved />}
       <Bar review={review} />
     </div>
@@ -75,25 +75,67 @@ function Bar({ review }: { review: ReviewableChange }) {
   );
 }
 
-/** What a change that writes no words does, for the ops where that is something a person must be told. */
-const NOTHING_WRITTEN: Partial<Record<PlanChange["op"]["op"], string>> = {
-  "remove-block": "This paragraph goes.",
-  "set-section-text": "This section is cleared.",
-  "set-section-prose": "This section is cleared.",
+/** How a change that writes no words introduces the words it takes out, and what it says when there are none. */
+interface Removal {
+  caption: string;
+  empty: string;
+}
+
+const CLEARS: Removal = {
+  caption: "Clears this section:",
+  empty: "Clears an empty section.",
 };
 
-/** The change as a person reads it: the words it proposes, or what writing none of them does. */
-function Words({ change }: { change: PlanChange }): ReactNode {
-  const words = changeWords(change);
-  const warning = NOTHING_WRITTEN[change.op.op];
+const REMOVALS: Partial<Record<PlanChange["op"]["op"], Removal>> = {
+  "remove-block": {
+    caption: "Removes this paragraph:",
+    empty: "Removes an empty paragraph.",
+  },
+  "set-section-text": CLEARS,
+  "set-section-prose": CLEARS,
+};
 
-  return words.length === 0 && warning ? (
-    <p className={styles.dropped}>{warning}</p>
-  ) : (
-    words.map((line, index) => (
-      <p key={index} className={styles.words}>
-        {line}
-      </p>
-    ))
+/** The change as a person reads it: the words it proposes, or the words it takes out when it writes none. */
+function Words({
+  change,
+  removes,
+}: {
+  change: PlanChange;
+  removes: readonly string[];
+}): ReactNode {
+  const words = changeWords(change);
+  const removal = REMOVALS[change.op.op];
+
+  if (words.length === 0 && removal) {
+    return <Removed removal={removal} lines={removes} />;
+  }
+
+  return words.map((line, index) => (
+    <p key={index} className={styles.words}>
+      {line}
+    </p>
+  ));
+}
+
+interface RemovedProps {
+  removal: Removal;
+  lines: readonly string[];
+}
+
+/** The words a change takes out, repeated struck through so the card reads on its own: stacked under another card, at the end of a section, or read aloud. */
+function Removed({ removal, lines }: RemovedProps): ReactNode {
+  if (lines.length === 0) {
+    return <p className={styles.dropped}>{removal.empty}</p>;
+  }
+
+  return (
+    <>
+      <p className={styles.caption}>{removal.caption}</p>
+      {lines.map((line, index) => (
+        <p key={index} className={styles.dropped}>
+          <del>{line}</del>
+        </p>
+      ))}
+    </>
   );
 }
