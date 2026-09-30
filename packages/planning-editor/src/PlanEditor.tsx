@@ -4,6 +4,7 @@ import { BlockNoteView } from "@blocknote/ariakit";
 import {
   settledBySlot,
   templateFor,
+  toBlocks,
   validatePlan,
   type PlanDocument,
   type PlanMeta,
@@ -21,8 +22,6 @@ import { InlineChanges } from "./blocks/InlineChanges.js";
 import type { ChangeHosts } from "./blocks/change-hosts.js";
 import { PlanSideMenu } from "./menu/PlanSideMenu.js";
 import { PlanSlashMenu } from "./menu/PlanSlashMenu.js";
-import { readBlocks } from "@re-cinq/planning-yjs";
-
 import { TemplateOutline } from "./outline/TemplateOutline.js";
 import styles from "./PlanEditor.module.scss";
 import type { PlanBlockNoteEditor } from "./schema/block-bridge.js";
@@ -237,13 +236,12 @@ function ParticipantsPane({
 function OutlinePane({
   meta,
   outlineFooter,
-  doc,
   ...outline
 }: Pick<
   LayoutProps,
-  "meta" | "template" | "report" | "sections" | "outlineFooter" | "doc"
+  "meta" | "template" | "report" | "sections" | "outlineFooter"
 >) {
-  const settled = useSettledBySlot(doc, outline.sections);
+  const settled = useSettledBySlot(outline.sections);
 
   return (
     <TemplateOutline {...outline} settled={settled} approval={meta.approval}>
@@ -252,18 +250,17 @@ function OutlinePane({
   );
 }
 
-// Read from the document rather than the projection, because `used` lives on the comment and question blocks themselves. Recomputed when the sections change, which is what an edit or a refine produces.
+// The projected sections carry every block with its props, `used` and `resolved` included, and are rebuilt on each edit or refine.
 function useSettledBySlot(
-  doc: Doc,
   sections: LayoutProps["sections"],
 ): ReadonlyMap<string, number> {
   return useMemo(
     () =>
       settledBySlot(
-        readBlocks(doc),
+        toBlocks({ sections }),
         sections.map((section) => section.slot),
       ),
-    [doc, sections],
+    [sections],
   );
 }
 
