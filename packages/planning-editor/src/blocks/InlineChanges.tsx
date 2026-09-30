@@ -125,7 +125,7 @@ interface RemovedProps {
 /** The words a change takes out, repeated struck through so the card reads on its own: stacked under another card, at the end of a section, or read aloud. */
 function Removed({ removal, lines }: RemovedProps): ReactNode {
   if (lines.length === 0) {
-    return <p className={styles.dropped}>{removal.empty}</p>;
+    return <p className={styles.caption}>{removal.empty}</p>;
   }
 
   return (

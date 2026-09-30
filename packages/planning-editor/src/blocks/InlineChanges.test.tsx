@@ -1,3 +1,4 @@
+import "@blocknote/ariakit/style.css";
 import { describe, it, expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
@@ -197,14 +198,68 @@ describe("a change proposed about one paragraph", () => {
     "says $says when what it takes out has no words",
     async ({ says, op, seed }) => {
       const card = await cardFor(op, seed);
+      const sentence = [...card.querySelectorAll("p")].find(
+        (line) => line.textContent === says,
+      );
 
       expect({
-        says: String(card.textContent).includes(says),
+        says: sentence?.textContent,
         struck: struckIn(card),
-      }).toEqual({ says: true, struck: [] });
+        decoration: decorationOf(sentence),
+      }).toEqual({ says, struck: [], decoration: "none" });
     },
   );
+
+  it("keeps a removed line struck in its card's color under BlockNote's styles for suggestions, even under the pointer", async () => {
+    const card = await cardFor({
+      op: "remove-block",
+      slot: "intent",
+      blockId: `paragraph-${CARTS}`,
+    });
+    const removed = card.querySelector("del")!;
+    await userEvent.hover(removed);
+    const words = getComputedStyle(removed);
+    const line = getComputedStyle(removed.parentElement!);
+
+    expect({
+      line: line.textDecorationLine,
+      words: words.textDecorationLine,
+      color: words.color,
+    }).toEqual({ line: "line-through", words: "none", color: line.color });
+  });
+
+  it("repeats the items nested under a removed list item on their own struck lines, after its own words", async () => {
+    const card = await cardFor(
+      { op: "remove-block", slot: "intent", blockId: "li-markets" },
+      planSeed("feature", {
+        intent: [
+          textBlock("paragraph", {}, SLOW),
+          {
+            id: "li-markets",
+            type: "bulletListItem",
+            props: {},
+            content: [{ type: "text", text: "Launch in DE", styles: {} }],
+            children: [
+              {
+                id: "li-at",
+                type: "bulletListItem",
+                props: {},
+                content: [{ type: "text", text: "Then in AT", styles: {} }],
+                children: [],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(struckIn(card)).toEqual(["Launch in DE", "Then in AT"]);
+  });
 });
+
+function decorationOf(element?: Element): string | undefined {
+  return element && getComputedStyle(element).textDecorationLine;
+}
 
 function struckIn(card: Element): string[] {
   return [...card.querySelectorAll("del")].map((line) =>
