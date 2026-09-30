@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyOps,
+  changeWords,
   isPlanBlock,
+  partitionSections,
   plainText,
   tableCells,
-  writtenIn,
   type BlockJson,
   type PlanChange,
 } from "@re-cinq/planning-document";
@@ -19,13 +20,18 @@ import type { Doc } from "yjs";
 
 import { blocksOf } from "./doc-blocks.js";
 
+/** What a change that writes no words takes out of the plan as it reads now: one block, or a section's prose. */
+export type Removal =
+  | { takes: "block"; type: BlockJson["type"]; lines: string[] }
+  | { takes: "section"; lines: string[] };
+
 /** One proposed change as a person meets it: the agent's words, whether the paragraph moved on, and what they can do about it. */
 export interface ReviewableChange {
   change: PlanChange;
   /** The paragraph reads differently now, so writing this would go over what someone else wrote. */
   stale: boolean;
-  /** The lines a removal or a section rewrite takes out of the section as it reads now; none for any other change. */
-  removes: string[];
+  /** Only for a removal or a section rewrite that writes nothing: what it takes out, so the card can show it. */
+  removes?: Removal;
   write(): void;
   discard(): void;
 }
@@ -56,36 +62,83 @@ function reviewable(doc: Doc): ReviewableChange[] {
   }));
 }
 
-/** The ops that take words out of a section rather than write over one paragraph. */
-const TAKES_OUT: readonly string[] = [
-  "remove-block",
-  "set-section-text",
-  "set-section-prose",
-];
+type RemovalReader = (
+  blocks: readonly BlockJson[],
+  change: PlanChange,
+) => Removal | undefined;
 
-/** The section's blocks that accepting leaves out, read as they stand now. */
+/** The ops that take words out of a section rather than write over one paragraph. */
+const REMOVALS: Partial<Record<PlanChange["op"]["op"], RemovalReader>> = {
+  "remove-block": blockRemoval,
+  "set-section-text": sectionRemoval,
+  "set-section-prose": sectionRemoval,
+};
+
+/** What the change takes out, read only when its card would show it: when it writes no words of its own. */
 function removedBy(
   blocks: readonly BlockJson[],
-  { op, slot }: PlanChange,
-): string[] {
-  if (!TAKES_OUT.includes(op.op)) {
-    return [];
-  }
+  change: PlanChange,
+): Removal | undefined {
+  const read = REMOVALS[change.op.op];
 
+  return read && changeWords(change).length === 0
+    ? read(blocks, change)
+    : undefined;
+}
+
+/** The block the removal is about, wherever it sits now: nested under another block or moved to another section, it still hosts the card. */
+function blockRemoval(
+  blocks: readonly BlockJson[],
+  change: PlanChange,
+): Removal | undefined {
+  const block = blocks
+    .flatMap(descendants)
+    .find((candidate) => candidate.id === change.anchorId);
+
+  return block && { takes: "block", type: block.type, lines: wordsOf(block) };
+}
+
+/** The section's blocks that accepting leaves out, read as they stand now. */
+function sectionRemoval(
+  blocks: readonly BlockJson[],
+  { op, slot }: PlanChange,
+): Removal {
   const kept = new Set(
-    writtenIn(applyOps(blocks, [op]), slot).map((block) => block.id),
+    sectionBlocks(applyOps(blocks, [op]), slot).map((block) => block.id),
   );
 
-  return writtenIn(blocks, slot)
-    .filter((block) => !kept.has(block.id))
-    .flatMap(wordsOf);
+  return {
+    takes: "section",
+    lines: sectionBlocks(blocks, slot)
+      .filter((block) => !kept.has(block.id))
+      .flatMap(wordsOf),
+  };
+}
+
+function sectionBlocks(
+  blocks: readonly BlockJson[],
+  slot: string,
+): BlockJson[] {
+  const section = partitionSections(blocks).find(
+    (candidate) => candidate.slot === slot,
+  );
+
+  return section?.blocks ?? [];
+}
+
+function descendants(block: BlockJson): BlockJson[] {
+  return [block, ...childrenOf(block).flatMap(descendants)];
+}
+
+function childrenOf(block: BlockJson): BlockJson[] {
+  return isPlanBlock(block) ? [] : block.children;
 }
 
 /** A block's own words, then its nested blocks' words, one line each; blank lines are left out. */
 function wordsOf(block: BlockJson): string[] {
-  const children = isPlanBlock(block) ? [] : block.children;
-
-  return [textOf(block.content), ...children.flatMap(wordsOf)].filter(Boolean);
+  return [textOf(block.content), ...childrenOf(block).flatMap(wordsOf)].filter(
+    Boolean,
+  );
 }
 
 /** A table reads as its cells on one line. */

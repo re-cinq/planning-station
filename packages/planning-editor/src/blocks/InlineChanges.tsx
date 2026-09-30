@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { changeWords, type PlanChange } from "@re-cinq/planning-document";
+import {
+  changeWords,
+  type BlockJson,
+  type PlanChange,
+} from "@re-cinq/planning-document";
 
 import type { ChangeHosts } from "./change-hosts.js";
-import type { ReviewableChange } from "../session/use-plan-changes.js";
+import type { Removal, ReviewableChange } from "../session/use-plan-changes.js";
 import styles from "./InlineChanges.module.scss";
 import refine from "./RefineControls.module.scss";
 
@@ -75,67 +79,64 @@ function Bar({ review }: { review: ReviewableChange }) {
   );
 }
 
-/** How a change that writes no words introduces the words it takes out, and what it says when there are none. */
-interface Removal {
-  caption: string;
-  empty: string;
-}
-
-const CLEARS: Removal = {
-  caption: "Clears this section:",
-  empty: "Clears an empty section.",
-};
-
-const REMOVALS: Partial<Record<PlanChange["op"]["op"], Removal>> = {
-  "remove-block": {
-    caption: "Removes this paragraph:",
-    empty: "Removes an empty paragraph.",
-  },
-  "set-section-text": CLEARS,
-  "set-section-prose": CLEARS,
-};
-
 /** The change as a person reads it: the words it proposes, or the words it takes out when it writes none. */
 function Words({
   change,
   removes,
 }: {
   change: PlanChange;
-  removes: readonly string[];
+  removes: Removal | undefined;
 }): ReactNode {
-  const words = changeWords(change);
-  const removal = REMOVALS[change.op.op];
-
-  if (words.length === 0 && removal) {
-    return <Removed removal={removal} lines={removes} />;
+  if (removes) {
+    return <Removed removal={removes} />;
   }
 
-  return words.map((line, index) => (
+  return changeWords(change).map((line, index) => (
     <p key={index} className={styles.words}>
       {line}
     </p>
   ));
 }
 
-interface RemovedProps {
-  removal: Removal;
-  lines: readonly string[];
-}
-
 /** The words a change takes out, repeated struck through so the card reads on its own: stacked under another card, at the end of a section, or read aloud. */
-function Removed({ removal, lines }: RemovedProps): ReactNode {
-  if (lines.length === 0) {
-    return <p className={styles.caption}>{removal.empty}</p>;
+function Removed({ removal }: { removal: Removal }): ReactNode {
+  const verb = removal.takes === "section" ? "Clears" : "Removes";
+  const what = removal.takes === "section" ? "section" : nounOf(removal.type);
+
+  if (removal.lines.length === 0) {
+    return <p className={styles.caption}>{`${verb} an empty ${what}.`}</p>;
   }
 
   return (
     <>
-      <p className={styles.caption}>{removal.caption}</p>
-      {lines.map((line, index) => (
+      <p className={styles.caption}>{`${verb} this ${what}:`}</p>
+      {removal.lines.map((line, index) => (
         <p key={index} className={styles.dropped}>
           <del>{line}</del>
         </p>
       ))}
     </>
   );
+}
+
+/** What a removed block is called, for the kinds a person would name; any other reads as a block. */
+const NOUNS: Partial<Record<BlockJson["type"], string>> = {
+  paragraph: "paragraph",
+  heading: "heading",
+  bulletListItem: "item",
+  numberedListItem: "item",
+  checkListItem: "item",
+  quote: "quote",
+  codeBlock: "code block",
+  table: "table",
+  question: "question",
+  answer: "answer",
+  comment: "comment",
+  finding: "finding",
+  kpi: "KPI",
+  prototype: "prototype",
+};
+
+function nounOf(type: BlockJson["type"]): string {
+  return NOUNS[type] ?? "block";
 }

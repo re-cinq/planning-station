@@ -2,8 +2,16 @@ import "@blocknote/ariakit/style.css";
 import { describe, it, expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
-import type { AgentOp, PlanDocument } from "@re-cinq/planning-document";
-import { proposeChanges, readBlocks } from "@re-cinq/planning-yjs";
+import type {
+  AgentOp,
+  BlockJson,
+  PlanDocument,
+} from "@re-cinq/planning-document";
+import {
+  applyOpsToDoc,
+  proposeChanges,
+  readBlocks,
+} from "@re-cinq/planning-yjs";
 
 import { PlanEditor } from "../PlanEditor.js";
 import { createMemoryHub, type PlanSeed } from "../session/memory-hub.js";
@@ -113,10 +121,10 @@ describe("a change proposed about one paragraph", () => {
       paragraphs: [],
     });
 
-    expect({
-      caption: String(card.textContent).includes("Clears this section:"),
-      struck: struckIn(card),
-    }).toEqual({ caption: true, struck: [SLOW, CARTS] });
+    expect(removalIn(card)).toEqual({
+      caption: "Clears this section:",
+      struck: [SLOW, CARTS],
+    });
   });
 
   it("writes only that paragraph when Accept is clicked", async () => {
@@ -149,33 +157,78 @@ describe("a change proposed about one paragraph", () => {
     });
 
     expect({
-      caption: String(card.textContent).includes("Removes this paragraph:"),
-      struck: struckIn(card),
+      ...removalIn(card),
       keeps: String(card.textContent).includes(SLOW),
-    }).toEqual({ caption: true, struck: [CARTS], keeps: false });
+    }).toEqual({
+      caption: "Removes this paragraph:",
+      struck: [CARTS],
+      keeps: false,
+    });
   });
 
-  it("reads a removed table as its cells on one struck line", async () => {
-    const card = await cardFor(
-      { op: "remove-block", slot: "intent", blockId: "t-markets" },
-      planSeed("feature", {
-        intent: [
-          textBlock("paragraph", {}, SLOW),
-          {
-            id: "t-markets",
-            type: "table",
-            props: {},
-            children: [],
-            content: {
-              type: "tableContent",
-              rows: [{ cells: ["Market", "p95"] }, { cells: ["DE", "200 ms"] }],
-            },
-          },
-        ],
-      }),
-    );
+  it.each<{ kind: string; blockId: string; caption: string; struck: string[] }>(
+    [
+      {
+        kind: "table as its cells on one line",
+        blockId: "t-markets",
+        caption: "Removes this table:",
+        struck: ["Market · p95 · DE · 200 ms"],
+      },
+      {
+        kind: "question, though a refine never rewrites one",
+        blockId: "question-Which market first?",
+        caption: "Removes this question:",
+        struck: ["Which market first?"],
+      },
+      {
+        kind: "list item with the items nested under it after its own words",
+        blockId: "li-markets",
+        caption: "Removes this item:",
+        struck: ["Launch in DE", "Then in AT"],
+      },
+      {
+        kind: "item nested under another, where its card hangs",
+        blockId: "li-at",
+        caption: "Removes this item:",
+        struck: ["Then in AT"],
+      },
+    ],
+  )(
+    "captions a removed $kind and repeats its words struck through",
+    async ({ blockId, caption, struck }) => {
+      const card = await cardFor(
+        { op: "remove-block", slot: "intent", blockId },
+        planSeed("feature", { intent: INTENT_BLOCKS }),
+      );
 
-    expect(struckIn(card)).toEqual(["Market · p95 · DE · 200 ms"]);
+      expect(removalIn(card)).toEqual({ caption, struck });
+    },
+  );
+
+  it("repeats the paragraph as it reads now, beside Apply anyway, when it was rewritten after the removal was proposed", async () => {
+    const { hub, screen } = await rendered();
+    propose(hub, {
+      op: "remove-block",
+      slot: "intent",
+      blockId: `paragraph-${CARTS}`,
+    });
+    applyOpsToDoc(hub.doc, [
+      {
+        op: "replace-block",
+        slot: "intent",
+        blockId: `paragraph-${CARTS}`,
+        block: {
+          type: "paragraph",
+          content: [{ type: "text", text: "Carts are left.", styles: {} }],
+        },
+      },
+    ]);
+    const card = screen.getByRole("group", { name: "Proposed change" });
+    await expect
+      .element(card.getByRole("button", { name: "Apply anyway" }))
+      .toBeVisible();
+
+    expect(struckIn(card.element())).toEqual(["Carts are left."]);
   });
 
   it.each<{ says: string; op: AgentOp; seed: PlanSeed }>([
@@ -227,38 +280,47 @@ describe("a change proposed about one paragraph", () => {
       color: words.color,
     }).toEqual({ line: "line-through", words: "none", color: line.color });
   });
-
-  it("repeats the items nested under a removed list item on their own struck lines, after its own words", async () => {
-    const card = await cardFor(
-      { op: "remove-block", slot: "intent", blockId: "li-markets" },
-      planSeed("feature", {
-        intent: [
-          textBlock("paragraph", {}, SLOW),
-          {
-            id: "li-markets",
-            type: "bulletListItem",
-            props: {},
-            content: [{ type: "text", text: "Launch in DE", styles: {} }],
-            children: [
-              {
-                id: "li-at",
-                type: "bulletListItem",
-                props: {},
-                content: [{ type: "text", text: "Then in AT", styles: {} }],
-                children: [],
-              },
-            ],
-          },
-        ],
-      }),
-    );
-
-    expect(struckIn(card)).toEqual(["Launch in DE", "Then in AT"]);
-  });
 });
+
+const INTENT_BLOCKS: BlockJson[] = [
+  textBlock("paragraph", {}, SLOW),
+  {
+    id: "t-markets",
+    type: "table",
+    props: {},
+    children: [],
+    content: {
+      type: "tableContent",
+      rows: [{ cells: ["Market", "p95"] }, { cells: ["DE", "200 ms"] }],
+    },
+  },
+  textBlock("question", { questionId: "q-market" }, "Which market first?"),
+  {
+    id: "li-markets",
+    type: "bulletListItem",
+    props: {},
+    content: [{ type: "text", text: "Launch in DE", styles: {} }],
+    children: [
+      {
+        id: "li-at",
+        type: "bulletListItem",
+        props: {},
+        content: [{ type: "text", text: "Then in AT", styles: {} }],
+        children: [],
+      },
+    ],
+  },
+];
 
 function decorationOf(element?: Element): string | undefined {
   return element && getComputedStyle(element).textDecorationLine;
+}
+
+function removalIn(card: Element) {
+  return {
+    caption: String(card.querySelector("p")?.textContent),
+    struck: struckIn(card),
+  };
 }
 
 function struckIn(card: Element): string[] {
