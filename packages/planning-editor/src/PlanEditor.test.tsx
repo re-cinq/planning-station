@@ -14,7 +14,10 @@ import {
   editingAna,
   FIRST_TITLE,
   lastCallOf,
+  planSeed,
+  renderAsAna,
   renderPair,
+  textBlock,
 } from "./testing/fixtures.js";
 
 const firstHeading = { name: FIRST_TITLE };
@@ -174,6 +177,31 @@ describe("PlanEditor", () => {
         expect.objectContaining({ code: "missing-block", slot: "kpis" }),
       ]),
     });
+  });
+
+  it("marks the intent in the outline with 1 settled input once Ben's thread is resolved, and not before", async () => {
+    const { screen } = await renderAsAna(
+      planSeed("feature", {
+        intent: [
+          textBlock("paragraph", {}, "Checkout"),
+          textBlock(
+            "comment",
+            { commentId: "c1", author: "Ben", at: "2026-09-18T09:12:00.000Z" },
+            "Support tags this weekly.",
+          ),
+        ],
+      }),
+    );
+    const waiting = screen
+      .getByRole("navigation", { name: "Plan outline" })
+      .getByRole("listitem", { name: FIRST_TITLE, exact: true })
+      .getByText("1 settled input waiting for a refine");
+    const thread = screen.getByLabelText("Comment by Ben");
+    await expect.element(thread).toBeVisible();
+    expect(waiting.query()).toBeNull();
+
+    await userEvent.click(thread.getByRole("button", { name: "Resolve" }));
+    await expect.element(waiting).toBeVisible();
   });
 
   it("shows Ben the words Ana types into the intent", async () => {

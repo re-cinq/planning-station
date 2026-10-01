@@ -2,7 +2,9 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import type { Doc } from "yjs";
 import { BlockNoteView } from "@blocknote/ariakit";
 import {
+  settledBySlot,
   templateFor,
+  toBlocks,
   validatePlan,
   type PlanDocument,
   type PlanMeta,
@@ -239,10 +241,26 @@ function OutlinePane({
   LayoutProps,
   "meta" | "template" | "report" | "sections" | "outlineFooter"
 >) {
+  const settled = useSettledBySlot(outline.sections);
+
   return (
-    <TemplateOutline {...outline} approval={meta.approval}>
+    <TemplateOutline {...outline} settled={settled} approval={meta.approval}>
       {outlineFooter}
     </TemplateOutline>
+  );
+}
+
+// The projected sections carry every block with its props, `used` and `resolved` included, and are rebuilt on each edit or refine.
+function useSettledBySlot(
+  sections: LayoutProps["sections"],
+): ReadonlyMap<string, number> {
+  return useMemo(
+    () =>
+      settledBySlot(
+        toBlocks({ sections }),
+        sections.map((section) => section.slot),
+      ),
+    [sections],
   );
 }
 
