@@ -20,7 +20,16 @@
   text-decoration: line-through;
 }
 
-.who {
+// BlockNote draws every `del` in the editor as a collaborator's suggestion, overlined on hover; a removed line keeps the strike `.dropped` gives it.
+.change .dropped del,
+.change .dropped del:hover {
+  color: inherit;
+  background: none;
+  border-radius: 0;
+  text-decoration: none;
+}
+
+.caption {
   margin: 0;
   color: var(--ps-fg-muted);
   font-size: var(--ps-fs-hint);

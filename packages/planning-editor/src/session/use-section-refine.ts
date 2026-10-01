@@ -4,7 +4,6 @@ import {
   refineInputs,
   settledCount,
   usesOf,
-  type BlockJson,
   type ProposalPreview,
   type RefineInputs,
   type RefineProposal,
@@ -16,9 +15,10 @@ import {
   askRefine,
   discardRefine,
   proposalsIn,
-  readBlocks,
 } from "@re-cinq/planning-yjs";
 import type { Doc } from "yjs";
+
+import { blocksOf } from "./doc-blocks.js";
 
 export interface RefineAsked {
   inputs: RefineInputs;
@@ -38,8 +38,6 @@ export interface SectionRefine {
   applyAnyway(): void;
   discard(): void;
 }
-
-const blocksCache = new WeakMap<Doc, BlockJson[]>();
 
 /** One section's refine, read from the live document so every tab sees the same one. */
 export function useSectionRefine(doc: Doc, slot: string): SectionRefine {
@@ -87,19 +85,4 @@ function useDocVersion(doc: Doc): number {
   }, [doc]);
 
   return version;
-}
-
-/** Read once per change and shared by every section, instead of once per section. */
-function blocksOf(doc: Doc): BlockJson[] {
-  const cached = blocksCache.get(doc);
-
-  if (cached) {
-    return cached;
-  }
-
-  const blocks = readBlocks(doc);
-  blocksCache.set(doc, blocks);
-  doc.once("update", () => blocksCache.delete(doc));
-
-  return blocks;
 }
