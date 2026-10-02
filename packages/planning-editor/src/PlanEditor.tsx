@@ -233,21 +233,37 @@ function ParticipantsPane({
   );
 }
 
+type OutlinePaneProps = Pick<
+  LayoutProps,
+  "editor" | "meta" | "template" | "report" | "sections" | "outlineFooter"
+>;
+
 function OutlinePane({
+  editor,
   meta,
   outlineFooter,
   ...outline
-}: Pick<
-  LayoutProps,
-  "meta" | "template" | "report" | "sections" | "outlineFooter"
->) {
+}: OutlinePaneProps) {
   const settled = useSettledBySlot(outline.sections);
 
   return (
-    <TemplateOutline {...outline} settled={settled} approval={meta.approval}>
+    <TemplateOutline
+      {...outline}
+      settled={settled}
+      approval={meta.approval}
+      onLocate={(slot) => scrollToSection(editor, slot)}
+    >
       {outlineFooter}
     </TemplateOutline>
   );
+}
+
+// Each section heading carries its slot, so the outline goes to it without looking the block up.
+function scrollToSection(editor: PlanBlockNoteEditor, slot: string): void {
+  const { dom } = editor.prosemirrorView;
+  const heading = dom.querySelector(`header[data-slot="${CSS.escape(slot)}"]`);
+
+  heading?.scrollIntoView({ block: "start" });
 }
 
 // The projected sections carry every block with its props, `used` and `resolved` included, and are rebuilt on each edit or refine.

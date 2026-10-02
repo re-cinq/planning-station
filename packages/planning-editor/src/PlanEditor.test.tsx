@@ -47,6 +47,21 @@ const renderRollout = async () => {
 
 const dragHandles = () => document.querySelectorAll('[data-test="dragHandle"]');
 
+const LONG_INTENT = planSeed("performance", {
+  intent: [...Array(60).keys()].map((line) =>
+    textBlock("paragraph", {}, `Line ${line}`),
+  ),
+});
+
+const { slots: PERFORMANCE_SLOTS } = templateFor("performance");
+const LAST_TITLE = PERFORMANCE_SLOTS.at(-1)?.title ?? "";
+
+const isOnScreen = (element: Element) => {
+  const rect = element.getBoundingClientRect();
+
+  return rect.top >= 0 && rect.bottom <= window.innerHeight;
+};
+
 const renderPlan = async (extra: Partial<PlanEditorProps> = {}) => {
   const { props, lastPlan } = editingAna(SEED);
   const screen = await render(<PlanEditor {...props} {...extra} />);
@@ -114,6 +129,19 @@ describe("PlanEditor", () => {
       (entry) => entry.getAttribute("aria-label"),
     );
     expect(titles.slice(1, 3)).toEqual(["Success criteria", "Rollout"]);
+  });
+
+  it("scrolls the last section's heading into view when its outline title is clicked", async () => {
+    const { screen } = await renderAsAna(LONG_INTENT);
+    const heading = screen.getByRole("heading", { name: LAST_TITLE });
+    await expect.element(heading).toBeInTheDocument();
+    expect(isOnScreen(heading.element())).toBe(false);
+    await userEvent.click(
+      screen
+        .getByRole("navigation", { name: "Plan outline" })
+        .getByRole("button", { name: LAST_TITLE }),
+    );
+    await expect.poll(() => isOnScreen(heading.element())).toBeTruthy();
   });
 
   it("offers Question in the agent's Rollout section when '/' is typed", async () => {
