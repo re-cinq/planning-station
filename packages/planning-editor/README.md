@@ -379,6 +379,7 @@ tokens at all and follows your theme the moment they exist:
 | accent and states                | `--accent`, `--accent-hover`, `--success`, `--warning`, `--danger`                            |
 | type                             | `--font-sans`, `--font-mono`, `--fs-xs`, `--fs-sm`, `--fs-lg`, `--fw-semibold`                |
 | rhythm and shape                 | `--space-2`, `--space-3`, `--space-5`, `--space-6`, `--radius-sm`, `--shadow`, `--transition` |
+| room above a section scrolled to | `--scroll-offset` (the height of a sticky header covering the editor)                         |
 
 BlockNote's own `--bn-*` variables are all derived from those tokens, so a theme
 switch needs no work on your side: change your tokens (or flip

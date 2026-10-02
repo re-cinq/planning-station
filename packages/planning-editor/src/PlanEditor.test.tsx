@@ -135,14 +135,13 @@ describe("PlanEditor", () => {
     const { screen } = await renderAsAna(LONG_INTENT);
     const heading = screen.getByRole("heading", { name: LAST_TITLE });
     await expect.element(heading).toBeInTheDocument();
-    const offScreenBefore = !isOnScreen(heading.element());
+    expect(isOnScreen(heading.element())).toBe(false);
     await userEvent.click(
       screen
         .getByRole("navigation", { name: "Plan outline" })
         .getByRole("button", { name: LAST_TITLE }),
     );
     await expect.poll(() => isOnScreen(heading.element())).toBeTruthy();
-    expect(offScreenBefore).toBe(true);
   });
 
   it("offers Question in the agent's Rollout section when '/' is typed", async () => {
