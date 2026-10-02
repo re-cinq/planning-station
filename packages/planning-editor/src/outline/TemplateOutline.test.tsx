@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
 import { templateFor } from "@re-cinq/planning-document";
 
@@ -111,5 +112,38 @@ describe("TemplateOutline", () => {
       "Rollout",
       "Success criteria required",
     ]);
+  });
+
+  it("hands onLocate the kpis slot when Success criteria is clicked", async () => {
+    const onLocate = vi.fn<(slot: string) => void>();
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        sections={HEADINGS}
+        onLocate={onLocate}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Success criteria" }),
+    );
+    expect(onLocate.mock.calls).toEqual([["kpis"]]);
+  });
+
+  it("keeps Success criteria as plain text when the plan lacks that section", async () => {
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        sections={HEADINGS.filter(({ slot }) => slot !== "kpis")}
+        onLocate={vi.fn()}
+      />,
+    );
+    await expect
+      .element(screen.getByRole("listitem", { name: "Success criteria" }))
+      .toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Success criteria" }).query(),
+    ).toBeNull();
   });
 });

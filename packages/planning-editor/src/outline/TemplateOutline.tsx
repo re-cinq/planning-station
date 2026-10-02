@@ -23,6 +23,8 @@ export interface TemplateOutlineProps {
   approval?: PlanMeta["approval"];
   /** Per slot, settled input no refine has used. Resolving a thread decides it; only a refine writes it in, so without this the outline reads as handled while nothing was written. */
   settled?: ReadonlyMap<string, number>;
+  /** Brings a section's heading into view; without it the titles are plain text. */
+  onLocate?: (slot: string) => void;
   children?: ReactNode;
 }
 
@@ -64,7 +66,7 @@ function dateOf(iso: string): string {
 
 type OutlineSlotsProps = Pick<
   TemplateOutlineProps,
-  "template" | "report" | "sections" | "settled"
+  "template" | "report" | "sections" | "settled" | "onLocate"
 >;
 
 function OutlineSlots(props: OutlineSlotsProps) {
@@ -82,6 +84,7 @@ function slotRows({
   report,
   sections = NO_SECTIONS,
   settled = NO_SETTLED,
+  onLocate,
 }: OutlineSlotsProps): OutlineSlotProps[] {
   const problems = problemsBySlot(report.problems);
 
@@ -89,6 +92,7 @@ function slotRows({
     section,
     problems: problems.get(section.slot) ?? [],
     settled: settled.get(section.slot) ?? 0,
+    onLocate,
   }));
 }
 
@@ -96,12 +100,15 @@ interface OutlineSlotProps {
   section: OutlineSection;
   problems: readonly Problem[];
   settled: number;
+  onLocate?: (slot: string) => void;
 }
 
-function OutlineSlot({ section, problems, settled }: OutlineSlotProps) {
+function OutlineSlot({ problems, settled, ...locatable }: OutlineSlotProps) {
+  const { section } = locatable;
+
   return (
     <li aria-label={section.title}>
-      <span className={styles.title}>{section.title}</span>
+      <SlotTitle {...locatable} />
       {section.required && <span className={styles.required}> required</span>}
       {settled > 0 && (
         <span className={styles.settled}> {settledPhrase(settled)}</span>
@@ -112,6 +119,26 @@ function OutlineSlot({ section, problems, settled }: OutlineSlotProps) {
         ))}
       </ul>
     </li>
+  );
+}
+
+// A section the plan lacks has no heading to go to, so its title stays text.
+function SlotTitle({
+  section,
+  onLocate,
+}: Pick<OutlineSlotProps, "section" | "onLocate">) {
+  if (!onLocate || !section.inPlan) {
+    return <span className={styles.title}>{section.title}</span>;
+  }
+
+  return (
+    <button
+      type="button"
+      className={styles.locate}
+      onClick={() => onLocate(section.slot)}
+    >
+      {section.title}
+    </button>
   );
 }
 

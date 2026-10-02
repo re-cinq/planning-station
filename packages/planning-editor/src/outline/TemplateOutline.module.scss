@@ -17,8 +17,25 @@
   padding-left: var(--ps-space-list);
 }
 
-.title {
+.title,
+.locate {
   font-weight: var(--ps-fw-label);
+}
+
+.locate {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
 }
 
 .required {
