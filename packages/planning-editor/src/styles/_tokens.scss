@@ -9,7 +9,7 @@
 //   type    --font-sans --font-mono --fs-xs --fs-sm --fs-base --fs-md --fs-lg --fs-xl
 //           --lh-body --lh-heading --lh-note --fw-medium --fw-semibold --fw-bold
 //   layout  --space-2 --space-3 --space-5 --space-6 --space-7 --space-page
-//           --space-paragraph --scroll-offset
+//           --space-paragraph
 //           --radius-sm --shadow --transition
 
 @mixin plan-tokens {
@@ -55,7 +55,6 @@
   --ps-space-section: var(--space-7, 2.5rem);
   --ps-space-layout: var(--space-6, 1.5rem);
   --ps-space-page: var(--space-page, 4rem);
-  --ps-scroll-offset: var(--scroll-offset, 0px);
   --ps-margin-notes: 17rem;
 
   --ps-radius: var(--radius-sm, 6px);
