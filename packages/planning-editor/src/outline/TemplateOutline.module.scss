@@ -14,7 +14,9 @@
   display: grid;
   gap: var(--ps-space-inline);
   margin: 0;
-  padding-left: var(--ps-space-list);
+  // Room for a two-digit number, which the sidebar's scroll box would otherwise clip.
+  padding-left: calc(var(--ps-space-list) + 1ch);
+  font-variant-numeric: tabular-nums;
 }
 
 .title,
@@ -31,10 +33,29 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  // Keeps the section's number on a wrapped title's first line instead of its last.
+  vertical-align: top;
+  text-decoration: underline transparent;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.25em;
+  transition:
+    color var(--ps-transition),
+    text-decoration-color var(--ps-transition);
 
+  // The title reads as a link, so a host's button chrome stays off it.
   &:hover,
+  &:focus-visible,
+  &:active {
+    padding: 0;
+    box-shadow: none;
+    color: var(--ps-accent);
+    background: none;
+    text-decoration-color: currentColor;
+  }
+
   &:focus-visible {
-    text-decoration: underline;
+    border-radius: 2px;
+    outline-offset: 2px;
   }
 }
 
