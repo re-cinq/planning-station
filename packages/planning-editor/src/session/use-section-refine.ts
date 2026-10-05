@@ -31,6 +31,8 @@ export interface SectionRefine {
   /** Answered questions plus resolved threads: what a refine has to work with. */
   settled: number;
   proposal?: RefineProposal;
+  /** Who asked the agent to refine another section, while it still works on that one: it answers one section at a time. */
+  busyFor?: string;
   preview?: ProposalPreview;
   ask(askedBy: string): RefineAsked;
   accept(): void;
@@ -46,12 +48,14 @@ export function useSectionRefine(doc: Doc, slot: string): SectionRefine {
   return useMemo(() => {
     const blocks = blocksOf(doc);
     const inputs = refineInputs(blocks, slot);
-    const proposal = proposalsIn(doc).find((one) => one.slot === slot);
+    const proposals = proposalsIn(doc);
+    const proposal = proposals.find((one) => one.slot === slot);
 
     return {
       inputs,
       settled: settledCount(inputs),
       proposal,
+      busyFor: askerElsewhere(proposals, slot),
       preview:
         proposal?.status === "proposed"
           ? previewProposal(blocks, proposal)
@@ -59,6 +63,17 @@ export function useSectionRefine(doc: Doc, slot: string): SectionRefine {
       ...actionsFor(doc, slot, inputs),
     };
   }, [doc, slot, version]);
+}
+
+function askerElsewhere(
+  proposals: readonly RefineProposal[],
+  slot: string,
+): string | undefined {
+  const asked = proposals.find(
+    (one) => one.slot !== slot && one.status === "asked",
+  );
+
+  return asked?.askedBy;
 }
 
 function actionsFor(doc: Doc, slot: string, inputs: RefineInputs) {

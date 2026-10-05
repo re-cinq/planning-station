@@ -4,6 +4,7 @@ import { render } from "vitest-browser-react";
 import type { BlockJson, PlanDocument } from "@re-cinq/planning-document";
 import {
   applyOpsToDoc,
+  askRefine,
   failRefine,
   proposeRefine,
 } from "@re-cinq/planning-yjs";
@@ -142,6 +143,36 @@ describe("RefineControls", () => {
       .toBeEnabled();
   });
 
+  it("tells Ana why the host refused her refine of the open questions", async () => {
+    const { actions } = await renderPlan(
+      () => () =>
+        Promise.reject(
+          new Error("the planning agent is still working on this plan"),
+        ),
+    );
+    await refine(actions);
+    await expect
+      .element(actions.getByRole("alert"))
+      .toHaveTextContent(
+        "The agent cannot refine this section now: the planning agent is still working on this plan",
+      );
+  });
+
+  it("disables Refine on the open questions while the agent refines Success criteria for Ben, and says so", async () => {
+    const { hub, actions } = await renderPlan(() => vi.fn());
+    askRefine(hub.doc, { slot: "kpis", askedBy: "Ben" });
+    await expect
+      .element(actions.getByRole("button", { name: "Refine this section" }))
+      .toBeDisabled();
+    await expect
+      .element(
+        actions.getByText(
+          "The agent is refining another section for Ben; refine this one when it finishes",
+        ),
+      )
+      .toBeVisible();
+  });
+
   it("shows the agent's paragraph as an added line before anyone accepts it", async () => {
     const { actions } = await renderPlan(agentProposes);
     await refine(actions);
@@ -212,6 +243,18 @@ describe("RefineControls", () => {
     await expect
       .element(actions.getByText("The agent is refining this for Ana…"))
       .toBeVisible();
+  });
+
+  it("disables Ask again on the failed open questions while the agent refines Success criteria for Ben, keeping the failure", async () => {
+    const { hub, actions } = await renderPlan(agentFails);
+    await refine(actions);
+    askRefine(hub.doc, { slot: "kpis", askedBy: "Ben" });
+    await expect
+      .element(actions.getByRole("button", { name: "Ask again" }))
+      .toBeDisabled();
+    await expect
+      .element(actions.getByRole("alert"))
+      .toHaveTextContent(`The agent could not refine this section: ${CRASHED}`);
   });
 
   it("offers Refine again once Ana dismisses the failed refine", async () => {
