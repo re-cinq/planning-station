@@ -3,6 +3,7 @@ import type {
   ProposedRefine,
   RefineProposal,
 } from "@re-cinq/planning-document";
+import { useState } from "react";
 import type { Doc } from "yjs";
 
 import {
@@ -21,13 +22,18 @@ export interface RefineControlsProps {
 interface Refining extends RefineControlsProps {
   refine: SectionRefine;
   ask: () => void;
+  /** Why the host last refused this section's ask; only this tab's person asked, so only they are told. */
+  refusal: string | null;
 }
+
+type Refuse = (reason: string | null) => void;
 
 /** Ask the agent for one section, then accept or discard what it proposes. */
 export function RefineControls(props: RefineControlsProps) {
   const refine = useSectionRefine(props.doc, props.slot);
-  const ask = useAsk(props, refine);
-  const view = { ...props, refine, ask };
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const ask = useAsk(props, refine, setRefusal);
+  const view = { ...props, refine, ask, refusal };
 
   return refine.proposal ? (
     <RefineState {...view} proposal={refine.proposal} />
@@ -51,35 +57,65 @@ function RefineState({
   }
 }
 
-function useAsk({ slot, title }: RefineControlsProps, refine: SectionRefine) {
+/** A refused ask is withdrawn in every tab, and its reason stays on the section for the person who asked. */
+function useAsk(
+  { slot, title }: RefineControlsProps,
+  refine: SectionRefine,
+  refuse: Refuse,
+) {
   const { user, onRefine } = usePlanActions();
 
   return () => {
+    refuse(null);
     const asked = refine.ask(user.name);
-    onRefine?.({ slot, title, ...asked }).catch(() => refine.discard());
+    onRefine?.({ slot, title, ...asked }).catch((error: unknown) => {
+      refine.discard();
+      refuse(reasonOf(error));
+    });
   };
 }
 
-function RefineButton({ refine, ask }: Refining) {
-  const settled = refine.settled > 0;
+function reasonOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function RefineButton({ refine, ask, refusal }: Refining) {
+  const ready = refine.settled > 0 && refine.busyFor === undefined;
 
   return (
-    <p className={styles.bar}>
-      <button
-        type="button"
-        className={styles.refine}
-        disabled={!settled}
-        onClick={ask}
-      >
-        Refine this section
-      </button>
-      <span className={styles.note}>
-        {settled
-          ? `uses ${settledPhrase(refine)}`
-          : "Answer a question or resolve a thread to refine"}
-      </span>
+    <>
+      {refusal && <Refusal reason={refusal} />}
+      <p className={styles.bar}>
+        <button
+          type="button"
+          className={styles.refine}
+          disabled={!ready}
+          onClick={ask}
+        >
+          Refine this section
+        </button>
+        <span className={styles.note}>{buttonNote(refine)}</span>
+      </p>
+    </>
+  );
+}
+
+function Refusal({ reason }: { reason: string }) {
+  return (
+    <p className={styles.failed} role="alert">
+      The agent cannot refine this section now: {reason}
     </p>
   );
+}
+
+function buttonNote(refine: SectionRefine): string {
+  if (refine.busyFor !== undefined) {
+    return `The agent is refining another section for ${refine.busyFor}; refine this one when it finishes`;
+  }
+
+  return refine.settled > 0
+    ? `uses ${settledPhrase(refine)}`
+    : "Answer a question or resolve a thread to refine";
 }
 
 function Asked({ refine, askedBy }: Refining & { askedBy: string }) {
@@ -103,9 +139,11 @@ function Failed({ refine, ask, reason }: Refining & { reason: string }) {
         The agent could not refine this section: {reason}
       </p>
       <p className={styles.bar}>
-        <button type="button" className={styles.refine} onClick={ask}>
-          Ask again
-        </button>
+        <Primary
+          label="Ask again"
+          run={ask}
+          disabled={refine.busyFor !== undefined}
+        />
         <Quiet label="Dismiss" run={refine.discard} />
       </p>
     </section>
@@ -142,15 +180,33 @@ function ProposalButtons({
   stale,
 }: Pick<Refining, "refine" | "ask"> & { stale: boolean }) {
   const [label, run] = stale ? ["Ask again", ask] : ["Accept", refine.accept];
+  const waiting = stale && refine.busyFor !== undefined;
 
   return (
     <p className={styles.bar}>
-      <button type="button" className={styles.refine} onClick={run}>
-        {label}
-      </button>
+      <Primary label={label} run={run} disabled={waiting} />
       {stale && <Quiet label="Apply anyway" run={refine.applyAnyway} />}
       <Quiet label="Discard" run={refine.discard} />
     </p>
+  );
+}
+
+interface PrimaryProps {
+  label: string;
+  run: () => void;
+  disabled?: boolean;
+}
+
+function Primary({ label, run, disabled = false }: PrimaryProps) {
+  return (
+    <button
+      type="button"
+      className={styles.refine}
+      disabled={disabled}
+      onClick={run}
+    >
+      {label}
+    </button>
   );
 }
 
