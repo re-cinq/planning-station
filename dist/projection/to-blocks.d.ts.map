@@ -1,0 +1,1 @@
+{"version":3,"file":"to-blocks.d.ts","sourceRoot":"","sources":["../../src/projection/to-blocks.ts"],"names":[],"mappings":"AAAA,OAAO,EAAc,KAAK,SAAS,EAAE,MAAM,yBAAyB,CAAC;AACrE,OAAO,KAAK,EAAE,YAAY,EAAW,MAAM,0BAA0B,CAAC;AAGtE,wBAAgB,QAAQ,CACtB,IAAI,EAAE,IAAI,CAAC,YAAY,EAAE,UAAU,CAAC,GAAG,OAAO,CAAC,IAAI,CAAC,YAAY,EAAE,OAAO,CAAC,CAAC,GAC1E,SAAS,EAAE,CAOb"}
