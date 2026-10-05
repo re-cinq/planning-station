@@ -47,8 +47,13 @@ const writtenIntent = (plan: PlanDocument) => {
 
 let running: TestServer | undefined;
 
-const startPlan = async (doc = docFromBlocks(readyFeature())) => {
-  running = await startTestServer({ debounce: 10 });
+const LONGER_THAN_ANY_TEST_MS = 60_000;
+
+const startPlan = async (
+  doc = docFromBlocks(readyFeature()),
+  debounce = 10,
+) => {
+  running = await startTestServer({ debounce });
   const { meta } = await running.service.createPlan(NEW_PLAN);
   await running.service.storeDocument({
     planId: meta.id,
@@ -158,7 +163,10 @@ describe("createAgentWriter", () => {
   });
 
   it("writes one version for three ops made while presence is open", async () => {
-    const { test, planId } = await startPlan();
+    const { test, planId } = await startPlan(
+      docFromBlocks(readyFeature()),
+      LONGER_THAN_ANY_TEST_MS,
+    );
     await test.writer.openPresence({ planId, user: AGENT_USER });
 
     const before = (await test.store.listVersions(planId)).length;
@@ -169,6 +177,7 @@ describe("createAgentWriter", () => {
         actor: "planning-agent",
         ops: [{ op: "append-to-section", slot: "intent", paragraphs: [text] }],
       });
+      await new Promise((resolve) => setTimeout(resolve, 20));
     }
 
     await test.writer.closePresence({ planId });
