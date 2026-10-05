@@ -7,7 +7,7 @@ import {
   listMarker,
   quoteLine,
   type ListKind,
-} from "./markdown-syntax.js";
+} from "../ops/markdown-syntax.js";
 
 type Render = (block: ProseBlock, number: number) => string[];
 

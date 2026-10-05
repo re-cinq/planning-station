@@ -211,8 +211,11 @@ const next = applyOps(blocks, [
 ]);
 ```
 
-`set-section-text` replaces a section's prose with plain paragraphs and leaves
-its plan blocks, questions and comments alone; `append-to-section` adds to it.
+`set-section-text` replaces a section's prose with paragraphs and leaves its
+plan blocks, questions and comments alone; `append-to-section` adds to it. Each
+paragraph string is read as Markdown, so `- ` lines become list items, `#`
+lines subheadings and `` `code` `` styled text, whatever line endings it was
+typed with; text with no Markdown in it stays one paragraph.
 `set-section-prose` does the same with rich blocks: paragraphs, level 3
 headings, nested bullet, numbered and checklist items, quotes, code with its
 language and tables, their text marked bold, italic, code or struck through,

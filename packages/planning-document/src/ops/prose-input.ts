@@ -80,13 +80,14 @@ export const proseInputSchema: z.ZodType<ProseInput> = z.lazy(() => {
   ]);
 });
 
-/** The blocks the agent's prose becomes, under ids its slot mints in order, so the same prose writes the same blocks. */
+/** The blocks the agent's prose becomes, under ids its slot mints in order, so the same prose writes the same blocks; `offset` counts the blocks already ahead of them. */
 export function toProseBlocks(
   slot: string,
   inputs: readonly ProseInput[],
+  offset = 0,
 ): ProseBlock[] {
   return inputs.map((input, index) =>
-    proseBlock(input, `${slot}-p-${index + 1}`),
+    proseBlock(input, `${slot}-p-${offset + index + 1}`),
   );
 }
 

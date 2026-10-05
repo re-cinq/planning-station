@@ -7,8 +7,8 @@ import {
   parseHeading,
   type FenceOpening,
   type PlanFence,
-} from "./markdown-syntax.js";
-import { readProse } from "./read-prose.js";
+} from "../ops/markdown-syntax.js";
+import { readProse } from "../ops/read-prose.js";
 
 export interface Fence {
   tag: PlanFence;

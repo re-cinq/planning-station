@@ -20,6 +20,7 @@ import type {
 import { insertBlocks, removeBlock, replaceBlock } from "./block-ops.js";
 import { inSection, withSections } from "./in-section.js";
 import { toProseBlocks } from "./prose-input.js";
+import { proseFromMarkdown } from "./read-prose.js";
 
 const KPIS_SLOT = "kpis";
 const PROTOTYPE_SLOT = "prototype";
@@ -167,18 +168,14 @@ function isSameEntity(current: BlockJson, next: BlockJson): boolean {
   );
 }
 
+/** An agent writes its paragraphs in Markdown, so each one becomes the blocks and styles it spells; plain text stays one paragraph. */
 function paragraphs(
   slot: string,
   texts: readonly string[],
   offset = 0,
 ): BlockJson[] {
-  return texts.map((text, index) =>
-    parseBlock({
-      id: `${slot}-p-${offset + index + 1}`,
-      type: "paragraph",
-      props: {},
-      content: inlineFromText(text),
-    }),
+  return toProseBlocks(slot, texts.flatMap(proseFromMarkdown), offset).map(
+    parseBlock,
   );
 }
 
