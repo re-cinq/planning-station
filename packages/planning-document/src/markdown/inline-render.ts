@@ -1,5 +1,5 @@
 import type { InlineContent } from "../blocks/inline-text.js";
-import { mergeTexts, WORD } from "./inline-parse.js";
+import { mergeTexts, WORD } from "../ops/inline-parse.js";
 
 type InlineNode = InlineContent[number];
 type StyledText = Extract<InlineNode, { type: "text" }>;

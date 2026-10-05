@@ -4,7 +4,7 @@ import { templateFor } from "../template/templates.js";
 import { planWith } from "../testing/plans.js";
 import { styledText } from "../testing/rich-prose.js";
 import { markdownToOps } from "./markdown-to-ops.js";
-import { readProse } from "./read-prose.js";
+import { readProse } from "../ops/read-prose.js";
 
 const plain = (text: string) => styledText(text);
 

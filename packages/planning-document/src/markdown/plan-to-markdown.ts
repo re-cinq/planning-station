@@ -17,7 +17,7 @@ import {
   planHeading,
   quoted,
   sectionHeading,
-} from "./markdown-syntax.js";
+} from "../ops/markdown-syntax.js";
 import { writeProse } from "./write-prose.js";
 
 type Answers = ReadonlyMap<string, readonly PlanBlockOf<"answer">[]>;

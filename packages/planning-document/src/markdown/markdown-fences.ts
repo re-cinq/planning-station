@@ -17,7 +17,7 @@ import {
   problem,
   type MarkdownOps,
 } from "./markdown-outcome.js";
-import type { PlanFence } from "./markdown-syntax.js";
+import type { PlanFence } from "../ops/markdown-syntax.js";
 import type { Fence } from "./read-markdown.js";
 
 /** What the plan holds now, for telling a changed fence from one written back as it was. */

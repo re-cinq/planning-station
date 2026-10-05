@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import type { InlineContent } from "../blocks/inline-text.js";
-import { parseInline } from "./inline-parse.js";
+import { parseInline } from "../ops/inline-parse.js";
 import { canonicalInline, renderInline } from "./inline-render.js";
 
 const plain = (text: string) => ({ type: "text" as const, text, styles: {} });

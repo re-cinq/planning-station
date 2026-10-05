@@ -3,7 +3,7 @@ import {
   AGENT_HEADING_LEVEL,
   DEFAULT_CODE_LANGUAGE,
   type ProseInput,
-} from "../ops/prose-input.js";
+} from "./prose-input.js";
 import { parseInline } from "./inline-parse.js";
 import {
   closesFence,
@@ -37,6 +37,11 @@ const READERS: readonly BlockReader[] = [
   readTable,
   readListItem,
 ];
+
+/** One run of Markdown text as blocks, whatever line endings it was typed with. */
+export function proseFromMarkdown(text: string): ProseInput[] {
+  return readProse(text.split(/\r?\n/));
+}
 
 /** A section's prose lines as blocks: paragraphs, subheadings, nested lists, quotes, code and tables. */
 export function readProse(lines: readonly string[]): ProseInput[] {
