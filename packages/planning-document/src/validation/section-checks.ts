@@ -21,11 +21,14 @@ import {
 } from "./problems.js";
 
 export const missingSections: Check = ({
-  plan: { sections },
+  plan: { sections, droppedSlots },
   template: { slots },
   phase,
 }) => {
-  const present = new Set(sections.map((section) => section.slot));
+  const present = new Set([
+    ...sections.map((section) => section.slot),
+    ...droppedSlots,
+  ]);
 
   return slots
     .filter(

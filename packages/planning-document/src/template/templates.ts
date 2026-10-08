@@ -101,6 +101,11 @@ export function isCustomSlot(slot: string): boolean {
   return slot.startsWith(CUSTOM_SLOT_PREFIX);
 }
 
+/** Every section may be removed except the ones the template always requires. */
+export function isRemovableSlot(template: PlanTemplate, slot: string): boolean {
+  return findSectionSlot(template, slot)?.required !== "always";
+}
+
 export function newCustomSlot(): string {
   return `${CUSTOM_SLOT_PREFIX}${newId("section")}`;
 }

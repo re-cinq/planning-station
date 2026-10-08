@@ -15,14 +15,22 @@ export interface OutlineSection {
   inPlan: boolean;
 }
 
-/** The plan's sections in document order, the agent's own included, then any template section the plan lacks. */
+/** What the outline reads of the plan: its sections in document order, and the template slots it dropped. */
+export interface OutlinePlan {
+  sections: readonly PlanSectionHeading[];
+  droppedSlots?: readonly string[];
+}
+
+/** The plan's sections in document order, the agent's own included, then any template section the plan lacks and never dropped. */
 export function outlineSections(
   template: PlanTemplate,
-  sections: readonly PlanSectionHeading[],
+  { sections, droppedSlots = [] }: OutlinePlan,
   phase: ValidationPhase,
 ): OutlineSection[] {
   const present = new Set(sections.map((section) => section.slot));
-  const missing = template.slots.filter((slot) => !present.has(slot.slot));
+  const missing = template.slots.filter(
+    (slot) => !present.has(slot.slot) && !droppedSlots.includes(slot.slot),
+  );
 
   return [...sections, ...missing].map((section) => ({
     ...outlineSection(template, section, phase),

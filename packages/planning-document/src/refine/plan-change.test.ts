@@ -195,6 +195,12 @@ describe("changeWords", () => {
     ).toEqual([]);
   });
 
+  it("reads a section removal as Removes the section", () => {
+    expect(
+      changeWords(change({ op: "remove-section", slot: "prototype" })),
+    ).toEqual(["Removes the section"]);
+  });
+
   it("reads a section-text set as each paragraph it writes, one line each", () => {
     expect(
       changeWords(

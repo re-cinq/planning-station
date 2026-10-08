@@ -20,6 +20,7 @@ import {
 } from "@re-cinq/planning-yjs";
 import { applyUpdate, Doc } from "yjs";
 
+import { SectionNotRemovableError } from "./section-not-removable-error.js";
 import {
   presenceStates,
   startTestServer,
@@ -143,6 +144,50 @@ describe("createAgentWriter", () => {
     ).rejects.toThrow(SectionChangedError);
   });
 
+  it("removes the feature prototype section and records it as dropped", async () => {
+    const { test, planId } = await startPlan();
+    const plan = await test.writer.applyOps({
+      planId,
+      actor: "planning-agent",
+      ops: [{ op: "remove-section", slot: "prototype" }],
+    });
+    expect({
+      prototype: plan.sections.some(({ slot }) => slot === "prototype"),
+      droppedSlots: plan.droppedSlots,
+    }).toEqual({ prototype: false, droppedSlots: ["prototype"] });
+  });
+
+  it("refuses to remove the always-required intent section, naming why", async () => {
+    const { test, planId } = await startPlan();
+    await expect(
+      test.writer.applyOps({
+        planId,
+        actor: "planning-agent",
+        ops: [{ op: "remove-section", slot: "intent" }],
+      }),
+    ).rejects.toThrow(
+      new SectionNotRemovableError(
+        "intent is always required in a feature plan, so it cannot be removed",
+      ),
+    );
+  });
+
+  it("refuses a proposed removal of the always-required kpis section", async () => {
+    const { test, planId } = await startPlan();
+    await expect(
+      test.writer.proposeChanges({
+        planId,
+        actor: "planning-agent",
+        ops: [{ op: "remove-section", slot: "kpis" }],
+        uses: { questions: [], comments: [] },
+      }),
+    ).rejects.toThrow(
+      new SectionNotRemovableError(
+        "kpis is always required in a feature plan, so it cannot be removed",
+      ),
+    );
+  });
+
   it("fails the Refine ana asked for the intent, and the next reader sees why", async () => {
     const asked = docFromBlocks(readyFeature());
     askRefine(asked, { slot: "intent", askedBy: "ana" });
@@ -194,7 +239,43 @@ describe("createAgentWriter", () => {
       presenceStates(test.collab, { repo: NEW_PLAN.repo, planId }),
     ).toEqual([{ user: AGENT_USER, editing: { slot: null } }]);
   });
+
+  it("refuses a Refine proposal removing intent and a pass removing kpis, naming why", async () => {
+    const { test, planId } = await startPlan();
+    const request = { planId, actor: "planning-agent" };
+    const uses = { questions: [], comments: [] };
+
+    expect({
+      proposal: await refusalOf(
+        test.writer.propose({
+          ...request,
+          slot: "intent",
+          baseHash: "any",
+          uses,
+          ops: [{ op: "remove-section", slot: "intent" }],
+        }),
+      ),
+      pass: await refusalOf(
+        test.writer.proposePass({
+          ...request,
+          uses,
+          ops: [{ op: "remove-section", slot: "kpis" }],
+        }),
+      ),
+    }).toEqual({
+      proposal:
+        "intent is always required in a feature plan, so it cannot be removed",
+      pass: "kpis is always required in a feature plan, so it cannot be removed",
+    });
+  });
 });
+
+function refusalOf(write: Promise<unknown>): Promise<string> {
+  return write.then(
+    () => "accepted",
+    (error: Error) => error.message,
+  );
+}
 
 const CRASHED = "the agent crashed before its first turn";
 const NO_STATE = new Uint8Array();

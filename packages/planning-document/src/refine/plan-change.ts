@@ -91,6 +91,7 @@ const WORDS: { [Kind in AgentOp["op"]]: WordsReader<Kind> } = {
   "remove-block": noWords,
   "add-section": sectionWords,
   "set-section-title": titleWords,
+  "remove-section": removalWords,
   "add-question": questionWords,
   "add-finding": findingWords,
 };
@@ -136,6 +137,10 @@ function prototypeWords({
 
 function noWords(): string[] {
   return [];
+}
+
+function removalWords(): string[] {
+  return ["Removes the section"];
 }
 
 function questionWords(op: { question: string }): string[] {

@@ -1,6 +1,7 @@
 import type { BlockJson } from "../blocks/block-json.js";
 import type { Section } from "../plan/plan-document.js";
 import {
+  droppedSlotsOf,
   partitionSections,
   planTitle,
   sectionOrder,
@@ -30,5 +31,9 @@ export function withSections(
   blocks: readonly BlockJson[],
   sections: readonly Section[],
 ): BlockJson[] {
-  return toBlocks({ sections: [...sections], title: planTitle(blocks) ?? "" });
+  return toBlocks({
+    sections: [...sections],
+    title: planTitle(blocks) ?? "",
+    droppedSlots: droppedSlotsOf(blocks),
+  });
 }

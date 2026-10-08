@@ -2,7 +2,7 @@ import type { BlockJson } from "../blocks/block-json.js";
 import type { PlanDocument } from "../plan/plan-document.js";
 import type { PlanMeta } from "../plan/plan-meta.js";
 import { kpisOf, prototypeOf } from "./derive-views.js";
-import { partitionSections, planTitle } from "./partition.js";
+import { droppedSlotsOf, partitionSections, planTitle } from "./partition.js";
 
 export function toPlanDocument(
   blocks: readonly BlockJson[],
@@ -17,5 +17,6 @@ export function toPlanDocument(
     sections,
     kpis: kpisOf(everyBlock),
     prototype: prototypeOf(everyBlock),
+    droppedSlots: droppedSlotsOf(blocks),
   };
 }

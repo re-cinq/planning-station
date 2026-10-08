@@ -15,7 +15,8 @@ export const PLAN_BLOCK_CONFIGS = {
   "plan-title": {
     type: "plan-title",
     content: "inline",
-    propSchema: {},
+    // The slots removed from the plan, comma-joined: BlockNote props are primitives.
+    propSchema: { droppedSlots: { default: "" } },
   },
   "section-heading": {
     type: "section-heading",

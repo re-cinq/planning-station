@@ -105,6 +105,7 @@ export function applyChangeAnyway(
       ),
     );
     changeMap(doc).delete(changeId);
+    discardRemovedSection(doc, op, origin);
   }, origin);
 
   return written[0] ?? [];
@@ -128,6 +129,13 @@ export function discardChangesIn(
   doc.transact(() => {
     waiting.forEach((change) => changeMap(doc).delete(change.changeId));
   }, origin);
+}
+
+/** A removed section leaves its other changes nowhere to land. */
+function discardRemovedSection(doc: Doc, op: AgentOp, origin?: unknown): void {
+  if (op.op === "remove-section") {
+    discardChangesIn(doc, op.slot, origin);
+  }
 }
 
 function isStale(blocks: readonly BlockJson[], change: PlanChange): boolean {

@@ -19,6 +19,8 @@ export interface TemplateOutlineProps {
   report: ValidationReport;
   /** The plan's sections in document order; without them the outline lists the template's. */
   sections?: readonly PlanSectionHeading[];
+  /** The template slots removed from the plan, which the outline no longer lists as missing. */
+  droppedSlots?: readonly string[];
   /** Once the plan is approved, the outline says by whom instead of whether it is ready. */
   approval?: PlanMeta["approval"];
   /** Per slot, settled input no refine has used. Resolving a thread decides it; only a refine writes it in, so without this the outline reads as handled while nothing was written. */
@@ -66,7 +68,7 @@ function dateOf(iso: string): string {
 
 type OutlineSlotsProps = Pick<
   TemplateOutlineProps,
-  "template" | "report" | "sections" | "settled" | "onLocate"
+  "template" | "report" | "sections" | "droppedSlots" | "settled" | "onLocate"
 >;
 
 function OutlineSlots(props: OutlineSlotsProps) {
@@ -83,12 +85,14 @@ function slotRows({
   template,
   report,
   sections = NO_SECTIONS,
+  droppedSlots,
   settled = NO_SETTLED,
   onLocate,
 }: OutlineSlotsProps): OutlineSlotProps[] {
   const problems = problemsBySlot(report.problems);
+  const plan = { sections, droppedSlots };
 
-  return outlineSections(template, sections, report.phase).map((section) => ({
+  return outlineSections(template, plan, report.phase).map((section) => ({
     section,
     problems: problems.get(section.slot) ?? [],
     settled: settled.get(section.slot) ?? 0,

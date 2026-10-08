@@ -94,6 +94,7 @@ export const agentOpSchema = z.discriminatedUnion("op", [
     slot: customSlotSchema,
     title: z.string().min(1),
   }),
+  z.object({ op: z.literal("remove-section"), slot: z.string().min(1) }),
   z.object({ op: z.literal("add-question"), ...questionInputSchema.shape }),
   z.object({ op: z.literal("add-finding"), ...findingInputSchema.shape }),
 ]);

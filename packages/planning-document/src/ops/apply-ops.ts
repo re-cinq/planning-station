@@ -21,6 +21,7 @@ import { insertBlocks, removeBlock, replaceBlock } from "./block-ops.js";
 import { inSection, withSections } from "./in-section.js";
 import { toProseBlocks } from "./prose-input.js";
 import { proseFromMarkdown } from "./read-prose.js";
+import { removeSection } from "./remove-section.js";
 
 const KPIS_SLOT = "kpis";
 const PROTOTYPE_SLOT = "prototype";
@@ -83,6 +84,7 @@ const HANDLERS: Handlers = {
   "remove-block": removeBlock,
   "add-section": addSection,
   "set-section-title": setSectionTitle,
+  "remove-section": removeSection,
   "add-question": (blocks, op) => upsert(blocks, op.slot, questionBlock(op)),
   "add-finding": addFinding,
 };
