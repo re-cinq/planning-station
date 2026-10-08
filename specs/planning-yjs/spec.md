@@ -46,13 +46,14 @@ The Yjs bridge reads and writes the contract's blocks in a Yjs document without 
 ## Changes, one paragraph at a time
 
 - A pass's answer is cut into one change per paragraph it touched, each waiting beside the plan: the plan reads as it did until someone takes one ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L73)).
-- A section the pass adds needs no one's approval: it is written into the plan at once with everything the pass put in it, and only the pass's edits to sections that were already there wait as changes, each filed under its own section. Once written a section stays, since nobody holds an op to remove one ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L83)).
+- A section the pass adds needs no one's approval: it is written into the plan at once with everything the pass put in it, and only the pass's edits to sections that were already there wait as changes, each filed under its own section. A pass's removal of a section, unlike an addition, waits as a change like any edit ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L83)).
 - A pass answers the ask a person made, even when it changed nothing there, so the plan never says a refine is still coming after it arrived ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L139)).
 - A change is accepted on its own, and the ones beside it keep waiting ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L156)).
 - Each change is held against the paragraph it is about, not against the section: one paragraph moving on leaves every other change acceptable, and the ones that moved on are named ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L167), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L177), [validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L207)).
 - A change whose paragraph moved on can still be applied anyway, onto the paragraph as it stands ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L187)).
 - A discarded change leaves the plan as it was ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L196)).
 - Asking a section again drops only the changes filed under it; a change the same pass filed under another section keeps waiting ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L218)).
+- Accepting a change that removes a section removes it, and drops the other changes waiting in that section, since they have nowhere left to land; changes filed under other sections keep waiting ([validated by](../../packages/planning-yjs/src/refine/changes.test.ts#L240)).
 
 ## Wire format
 

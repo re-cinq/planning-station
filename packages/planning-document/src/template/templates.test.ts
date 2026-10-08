@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import {
   TEMPLATES,
   isCustomSlot,
+  isRemovableSlot,
   newCustomSlot,
   sectionSlotFor,
   templateFor,
@@ -125,5 +126,23 @@ describe("newCustomSlot", () => {
       fresh: first !== second,
       intent: isCustomSlot("intent"),
     }).toEqual({ custom: true, fresh: true, intent: false });
+  });
+});
+
+describe("isRemovableSlot", () => {
+  it("answers false for the always-required intent, kpis and ui-change prototype", () => {
+    expect([
+      isRemovableSlot(templateFor("feature"), "intent"),
+      isRemovableSlot(templateFor("feature"), "kpis"),
+      isRemovableSlot(templateFor("ui-change"), "prototype"),
+    ]).toEqual([false, false, false]);
+  });
+
+  it("answers true for the feature prototype, a custom section and an unknown slot", () => {
+    expect([
+      isRemovableSlot(templateFor("feature"), "prototype"),
+      isRemovableSlot(templateFor("feature"), "custom-rollout"),
+      isRemovableSlot(templateFor("feature"), "risk"),
+    ]).toEqual([true, true, true]);
   });
 });

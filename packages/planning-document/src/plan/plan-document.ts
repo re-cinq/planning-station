@@ -14,6 +14,7 @@ export const sectionSchema = z.object({
 export const derivedViewsSchema = z.object({
   kpis: z.array(kpiSchema),
   prototype: prototypeDeclarationSchema.nullable(),
+  droppedSlots: z.array(z.string()),
 });
 
 export const planDocumentSchema = planMetaSchema

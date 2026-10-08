@@ -1,5 +1,43 @@
 .actions {
   display: flex;
   width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-inline);
   margin-top: var(--ps-space-list);
+}
+
+.remove {
+  display: inline-flex;
+  margin-left: auto;
+  padding: var(--ps-space-inline);
+  color: var(--ps-fg-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ps-radius);
+  cursor: pointer;
+  transition: color var(--ps-transition);
+}
+
+.remove:hover {
+  color: var(--ps-fg);
+  border-color: var(--ps-border);
+}
+
+.confirm {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: var(--ps-space-list);
+  align-items: center;
+  padding: var(--ps-space-inline);
+  background: var(--ps-bg);
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius);
+}
+
+.question {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: var(--ps-fs-label);
 }

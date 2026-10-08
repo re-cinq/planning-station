@@ -33,11 +33,14 @@ export function seedBlocks(
 
 export const PLAN_TITLE_ID = "plan-title";
 
-export function titleBlock(title: string): BlockJson {
+export function titleBlock(
+  title: string,
+  droppedSlots: readonly string[] = [],
+): BlockJson {
   return parseBlock({
     id: PLAN_TITLE_ID,
     type: "plan-title",
-    props: {},
+    props: { droppedSlots: droppedSlots.join(",") },
     content: inlineFromText(title),
   });
 }

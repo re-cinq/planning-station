@@ -235,3 +235,32 @@ describe("discardChangesIn", () => {
     expect(changesIn(doc).map((change) => change.slot)).toEqual(["scope"]);
   });
 });
+
+describe("acceptChange remove-section", () => {
+  it("removes scope, drops its other waiting change and keeps the intent change", () => {
+    const doc = seeded();
+    const changes = proposeChanges(
+      doc,
+      {
+        slot: "scope",
+        ops: [
+          rewrite(doc, "Checkout p95 is 450 ms."),
+          { op: "append-to-section", slot: "scope", paragraphs: ["EU only."] },
+          { op: "remove-section", slot: "scope" },
+        ],
+        uses: { questions: [], comments: [] },
+        proposedBy: "planning-agent",
+      },
+      "agent",
+    );
+    acceptChange(doc, changes[2]?.changeId ?? "");
+
+    expect({
+      scope: readBlocks(doc).some(
+        (block) =>
+          block.type === "section-heading" && block.props.slot === "scope",
+      ),
+      left: changesIn(doc).map((change) => change.slot),
+    }).toEqual({ scope: false, left: ["intent"] });
+  });
+});

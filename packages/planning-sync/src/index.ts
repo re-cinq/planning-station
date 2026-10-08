@@ -22,6 +22,7 @@ export {
   type ProposalRequest,
 } from "./core/agent-writer.js";
 export { PlanNotFoundError } from "./core/errors.js";
+export { SectionNotRemovableError } from "./core/section-not-removable-error.js";
 export {
   approvalError,
   PlanNotApprovableError,

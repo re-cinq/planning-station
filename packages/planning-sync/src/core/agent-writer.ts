@@ -2,7 +2,9 @@ import type { Document, Hocuspocus } from "@hocuspocus/server";
 import {
   blockHash,
   enforceTrue,
+  isRemovableSlot,
   SectionChangedError,
+  templateFor,
   toPlanDocument,
   type AgentOp,
   type PlanChange,
@@ -32,6 +34,7 @@ import {
   type PresenceRequest,
 } from "./agent-presence.js";
 import { openPlanConnection, transactOn } from "./plan-connection.js";
+import { SectionNotRemovableError } from "./section-not-removable-error.js";
 import type { PlanningService } from "./planning-service.js";
 
 export const AGENT_ORIGIN = "planning-agent";
@@ -135,6 +138,7 @@ async function write(
   request: OpsRequest,
 ): Promise<PlanDocument> {
   const { json } = await context.service.readPlan(request.planId);
+  enforceRemovable(json, request.ops);
   const blocks = await inHeldOrFreshDocument(context, json, (document) => {
     enforceBase(document, request.base);
     enforceBlock(document, request.expect);
@@ -150,6 +154,7 @@ async function propose(
   { planId, actor, ...offer }: ProposalRequest,
 ): Promise<ProposedRefine> {
   const { json } = await options.service.readPlan(planId);
+  enforceRemovable(json, offer.ops);
 
   return inDocument(options, json, (document) =>
     proposeRefine(document, { ...offer, proposedBy: actor }, AGENT_ORIGIN),
@@ -161,6 +166,7 @@ async function pass(
   { planId, actor, ...offer }: PassRequest,
 ): Promise<PassOutcome> {
   const { json } = await options.service.readPlan(planId);
+  enforceRemovable(json, offer.ops);
 
   return inDocument(options, json, (document) =>
     proposePass(document, { ...offer, proposedBy: actor }, AGENT_ORIGIN),
@@ -172,6 +178,7 @@ async function changes(
   { planId, actor, asked, ops, uses }: PassRequest,
 ): Promise<PlanChange[]> {
   const { json } = await options.service.readPlan(planId);
+  enforceRemovable(json, ops);
 
   return inDocument(options, json, (document) =>
     proposeChanges(
@@ -202,6 +209,20 @@ async function finish(
   await inDocument(options, json, (document) =>
     finishRefine(document, request, AGENT_ORIGIN),
   );
+}
+
+/** applyOps knows no template, so the always-required sections are kept here, where the plan's type is known. */
+function enforceRemovable(meta: PlanMeta, ops: readonly AgentOp[]): void {
+  const template = templateFor(meta.type);
+  ops
+    .filter((op) => op.op === "remove-section")
+    .forEach(({ slot }) =>
+      enforceTrue(
+        isRemovableSlot(template, slot),
+        SectionNotRemovableError,
+        `${slot} is always required in a ${meta.type} plan, so it cannot be removed`,
+      ),
+    );
 }
 
 function enforceBase(document: Document, base?: SectionBase): void {

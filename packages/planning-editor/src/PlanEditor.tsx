@@ -81,6 +81,7 @@ type LayoutProps = Pick<
     awareness: PlanSession["awareness"];
     report: ValidationReport;
     sections: PlanDocument["sections"];
+    droppedSlots: PlanDocument["droppedSlots"];
   };
 
 const NO_ADAPTERS: PlanEditorAdapters = {};
@@ -235,7 +236,13 @@ function ParticipantsPane({
 
 type OutlinePaneProps = Pick<
   LayoutProps,
-  "editor" | "meta" | "template" | "report" | "sections" | "outlineFooter"
+  | "editor"
+  | "meta"
+  | "template"
+  | "report"
+  | "sections"
+  | "droppedSlots"
+  | "outlineFooter"
 >;
 
 function OutlinePane({

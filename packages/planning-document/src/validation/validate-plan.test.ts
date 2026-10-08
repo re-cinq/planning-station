@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { BlockJson } from "../blocks/block-json.js";
 import type { PlanMeta, PlanKind } from "../plan/plan-meta.js";
-import { seedBlocks } from "../projection/seed.js";
+import { seedBlocks, titleBlock } from "../projection/seed.js";
 import { toPlanDocument } from "../projection/to-plan-document.js";
 import { templateFor } from "../template/templates.js";
 import { block, heading, paragraph } from "../testing/block-builders.js";
@@ -211,5 +211,37 @@ describe("validatePlan", () => {
     expect(codes(blocks, "approval", "ui-change")).toEqual([
       ["prototype-below-minimum", "prototype"],
     ]);
+  });
+
+  it("reports nothing about prototype at approval once the empty Prototype section is removed", () => {
+    const feature = templateFor("feature");
+    const seeded = seedBlocks(feature);
+    const withoutPrototype = feature.slots.filter(
+      ({ slot }) => slot !== "prototype",
+    );
+    const removed = [
+      titleBlock("", ["prototype"]),
+      ...seedBlocks({ ...feature, slots: withoutPrototype }).slice(1),
+    ];
+    const aboutPrototype = (blocks: BlockJson[]) =>
+      codes(blocks, "approval").filter(([, slot]) => slot === "prototype");
+    expect([aboutPrototype(seeded), aboutPrototype(removed)]).toEqual([
+      [
+        ["empty-required-section", "prototype"],
+        ["missing-block", "prototype"],
+      ],
+      [],
+    ]);
+  });
+
+  it("reports no minimum for a ui-change plan whose prototype slot is dropped", () => {
+    const blocks = [
+      titleBlock("New header", ["prototype"]),
+      heading("intent", "Intent"),
+      paragraph("New header"),
+      heading("kpis", "KPIs"),
+      block("kpi"),
+    ];
+    expect(codes(blocks, "approval", "ui-change")).toEqual([]);
   });
 });

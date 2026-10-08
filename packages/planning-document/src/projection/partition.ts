@@ -17,6 +17,14 @@ export function planTitle(blocks: readonly BlockJson[]): string | null {
     : null;
 }
 
+/** The template slots removed from the plan, which validation no longer asks for. */
+export function droppedSlotsOf(blocks: readonly BlockJson[]): string[] {
+  const title = blocks.find((block) => block.type === TITLE_BLOCK);
+  const joined = title?.type === TITLE_BLOCK ? title.props.droppedSlots : "";
+
+  return joined === "" ? [] : joined.split(",");
+}
+
 // Grows the sections it builds in place: copying them per block made a large plan quadratic.
 export function partitionSections(blocks: readonly BlockJson[]): Section[] {
   return blocks
