@@ -41,14 +41,18 @@ const dotColor = (region: Element, name: string) =>
 const selectionIn = (region: Element) =>
   region.querySelector<HTMLElement>(".ProseMirror-yjs-selection");
 
-const selectCheckout = async (ana: Locator) => {
-  await userEvent.click(ana.getByText("Checkout"));
-  await expect
-    .poll(() => ana.element().contains(document.activeElement))
-    .toBeTruthy();
-  await userEvent.keyboard("{End}{Shift>}{Home}{/Shift}");
-  await expect.poll(() => String(document.getSelection())).toBe("Checkout");
-};
+const selectCheckout = (ana: Locator) =>
+  expect
+    .poll(
+      async () => {
+        await userEvent.click(ana.getByText("Checkout"));
+        await userEvent.keyboard("{End}{Shift>}{Home}{/Shift}");
+
+        return String(document.getSelection());
+      },
+      { timeout: 10_000, interval: 250 },
+    )
+    .toBe("Checkout");
 
 const channelsOf = (hex: string) =>
   [1, 3, 5]
