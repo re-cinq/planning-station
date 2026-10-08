@@ -1,0 +1,1 @@
+{"version":3,"file":"entities.d.ts","sourceRoot":"","sources":["../../src/plan/entities.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,CAAC,EAAE,MAAM,KAAK,CAAC;AAOxB,eAAO,MAAM,SAAS;;;;;;;;;;;;iBAQpB,CAAC;AAEH,eAAO,MAAM,0BAA0B;;;;;;;;;;iBAKrC,CAAC;AAEH,MAAM,MAAM,GAAG,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,SAAS,CAAC,CAAC;AAC5C,MAAM,MAAM,oBAAoB,GAAG,CAAC,CAAC,KAAK,CAAC,OAAO,0BAA0B,CAAC,CAAC"}
