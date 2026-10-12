@@ -119,6 +119,26 @@ describe("validatePlan", () => {
     });
   });
 
+  it("passes at approval with an unresolved warning finding in intent, since only a blocker holds approval", () => {
+    const withWarning = READY_FEATURE.toSpliced(
+      1,
+      0,
+      block(
+        "finding",
+        { findingId: "f-ground-7", severity: "warning" },
+        {
+          id: "f-ground-7",
+          text: "This section names `apps/dummy-idp`, which is not on the default branch.",
+        },
+      ),
+    );
+    expect(validatePlan(plan(withWarning), "approval")).toEqual({
+      passed: true,
+      phase: "approval",
+      problems: [],
+    });
+  });
+
   it("reports missing-section for a plan without the kpis heading at draft", () => {
     expect(codes([heading("intent", "What we want and why")], "draft")).toEqual(
       [["missing-section", "kpis"]],
