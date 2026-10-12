@@ -1,0 +1,108 @@
+import { toProseBlocks } from "../ops/prose-input.js";
+import { allowsBlock, disallowedBlockMessage } from "../template/slots.js";
+import { writeProse } from "./write-prose.js";
+/** A pass never writes what validation would flag, and never touches what a person already wrote. A refused block the pass repeats as it stands is the person's and is compared as unchanged, so what the pass adds beside it anchors to it; one the pass left out leaves the comparison, so it is never removed; one the pass wrote itself is dropped and reported. A section with no known slot is compared whole. */
+export function judgeProse(slot, live, written) {
+    if (!slot) {
+        return { live, written, problems: [] };
+    }
+    const judge = judgeIn(slot, live);
+    return {
+        live: comparedLive(judge, live, written),
+        written: written.filter((block) => judge.allows(block) || judge.repeats(block)),
+        problems: written
+            .filter(judge.refuses)
+            .map((block) => refusal(slot, block)),
+    };
+}
+/** The live side of the comparison: what the slot allows, and a person's refused block only where the pass repeats it. */
+function comparedLive(judge, live, written) {
+    const repeated = new Set(written.filter(judge.repeats).map(judge.keyOf));
+    return live.filter((block) => judge.allows(block) || repeated.has(canonical(block)));
+}
+function judgeIn(slot, live) {
+    const allows = (block) => allowsBlock(slot, block.type);
+    const keyOf = (block) => canonicalInput(slot.slot, block);
+    const standing = new Set(live.filter((block) => !allows(block)).map(canonical));
+    const repeats = (block) => !allows(block) && standing.has(keyOf(block));
+    return {
+        allows,
+        repeats,
+        refuses: (block) => !allows(block) && !repeats(block),
+        keyOf,
+    };
+}
+function refusal(slot, block) {
+    return {
+        code: "disallowed-block",
+        slot: slot.slot,
+        message: disallowedBlockMessage(slot, block.type),
+    };
+}
+function canonical(block) {
+    return writeProse([block]).join("\n");
+}
+function canonicalInput(slot, block) {
+    return writeProse(toProseBlocks(slot, [block])).join("\n");
+}
+/** The diff's ops, held to the same rule: a copy or a move of a person's refused block pairs as a new insert, so no op may add a refused block or take away one a person wrote. */
+export function guardOps(ops, slot, live) {
+    if (!slot) {
+        return { ops: [...ops], problems: [] };
+    }
+    const theirs = new Set(live.filter((block) => !allowsBlock(slot, block.type)).map(({ id }) => id));
+    const guarded = ops.map((op) => guardOp(op, slot, theirs));
+    return {
+        ops: joinedInserts(guarded.flatMap(({ op }) => (op ? [op] : []))),
+        problems: guarded.flatMap(({ problems }) => problems),
+    };
+}
+/** A rewrite turned into an insert anchors where the run after it anchors too; as two inserts after one block they would land in reverse, so they are joined in the order written. */
+function joinedInserts(ops) {
+    return ops.reduce((joined, op) => {
+        const last = joined.at(-1);
+        const follows = last?.op === "insert-blocks" &&
+            op.op === "insert-blocks" &&
+            last.after === op.after;
+        return follows
+            ? [
+                ...joined.slice(0, -1),
+                { ...last, blocks: [...last.blocks, ...op.blocks] },
+            ]
+            : [...joined, op];
+    }, []);
+}
+function guardOp(op, slot, theirs) {
+    if (op.op === "remove-block") {
+        return { op: theirs.has(op.blockId) ? null : op, problems: [] };
+    }
+    if (op.op === "replace-block") {
+        return theirs.has(op.blockId)
+            ? guardInsert(besideTheirs(op), slot)
+            : guardReplace(op, slot);
+    }
+    return op.op === "insert-blocks"
+        ? guardInsert(op, slot)
+        : { op, problems: [] };
+}
+/** A rewrite aimed at a person's refused block writes its block after that one instead, so the pass's words land and the person's stay. */
+function besideTheirs({ slot, blockId, block }) {
+    return { op: "insert-blocks", slot, after: blockId, blocks: [block] };
+}
+function guardReplace(op, slot) {
+    const refused = refusedAmong(slot, [op.block]);
+    return { op: refused.length > 0 ? null : op, problems: refused };
+}
+function guardInsert(op, slot) {
+    const blocks = op.blocks.filter((block) => allowsBlock(slot, block.type));
+    return {
+        op: blocks.length > 0 ? { ...op, blocks } : null,
+        problems: refusedAmong(slot, op.blocks),
+    };
+}
+function refusedAmong(slot, blocks) {
+    return blocks
+        .filter((block) => !allowsBlock(slot, block.type))
+        .map((block) => refusal(slot, block));
+}
+//# sourceMappingURL=allowed-prose.js.map
