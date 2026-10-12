@@ -1,0 +1,1 @@
+{"version":3,"file":"approval-error.d.ts","sourceRoot":"","sources":["../../src/core/approval-error.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,4BAA4B,CAAC;AAEnE,qBAAa,sBAAuB,SAAQ,KAAK;IAG7C,QAAQ,CAAC,MAAM,EAAE,gBAAgB;gBADjC,OAAO,EAAE,MAAM,EACN,MAAM,EAAE,gBAAgB;CAIpC;AAED,2EAA2E;AAC3E,wBAAgB,aAAa,CAAC,MAAM,EAAE,gBAAgB,IAC5C,SAAS,MAAM,4BACxB"}
