@@ -1,3 +1,4 @@
+import { isBlankParagraph } from "../blocks/blank-paragraph.js";
 import { type BlockJson, isPlanBlock } from "../blocks/block-json.js";
 import { blockHash } from "../blocks/block-hash.js";
 import { plainText } from "../blocks/inline-text.js";
@@ -37,7 +38,7 @@ function readSection(
   section: Section,
 ): ReadSection {
   const content = section.blocks.filter(
-    (block) => !NOT_CONTENT.includes(block.type),
+    (block) => !NOT_CONTENT.includes(block.type) && !isBlankParagraph(block),
   );
 
   return {

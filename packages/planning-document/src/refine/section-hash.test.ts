@@ -29,6 +29,11 @@ describe("sectionHash", () => {
     expect(intentOf(rewritten)).not.toBe(intentOf(SLOW));
   });
 
+  it("keeps the intent's hash when a blank paragraph is added to it", () => {
+    const blank = textBlock("paragraph", {}, "");
+    expect(intentOf(SLOW, blank)).toBe(intentOf(SLOW));
+  });
+
   it("hashes the intent as at most 14 hex digits", () => {
     expect(intentOf(SLOW)).toMatch(/^[0-9a-f]{1,14}$/);
   });

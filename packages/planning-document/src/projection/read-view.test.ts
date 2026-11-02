@@ -31,4 +31,18 @@ describe("readView", () => {
       },
     });
   });
+
+  it("leaves a blank paragraph out of the intent it lists, so the agent never answers against one", () => {
+    const blocks = planWith("feature", {
+      intent: [
+        textBlock("paragraph", {}, ""),
+        textBlock("paragraph", {}, "Checkout is slow."),
+      ],
+    });
+    const [intent] = readView(blocks).sections;
+
+    expect(intent?.blocks.map((block) => block.text)).toEqual([
+      "Checkout is slow.",
+    ]);
+  });
 });

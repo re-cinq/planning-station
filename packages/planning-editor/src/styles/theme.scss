@@ -61,6 +61,32 @@
   padding-block: var(--ps-space-paragraph);
 }
 
+// A section nobody wrote in yet offers a place to start, read like the
+// paragraph a click on it becomes; BlockNote's own hint takes over once the
+// cursor is in it.
+.ps-editor .ps-empty-section {
+  padding-block: var(--ps-space-paragraph);
+  color: var(--ps-fg-muted);
+  line-height: var(--ps-lh-body);
+  cursor: text;
+  user-select: none;
+}
+
+.ps-editor
+  .bn-block-content[data-plan-placeholder]:not([data-is-empty-and-focused]):has(
+    .ProseMirror-trailingBreak:only-child
+  )::after {
+  content: attr(data-plan-placeholder);
+  color: var(--ps-fg-muted);
+  font-style: normal;
+}
+
+// The plan ends with its last section's actions, and BlockNote's trailing
+// block would put writing under them.
+.ps-editor .bn-trailing-block {
+  display: none;
+}
+
 // Comments and a section's panel lead the section, so on a page wide enough
 // they float into a margin beside it rather than interrupting its text.
 .ps-editor .bn-container {
