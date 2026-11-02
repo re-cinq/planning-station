@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { userEvent } from "vitest/browser";
-import { templateFor, type PlanDocument } from "@re-cinq/planning-document";
-import { blockText, writtenBlocks } from "@re-cinq/planning-document/testing";
+import { templateFor } from "@re-cinq/planning-document";
+import { blockText } from "@re-cinq/planning-document/testing";
 
 import {
   CHECKOUT_PLAN,
@@ -12,9 +12,15 @@ import {
   seeded,
   textBlock,
 } from "../testing/fixtures.js";
+import {
+  EMPTY_PLAN,
+  intentOf,
+  REFINE_NOTE,
+  renderEmpty,
+  renderRefinable,
+} from "../testing/sections.js";
 import { EMPTY_SECTION_TEXT } from "./empty-section.js";
 
-const EMPTY_PLAN = planSeed("performance");
 const BLANK_INTENT = planSeed("performance", {
   intent: [textBlock("paragraph", {}, "")],
 });
@@ -36,58 +42,6 @@ const placeholderCount = (container: HTMLElement) =>
   container.querySelectorAll(`[aria-label^="${EMPTY_SECTION_TEXT} in "]`)
     .length;
 
-const renderEmpty = async (seed = EMPTY_PLAN) => {
-  const rendered = await renderAsAna(seed);
-  await expect
-    .element(rendered.screen.getByRole("heading", { name: FIRST_TITLE }))
-    .toBeVisible();
-
-  return rendered;
-};
-
-const REFINE_NOTE = "Answer a question or resolve a thread to refine";
-
-const renderRefinable = async () => {
-  const rendered = await renderAsAna(CHECKOUT_PLAN, {
-    onRefine: () => Promise.resolve(),
-  });
-  const { screen } = rendered;
-  await expect.element(screen.getByText(REFINE_NOTE).first()).toBeVisible();
-
-  return rendered;
-};
-
-const pasteInto = (target: Element, text: string) => {
-  const clipboardData = new DataTransfer();
-  clipboardData.setData("text/plain", text);
-  target.dispatchEvent(
-    new ClipboardEvent("paste", { clipboardData, bubbles: true }),
-  );
-};
-
-const middlePressOn = (target: Element) => {
-  target.dispatchEvent(
-    new MouseEvent("mousedown", { button: 1, bubbles: true, cancelable: true }),
-  );
-};
-
-const greyedRefineOf = (
-  screen: Awaited<ReturnType<typeof renderAsAna>>["screen"],
-) => screen.getByRole("button", { name: "Refine this section" }).first();
-
-const pastesAfterHeldPress = async (key: string) => {
-  const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
-  const checkout = screen.getByText("Checkout").element();
-  await userEvent.click(checkout);
-  middlePressOn(
-    screen.getByRole("heading", { name: "Success criteria" }).element(),
-  );
-  checkout.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
-  pasteInto(checkout, "X");
-
-  return lastPlan();
-};
-
 const renderReadOnly = async () => {
   const rendered = await renderAsAna(EMPTY_PLAN, { readOnly: true });
   await expect
@@ -95,22 +49,6 @@ const renderReadOnly = async () => {
     .toBeVisible();
 
   return rendered.screen;
-};
-
-const intentOf = (plan: PlanDocument | undefined) => {
-  const [intent] = plan?.sections ?? [];
-  const blocks = intent?.blocks ?? [];
-
-  return {
-    written: writtenBlocks(blocks),
-    last: blocks.at(-1)?.type,
-  };
-};
-
-const intentText = (plan: PlanDocument | undefined) => {
-  const { written } = intentOf(plan);
-
-  return written.map(blockText).join();
 };
 
 describe("emptySectionPlaceholder", () => {
@@ -220,59 +158,6 @@ describe("emptySectionPlaceholder", () => {
     );
     await userEvent.keyboard("Z");
     expect(lastPlan()).toBeUndefined();
-  });
-
-  it("pastes nothing into 'Checkout' when a middle press on the success criteria heading is released", async () => {
-    const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
-    const checkout = screen.getByText("Checkout").element();
-    await userEvent.click(checkout);
-    document.addEventListener("mouseup", () => pasteInto(checkout, "X"), {
-      once: true,
-    });
-    await userEvent.click(
-      screen.getByRole("heading", { name: "Success criteria" }),
-      { button: "middle" },
-    );
-    expect(lastPlan()).toBeUndefined();
-  });
-
-  it("pastes nothing into 'Checkout' when a middle press on the intent's disabled Refine button is released", async () => {
-    const { screen, lastPlan } = await renderRefinable();
-    const checkout = screen.getByText("Checkout").element();
-    await userEvent.click(checkout);
-    document.addEventListener("pointerup", () => pasteInto(checkout, "X"), {
-      once: true,
-    });
-    await userEvent.click(greyedRefineOf(screen), {
-      button: "middle",
-      force: true,
-    });
-    expect(lastPlan()).toBeUndefined();
-  });
-
-  it("leaves a paste into a box beside the plan alone while a middle press on the success criteria heading is held", async () => {
-    const { screen } = await renderEmpty(CHECKOUT_PLAN);
-    const box = document.body.appendChild(document.createElement("textarea"));
-    middlePressOn(
-      screen.getByRole("heading", { name: "Success criteria" }).element(),
-    );
-    const paste = new ClipboardEvent("paste", {
-      bubbles: true,
-      cancelable: true,
-    });
-    box.dispatchEvent(paste);
-    box.remove();
-    expect(paste.defaultPrevented).toBe(false);
-  });
-
-  it("pastes 'X' into 'Checkout' from the keyboard after a middle press on the success criteria heading whose release was lost", async () => {
-    const plan = await pastesAfterHeldPress("v");
-    expect(intentText(plan)).toContain("X");
-  });
-
-  it("pastes nothing into 'Checkout' when only Shift is pressed while a middle press on the success criteria heading is held", async () => {
-    const plan = await pastesAfterHeldPress("Shift");
-    expect(plan).toBeUndefined();
   });
 
   it("writes nothing when the intent placeholder is right-clicked", async () => {

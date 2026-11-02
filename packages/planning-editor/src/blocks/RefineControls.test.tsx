@@ -257,6 +257,19 @@ describe("RefineControls", () => {
       .toHaveTextContent(`The agent could not refine this section: ${CRASHED}`);
   });
 
+  it("says Ask again on the failed open questions waits for the agent to finish refining for Ben", async () => {
+    const { hub, actions } = await renderPlan(agentFails);
+    await refine(actions);
+    askRefine(hub.doc, { slot: "kpis", askedBy: "Ben" });
+    await expect
+      .element(
+        actions.getByText(
+          "The agent is refining another section for Ben; ask again when it finishes",
+        ),
+      )
+      .toBeVisible();
+  });
+
   it("offers Refine again once Ana dismisses the failed refine", async () => {
     const { actions } = await renderPlan(agentFails);
     await refine(actions);

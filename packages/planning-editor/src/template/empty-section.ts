@@ -1,9 +1,4 @@
 import { createExtension, type ExtensionOptions } from "@blocknote/core";
-import {
-  MARGIN_NOTES,
-  NOT_CONTENT,
-  SECTION_ACTIONS,
-} from "@re-cinq/planning-document";
 import type { Node } from "prosemirror-model";
 import {
   NodeSelection,
@@ -12,21 +7,17 @@ import {
   type EditorState,
   type Selection,
 } from "prosemirror-state";
-import { Decoration, DecorationSet, type EditorView } from "prosemirror-view";
+import { DecorationSet, type EditorView } from "prosemirror-view";
 
 import { holdsPaste, leave } from "./focus-release.js";
-import { IS_APPLE } from "./platform.js";
-import { STRUCTURAL } from "./template-guard.js";
-import { SECTION_HEADING, topBlocks, type TopBlock } from "./top-blocks.js";
 
-export const EMPTY_SECTION_TEXT = "Write here…";
+export { EMPTY_SECTION_TEXT } from "./placeholders.js";
+import { placeholders, writeBefore } from "./placeholders.js";
+import { STRUCTURAL } from "./template-guard.js";
+import { writes } from "./writing-keys.js";
+import { topBlocks, type TopBlock } from "./top-blocks.js";
 
 const PLACEHOLDER = new PluginKey("planEmptySection");
-const PARAGRAPH = "paragraph";
-const PLACEHOLDER_CLASS = "ps-empty-section";
-
-/** What a section carries besides its writing: its margin notes and actions, and the agent's questions with their answers. */
-const NOT_WRITING: readonly string[] = [...NOT_CONTENT, "question", "answer"];
 
 /** The skeleton a click must not select; the title is text people type in, so a click there is the editor's own. */
 const SECTION_SKELETON = STRUCTURAL.filter((type) => type !== "plan-title");
@@ -46,13 +37,6 @@ const SELECTABLE_TEXT_IN: readonly string[] = [
   "section-actions",
 ];
 
-/** Keys that write or delete, besides a typed character. */
-const EDITING_KEYS: readonly string[] = ["Enter", "Backspace", "Delete"];
-
-/** Control's chords that delete, transpose or open a line in text on Apple's systems; its others only move the caret. */
-const APPLE_CONTROL_EDITS: readonly string[] = ["d", "h", "k", "o", "t"];
-
-const MAIN_BUTTON = 0;
 const MIDDLE_BUTTON = 1;
 
 type Editor = ExtensionOptions["editor"];
@@ -61,15 +45,6 @@ type Editor = ExtensionOptions["editor"];
 type Root =
   Document | (ShadowRoot & { getSelection?: () => DomSelection | null });
 type DomSelection = globalThis.Selection;
-
-interface Section {
-  title: string;
-  blocks: TopBlock[];
-  /** Whether its actions have been reached. */
-  closed: boolean;
-}
-
-type Write = (beforeId: string) => void;
 
 /** Gives a section nobody has written in a place to click, and keeps the editor's padding and skeleton from taking the cursor. */
 export const emptySectionPlaceholder = createExtension(
@@ -92,24 +67,41 @@ function propsFor(editor: Editor) {
     handleDOMEvents: { mousedown: ignoresPress },
     handleClickOn: isSkeleton,
     handleKeyDown: ignoresKeysOnSkeleton,
+    handlePaste: ignoresPasteOnSkeleton,
   };
 }
 
-/** A read-only plan is read and copied from, so it keeps every press. Every button is weighed: a right or middle press moves the caret too, and ignoring it still opens the context menu. */
+/** A read-only plan is read and copied from, so it keeps every press. Every button is weighed: a right or middle press moves the caret too, and ignoring it still opens the context menu. A middle press the editor ignores, or one on a section's skeleton text, pastes on release where the caret was, so that paste is held. */
 function ignoresPress(view: EditorView, event: MouseEvent): boolean {
-  const ignored =
-    view.editable &&
-    (ignoresBesideBlocks(view, event) || ignoresSkeletonSpace(view, event));
+  const ignored = view.editable && ignoresOn(view, event);
 
   if (ignored) {
     leave(view);
   }
 
-  if (ignored && event.button === MIDDLE_BUTTON) {
+  const skeleton = ignored || isOnSkeleton(view, event.target);
+
+  if (skeleton && isMiddle(view, event)) {
     holdsPaste(view);
   }
 
   return ignored;
+}
+
+function isMiddle(view: EditorView, event: MouseEvent): boolean {
+  return view.editable && event.button === MIDDLE_BUTTON;
+}
+
+function ignoresOn(view: EditorView, event: MouseEvent): boolean {
+  return ignoresBesideBlocks(view, event) || ignoresSkeletonSpace(view, event);
+}
+
+/** A paste after selecting text in a section's panel or actions has nowhere it belongs either: ProseMirror would put it where the caret was. A paste into the panel's own input is the input's. */
+export function ignoresPasteOnSkeleton(
+  view: EditorView,
+  event: ClipboardEvent,
+): boolean {
+  return view.editable && !isInteractive(event.target) && onSkeleton(view);
 }
 
 /** Text in a section's panel or actions can be selected to copy it, which leaves the editor focused with its caret where it was, or selects the block itself. A key that writes or deletes then has nowhere it belongs, so it does nothing, rather than act on that caret or put a paragraph beside the block. Keys typed into the panel's own input are the input's. */
@@ -158,20 +150,6 @@ function selectsSkeleton(selection: Selection): boolean {
   return SECTION_SKELETON.includes(type.name);
 }
 
-function writes(event: KeyboardEvent): boolean {
-  const { key, metaKey } = event;
-  const typed = EDITING_KEYS.includes(key) || [...key].length === 1;
-
-  return typed && !metaKey && !isControlShortcut(event);
-}
-
-/** A Control chord is a shortcut, except where it writes: AltGr, which sends Control with a character, and Control's editing keys on Apple's systems. */
-function isControlShortcut(event: KeyboardEvent): boolean {
-  const edits = IS_APPLE && APPLE_CONTROL_EDITS.includes(event.key);
-
-  return event.ctrlKey && !edits && !event.getModifierState("AltGraph");
-}
-
 /** A press beside the blocks, level only with a section's skeleton, neither focuses the editor nor selects a block; level with a line of text, or in a gap, it still puts the caret where the editor would. */
 export function ignoresBesideBlocks(
   view: EditorView,
@@ -211,6 +189,15 @@ function isSkeletonSpace(view: EditorView, target: EventTarget | null) {
     SECTION_SKELETON.includes(type) &&
     !isInteractive(target) &&
     !(SELECTABLE_TEXT_IN.includes(type) && holdsText(target))
+  );
+}
+
+/** A press anywhere on a section's skeleton, text and controls included: a middle one there pastes, on release, where the caret was. */
+function isOnSkeleton(view: EditorView, target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    view.dom.contains(target) &&
+    SECTION_SKELETON.includes(contentTypeOf(target))
   );
 }
 
@@ -260,128 +247,4 @@ function isLevelWith(view: EditorView, { pos }: TopBlock, row: number) {
 /** A click on a section's skeleton is handled, so ProseMirror never selects the block itself; its buttons still take the click. */
 function isSkeleton(...[view, , node]: [EditorView, number, Node]): boolean {
   return view.editable && SECTION_SKELETON.includes(node.type.name);
-}
-
-export function placeholders(doc: Node, write: Write): Decoration[] {
-  return sectionsOf(topBlocks(doc)).flatMap((section) =>
-    placeholderOf(section, write),
-  );
-}
-
-/** Each section's blocks down to its actions. A block under them is out of place, never where a placeholder belongs. */
-function sectionsOf(blocks: readonly TopBlock[]): Section[] {
-  return blocks.reduce<Section[]>((sections, block) => {
-    if (block.type === SECTION_HEADING) {
-      sections.push({ title: titleOf(block), blocks: [], closed: false });
-
-      return sections;
-    }
-
-    const current = sections.at(-1);
-
-    if (current && !current.closed) {
-      current.blocks.push(block);
-      current.closed = block.type === SECTION_ACTIONS;
-    }
-
-    return sections;
-  }, []);
-}
-
-function titleOf({ content }: TopBlock): string {
-  return String(content?.attrs["title"] ?? "");
-}
-
-/** An unwritten section's empty paragraph shows the placeholder; one without a paragraph gets it under its margin notes, where its writing would start. */
-function placeholderOf(section: Section, write: Write): Decoration[] {
-  if (section.blocks.some(isWriting)) {
-    return [];
-  }
-
-  const blank = section.blocks.find(isBlankParagraph);
-
-  if (blank) {
-    return [onBlank(blank)];
-  }
-
-  const start = section.blocks.find(
-    (block) => !MARGIN_NOTES.includes(block.type),
-  );
-
-  return start ? [widgetBefore(start, section.title, write)] : [];
-}
-
-function isWriting(block: TopBlock): boolean {
-  return !NOT_WRITING.includes(block.type) && !isBlankParagraph(block);
-}
-
-/** Blank as planning-document's `isBlankParagraph` reads it: no children, and nothing inline, not even a line break. */
-function isBlankParagraph({ node, content, type }: TopBlock): boolean {
-  return (
-    type === PARAGRAPH && node.childCount === 1 && content?.content.size === 0
-  );
-}
-
-function onBlank({ pos, content }: TopBlock): Decoration {
-  const from = pos + 1;
-
-  return Decoration.node(from, from + (content?.nodeSize ?? 0), {
-    "data-plan-placeholder": EMPTY_SECTION_TEXT,
-  });
-}
-
-function widgetBefore({ pos, node }: TopBlock, title: string, write: Write) {
-  const beforeId = String(node.attrs["id"] ?? "");
-
-  return Decoration.widget(
-    pos,
-    () => placeholderElement(title, () => write(beforeId)),
-    { side: -1, key: `empty-${beforeId}-${title}`, stopEvent: () => true },
-  );
-}
-
-function placeholderElement(title: string, write: () => void): HTMLElement {
-  const element = document.createElement("div");
-  element.className = PLACEHOLDER_CLASS;
-  element.contentEditable = "false";
-  element.role = "button";
-  element.tabIndex = 0;
-  element.ariaLabel = `${EMPTY_SECTION_TEXT} in ${title}`;
-  element.textContent = EMPTY_SECTION_TEXT;
-  element.addEventListener("mousedown", (event) => {
-    pressPlaceholder(event, write);
-  });
-  element.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      write();
-    }
-  });
-
-  return element;
-}
-
-/** Only the main button writes; another button's press takes no focus either, and a right one still opens the context menu. */
-function pressPlaceholder(event: MouseEvent, write: () => void): void {
-  event.preventDefault();
-
-  if (event.button === MAIN_BUTTON) {
-    write();
-  }
-}
-
-/** Puts a paragraph where the section's writing starts and the cursor in it. */
-function writeBefore(editor: Editor, beforeId: string): void {
-  editor.transact(() => {
-    const [paragraph] = editor.insertBlocks(
-      [{ type: PARAGRAPH }],
-      beforeId,
-      "before",
-    );
-
-    if (paragraph) {
-      editor.setTextCursorPosition(paragraph, "start");
-    }
-  });
-  editor.focus();
 }
