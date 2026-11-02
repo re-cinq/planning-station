@@ -76,12 +76,16 @@ const renderEmpty = async (seed = EMPTY_PLAN) => {
 
 type Screen = Awaited<ReturnType<typeof renderEmpty>>["screen"];
 
+type Button = "left" | "right" | "middle";
+
 const pressPaddingBeside = async (
   pick: (screen: Screen) => { element: () => Element },
+  button: Button = "left",
 ) => {
   const { screen, lastPlan } = await renderEmpty();
   const editor = editorOf(screen.container);
   await userEvent.click(editor, {
+    button,
     position: inPaddingBeside(editor, pick(screen).element()),
   });
   await userEvent.keyboard("{Enter}");
@@ -118,6 +122,22 @@ describe("the plan's layout, themed, on a wide page", () => {
   it("neither focuses the editor, selects a block nor takes an Enter when the padding beside the intent actions is pressed", async () => {
     const pressed = await pressPaddingBeside((screen) =>
       screen.getByRole("group", { name: `${FIRST_TITLE} actions` }),
+    );
+    expect(pressed).toEqual(NOTHING_TAKEN);
+  });
+
+  it("neither focuses the editor, selects a block nor takes an Enter when the padding beside the intent actions is right-clicked", async () => {
+    const pressed = await pressPaddingBeside(
+      (screen) => screen.getByRole("group", { name: `${FIRST_TITLE} actions` }),
+      "right",
+    );
+    expect(pressed).toEqual(NOTHING_TAKEN);
+  });
+
+  it("neither focuses the editor, selects a block nor takes an Enter when the padding beside the intent actions is middle-clicked", async () => {
+    const pressed = await pressPaddingBeside(
+      (screen) => screen.getByRole("group", { name: `${FIRST_TITLE} actions` }),
+      "middle",
     );
     expect(pressed).toEqual(NOTHING_TAKEN);
   });

@@ -44,9 +44,12 @@ const SELECTABLE_TEXT_IN: readonly string[] = [
 /** Keys that write or delete, besides a typed character. */
 const EDITING_KEYS: readonly string[] = ["Enter", "Backspace", "Delete"];
 
-const MAIN_BUTTON = 0;
-
 type Editor = ExtensionOptions["editor"];
+
+/** Where the browser keeps the selection: a shadow root has its own in Chromium, a document always does. */
+type Root =
+  Document | (ShadowRoot & { getSelection?: () => DomSelection | null });
+type DomSelection = globalThis.Selection;
 
 interface Section {
   title: string;
@@ -81,11 +84,10 @@ function propsFor(editor: Editor) {
   };
 }
 
-/** A read-only plan is read and copied from, so it keeps every press; only the main button places a caret, so only it is weighed. */
+/** A read-only plan is read and copied from, so it keeps every press. Every button is weighed: a right or middle press moves the caret too, and ignoring it still opens the context menu. */
 function ignoresPress(view: EditorView, event: MouseEvent): boolean {
-  const weighed = view.editable && event.button === MAIN_BUTTON;
   const ignored =
-    weighed &&
+    view.editable &&
     (ignoresBesideBlocks(view, event) || ignoresSkeletonSpace(view, event));
 
   if (ignored) {
@@ -118,11 +120,19 @@ function onSkeleton(view: EditorView): boolean {
 
 /** Where the browser's own selection sits: in a section's skeleton after a press on its text, whatever ProseMirror's selection says. */
 function readsSkeleton(view: EditorView): boolean {
-  const { ownerDocument } = view.dom;
-  const anchor = ownerDocument.getSelection()?.anchorNode;
+  const anchor = anchorOf(view);
   const element = anchor instanceof Element ? anchor : anchor?.parentElement;
 
-  return element ? SECTION_SKELETON.includes(contentTypeOf(element)) : false;
+  return element && view.dom.contains(element)
+    ? SECTION_SKELETON.includes(contentTypeOf(element))
+    : false;
+}
+
+function anchorOf({ root, dom }: EditorView) {
+  const rooted: Root = root;
+  const selection = rooted.getSelection?.() ?? dom.ownerDocument.getSelection();
+
+  return selection?.anchorNode;
 }
 
 function isInteractive(target: EventTarget | null): boolean {

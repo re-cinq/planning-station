@@ -163,6 +163,17 @@ describe("emptySectionPlaceholder", () => {
     expect(lastPlan()).toBeUndefined();
   });
 
+  it("changes nothing when Z is typed after the caret in 'Checkout' is left for a right-click on the success criteria heading", async () => {
+    const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
+    await userEvent.click(screen.getByText("Checkout"));
+    await userEvent.click(
+      screen.getByRole("heading", { name: "Success criteria" }),
+      { button: "right" },
+    );
+    await userEvent.keyboard("Z");
+    expect(lastPlan()).toBeUndefined();
+  });
+
   it("changes nothing when Enter follows a click on the intent's Refine note, after the caret was in 'Checkout'", async () => {
     const { screen, lastPlan } = await renderRefinable();
     await userEvent.click(screen.getByText("Checkout"));
@@ -171,11 +182,11 @@ describe("emptySectionPlaceholder", () => {
     expect(lastPlan()).toBeUndefined();
   });
 
-  it("changes nothing when Enter and Backspace follow a double-click on a word of the intent's Refine note, after the caret was in 'Checkout'", async () => {
+  it("changes nothing when Enter, Backspace, Delete and X follow a double-click on a word of the intent's Refine note, after the caret was in 'Checkout'", async () => {
     const { screen, lastPlan } = await renderRefinable();
     await userEvent.click(screen.getByText("Checkout"));
     await userEvent.dblClick(screen.getByText(REFINE_NOTE).first());
-    await userEvent.keyboard("{Enter}{Backspace}{Delete}");
+    await userEvent.keyboard("{Enter}{Backspace}{Delete}X");
     expect(lastPlan()).toBeUndefined();
   });
 
