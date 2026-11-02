@@ -57,6 +57,14 @@ const renderRefinable = async () => {
   return rendered;
 };
 
+const pasteInto = (target: Element, text: string) => {
+  const clipboardData = new DataTransfer();
+  clipboardData.setData("text/plain", text);
+  target.dispatchEvent(
+    new ClipboardEvent("paste", { clipboardData, bubbles: true }),
+  );
+};
+
 const renderReadOnly = async () => {
   const rendered = await renderAsAna(EMPTY_PLAN, { readOnly: true });
   await expect
@@ -171,6 +179,39 @@ describe("emptySectionPlaceholder", () => {
       { button: "right" },
     );
     await userEvent.keyboard("Z");
+    expect(lastPlan()).toBeUndefined();
+  });
+
+  it("changes nothing when Z is typed after the caret in 'Checkout' is left for a click on the intent's disabled Refine button", async () => {
+    const { screen, lastPlan } = await renderRefinable();
+    await userEvent.click(screen.getByText("Checkout"));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Refine this section" }).first(),
+      { force: true },
+    );
+    await userEvent.keyboard("Z");
+    expect(lastPlan()).toBeUndefined();
+  });
+
+  it("pastes nothing into 'Checkout' when a middle press on the success criteria heading is released", async () => {
+    const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
+    const checkout = screen.getByText("Checkout").element();
+    await userEvent.click(checkout);
+    document.addEventListener("mouseup", () => pasteInto(checkout, "X"), {
+      once: true,
+    });
+    await userEvent.click(
+      screen.getByRole("heading", { name: "Success criteria" }),
+      { button: "middle" },
+    );
+    expect(lastPlan()).toBeUndefined();
+  });
+
+  it("writes nothing when the intent placeholder is right-clicked", async () => {
+    const { screen, lastPlan } = await renderEmpty();
+    await userEvent.click(screen.getByRole("button", writeInIntent), {
+      button: "right",
+    });
     expect(lastPlan()).toBeUndefined();
   });
 

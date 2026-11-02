@@ -276,11 +276,12 @@ const keyOn = (key: string, init: KeyboardEventInit = {}) => {
 };
 
 describe("ignoresKeysOnSkeleton", () => {
-  it("swallows Enter and a typed letter while the intent panel itself is selected, but not a copy", () => {
+  it("swallows Enter, a typed letter and a typed 😀 while the intent panel itself is selected, but not a copy", () => {
     expect({
       enter: keyOn("Enter"),
       letter: keyOn("x"),
+      emoji: keyOn("😀"),
       copy: keyOn("c", { metaKey: true }),
-    }).toEqual({ enter: true, letter: true, copy: false });
+    }).toEqual({ enter: true, letter: true, emoji: true, copy: false });
   });
 });

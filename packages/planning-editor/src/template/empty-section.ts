@@ -14,6 +14,7 @@ import {
 } from "prosemirror-state";
 import { Decoration, DecorationSet, type EditorView } from "prosemirror-view";
 
+import { holdsPaste, leave, leaveOnRelease } from "./focus-release.js";
 import { STRUCTURAL } from "./template-guard.js";
 import { SECTION_HEADING, topBlocks, type TopBlock } from "./top-blocks.js";
 
@@ -35,6 +36,9 @@ const BESIDE_BLOCKS = ".bn-block-group, .bn-block-outer, .bn-block";
 /** What inside a section's skeleton takes a press of its own. */
 const INTERACTIVE = "button, input, textarea, select, a, [role='button']";
 
+/** A control that takes nothing: a press on it is a press on the skeleton around it. */
+const DISABLED = ":disabled, [aria-disabled='true']";
+
 /** The skeleton blocks whose text can be selected to copy it: what the agent proposes, why it failed, what removing asks. A heading's title and hint cannot be selected, so a press on them would only focus the editor. */
 const SELECTABLE_TEXT_IN: readonly string[] = [
   "section-panel",
@@ -43,6 +47,9 @@ const SELECTABLE_TEXT_IN: readonly string[] = [
 
 /** Keys that write or delete, besides a typed character. */
 const EDITING_KEYS: readonly string[] = ["Enter", "Backspace", "Delete"];
+
+const MAIN_BUTTON = 0;
+const MIDDLE_BUTTON = 1;
 
 type Editor = ExtensionOptions["editor"];
 
@@ -78,7 +85,10 @@ function propsFor(editor: Editor) {
       editor.isEditable
         ? DecorationSet.create(state.doc, placeholders(state.doc, write))
         : DecorationSet.empty,
-    handleDOMEvents: { mousedown: ignoresPress },
+    handleDOMEvents: {
+      mousedown: ignoresPress,
+      pointerdown: leavesDisabled,
+    },
     handleClickOn: isSkeleton,
     handleKeyDown: ignoresKeysOnSkeleton,
   };
@@ -94,16 +104,27 @@ function ignoresPress(view: EditorView, event: MouseEvent): boolean {
     leave(view);
   }
 
+  if (ignored && event.button === MIDDLE_BUTTON) {
+    holdsPaste(view);
+  }
+
   return ignored;
 }
 
-/** A press the editor ignores still moves the person's attention away from where the caret was, so the editor lets go of focus: the next key must not write there. */
-function leave(view: EditorView): void {
-  const { dom } = view;
+/** A press on a disabled control in a section's skeleton sends no mouse events, so it never reaches `ignoresPress`; its pointer event does. The browser still focuses the editor around the control, so the editor lets go of focus once the press is released. */
+function leavesDisabled(view: EditorView, event: PointerEvent): boolean {
+  const { target } = event;
+  const disabled = target instanceof Element && target.matches(DISABLED);
 
-  if (dom instanceof HTMLElement) {
-    dom.blur();
+  if (disabled && view.editable && isSkeletonContent(target)) {
+    leaveOnRelease(view);
   }
+
+  return false;
+}
+
+function isSkeletonContent(target: Element): boolean {
+  return SECTION_SKELETON.includes(contentTypeOf(target));
 }
 
 /** Text in a section's panel or actions can be selected to copy it, which leaves the editor focused with its caret where it was, or selects the block itself. A key that writes or deletes then has nowhere it belongs, so it does nothing, rather than act on that caret or put a paragraph beside the block. Keys typed into the panel's own input are the input's. */
@@ -136,7 +157,10 @@ function anchorOf({ root, dom }: EditorView) {
 }
 
 function isInteractive(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest(INTERACTIVE) !== null;
+  const control =
+    target instanceof Element ? target.closest(INTERACTIVE) : null;
+
+  return control !== null && !control.matches(DISABLED);
 }
 
 function selectsSkeleton(selection: Selection): boolean {
@@ -150,7 +174,7 @@ function selectsSkeleton(selection: Selection): boolean {
 }
 
 function writes({ key, metaKey, ctrlKey }: KeyboardEvent): boolean {
-  const typed = EDITING_KEYS.includes(key) || key.length === 1;
+  const typed = EDITING_KEYS.includes(key) || [...key].length === 1;
 
   return typed && !metaKey && !ctrlKey;
 }
@@ -298,9 +322,10 @@ function isWriting(block: TopBlock): boolean {
   return !NOT_WRITING.includes(block.type) && !isBlankParagraph(block);
 }
 
+/** Blank as planning-document's `isBlankParagraph` reads it: no text, and no children. */
 function isBlankParagraph({ node, content, type }: TopBlock): boolean {
   return (
-    type === PARAGRAPH && node.childCount === 1 && content?.content.size === 0
+    type === PARAGRAPH && node.childCount === 1 && content?.textContent === ""
   );
 }
 
@@ -331,8 +356,7 @@ function placeholderElement(title: string, write: () => void): HTMLElement {
   element.ariaLabel = `${EMPTY_SECTION_TEXT} in ${title}`;
   element.textContent = EMPTY_SECTION_TEXT;
   element.addEventListener("mousedown", (event) => {
-    event.preventDefault();
-    write();
+    pressPlaceholder(event, write);
   });
   element.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -342,6 +366,15 @@ function placeholderElement(title: string, write: () => void): HTMLElement {
   });
 
   return element;
+}
+
+/** Only the main button writes; another button's press takes no focus either, and a right one still opens the context menu. */
+function pressPlaceholder(event: MouseEvent, write: () => void): void {
+  event.preventDefault();
+
+  if (event.button === MAIN_BUTTON) {
+    write();
+  }
 }
 
 /** Puts a paragraph where the section's writing starts and the cursor in it. */
