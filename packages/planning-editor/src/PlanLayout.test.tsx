@@ -165,6 +165,20 @@ describe("the plan's layout, themed, on a wide page", () => {
     }).toEqual({ focused: false, kpis: [] });
   });
 
+  it("changes nothing when Z is typed after the caret in 'Checkout' is left for a press in the padding beside the success criteria actions", async () => {
+    const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
+    const editor = editorOf(screen.container);
+    await userEvent.click(screen.getByText("Checkout"));
+    const actions = screen.getByRole("group", {
+      name: "Success criteria actions",
+    });
+    await userEvent.click(editor, {
+      position: inPaddingBeside(editor, actions.element()),
+    });
+    await userEvent.keyboard("Z");
+    expect(lastPlan()).toBeUndefined();
+  });
+
   it("puts the caret at the start of 'Targets' when the padding beside it is pressed", async () => {
     const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
     const editor = editorOf(screen.container);

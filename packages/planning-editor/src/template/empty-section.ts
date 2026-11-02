@@ -35,6 +35,17 @@ const BESIDE_BLOCKS = ".bn-block-group, .bn-block-outer, .bn-block";
 /** What inside a section's skeleton takes a press of its own. */
 const INTERACTIVE = "button, input, textarea, select, a, [role='button']";
 
+/** The skeleton blocks whose text can be selected to copy it: what the agent proposes, why it failed, what removing asks. A heading's title and hint cannot be selected, so a press on them would only focus the editor. */
+const SELECTABLE_TEXT_IN: readonly string[] = [
+  "section-panel",
+  "section-actions",
+];
+
+/** Keys that write or delete, besides a typed character. */
+const EDITING_KEYS: readonly string[] = ["Enter", "Backspace", "Delete"];
+
+const MAIN_BUTTON = 0;
+
 type Editor = ExtensionOptions["editor"];
 
 interface Section {
@@ -70,10 +81,11 @@ function propsFor(editor: Editor) {
   };
 }
 
-/** A read-only plan is read and copied from, so it keeps every press. */
+/** A read-only plan is read and copied from, so it keeps every press; only the main button places a caret, so only it is weighed. */
 function ignoresPress(view: EditorView, event: MouseEvent): boolean {
+  const weighed = view.editable && event.button === MAIN_BUTTON;
   const ignored =
-    view.editable &&
+    weighed &&
     (ignoresBesideBlocks(view, event) || ignoresSkeletonSpace(view, event));
 
   if (ignored) {
@@ -92,12 +104,29 @@ function leave(view: EditorView): void {
   }
 }
 
-/** Text in a section's heading, panel or actions can be selected to copy it, which can select the block itself; Enter or typing then has nowhere to write, so it writes nothing rather than a paragraph beside the block. */
+/** Text in a section's panel or actions can be selected to copy it, which leaves the editor focused with its caret where it was, or selects the block itself. A key that writes or deletes then has nowhere it belongs, so it does nothing, rather than act on that caret or put a paragraph beside the block. Keys typed into the panel's own input are the input's. */
 export function ignoresKeysOnSkeleton(
   view: EditorView,
   event: KeyboardEvent,
 ): boolean {
-  return selectsSkeleton(view.state.selection) && writes(event);
+  return writes(event) && !isInteractive(event.target) && onSkeleton(view);
+}
+
+function onSkeleton(view: EditorView): boolean {
+  return selectsSkeleton(view.state.selection) || readsSkeleton(view);
+}
+
+/** Where the browser's own selection sits: in a section's skeleton after a press on its text, whatever ProseMirror's selection says. */
+function readsSkeleton(view: EditorView): boolean {
+  const { ownerDocument } = view.dom;
+  const anchor = ownerDocument.getSelection()?.anchorNode;
+  const element = anchor instanceof Element ? anchor : anchor?.parentElement;
+
+  return element ? SECTION_SKELETON.includes(contentTypeOf(element)) : false;
+}
+
+function isInteractive(target: EventTarget | null): boolean {
+  return target instanceof Element && target.closest(INTERACTIVE) !== null;
 }
 
 function selectsSkeleton(selection: Selection): boolean {
@@ -111,7 +140,7 @@ function selectsSkeleton(selection: Selection): boolean {
 }
 
 function writes({ key, metaKey, ctrlKey }: KeyboardEvent): boolean {
-  const typed = key === "Enter" || key.length === 1;
+  const typed = EDITING_KEYS.includes(key) || key.length === 1;
 
   return typed && !metaKey && !ctrlKey;
 }
@@ -145,22 +174,22 @@ export function ignoresSkeletonSpace(
 }
 
 function isSkeletonSpace(view: EditorView, target: EventTarget | null) {
+  if (!(target instanceof Element) || !view.dom.contains(target)) {
+    return false;
+  }
+
+  const type = contentTypeOf(target);
+
   return (
-    target instanceof Element &&
-    view.dom.contains(target) &&
-    !target.closest(INTERACTIVE) &&
-    !holdsSelectableText(target) &&
-    SECTION_SKELETON.includes(contentTypeOf(target))
+    SECTION_SKELETON.includes(type) &&
+    !isInteractive(target) &&
+    !(SELECTABLE_TEXT_IN.includes(type) && holdsText(target))
   );
 }
 
-/** Text a press could start selecting. A heading's title and hint cannot be selected, so a press on them would only focus the editor with its caret left wherever it was, and the next key would write there. */
-function holdsSelectableText(target: Element): boolean {
-  return (
-    getComputedStyle(target).userSelect !== "none" &&
-    [...target.childNodes].some(
-      (child) => child instanceof Text && child.data.trim() !== "",
-    )
+function holdsText(target: Element): boolean {
+  return [...target.childNodes].some(
+    (child) => child instanceof Text && child.data.trim() !== "",
   );
 }
 

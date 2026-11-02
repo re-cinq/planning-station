@@ -45,6 +45,18 @@ const renderEmpty = async (seed = EMPTY_PLAN) => {
   return rendered;
 };
 
+const REFINE_NOTE = "Answer a question or resolve a thread to refine";
+
+const renderRefinable = async () => {
+  const rendered = await renderAsAna(CHECKOUT_PLAN, {
+    onRefine: () => Promise.resolve(),
+  });
+  const { screen } = rendered;
+  await expect.element(screen.getByText(REFINE_NOTE).first()).toBeVisible();
+
+  return rendered;
+};
+
 const renderReadOnly = async () => {
   const rendered = await renderAsAna(EMPTY_PLAN, { readOnly: true });
   await expect
@@ -148,6 +160,22 @@ describe("emptySectionPlaceholder", () => {
       screen.getByRole("heading", { name: "Success criteria" }),
     );
     await userEvent.keyboard("Z");
+    expect(lastPlan()).toBeUndefined();
+  });
+
+  it("changes nothing when Enter follows a click on the intent's Refine note, after the caret was in 'Checkout'", async () => {
+    const { screen, lastPlan } = await renderRefinable();
+    await userEvent.click(screen.getByText("Checkout"));
+    await userEvent.click(screen.getByText(REFINE_NOTE).first());
+    await userEvent.keyboard("{Enter}");
+    expect(lastPlan()).toBeUndefined();
+  });
+
+  it("changes nothing when Enter and Backspace follow a double-click on a word of the intent's Refine note, after the caret was in 'Checkout'", async () => {
+    const { screen, lastPlan } = await renderRefinable();
+    await userEvent.click(screen.getByText("Checkout"));
+    await userEvent.dblClick(screen.getByText(REFINE_NOTE).first());
+    await userEvent.keyboard("{Enter}{Backspace}{Delete}");
     expect(lastPlan()).toBeUndefined();
   });
 
