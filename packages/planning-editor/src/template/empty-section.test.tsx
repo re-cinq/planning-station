@@ -4,6 +4,7 @@ import { templateFor, type PlanDocument } from "@re-cinq/planning-document";
 import { blockText, writtenBlocks } from "@re-cinq/planning-document/testing";
 
 import {
+  CHECKOUT_PLAN,
   FIRST_TITLE,
   planMeta,
   planSeed,
@@ -130,6 +131,26 @@ describe("emptySectionPlaceholder", () => {
     await userEvent.keyboard("{Enter}");
     expect(intentOf(lastPlan()).written).toEqual([]);
   });
+
+  it("leaves the plan title 'Faster checkout' alone when X is typed after a click on the success criteria heading", async () => {
+    const { screen, lastPlan } = await renderEmpty();
+    await userEvent.click(
+      screen.getByRole("heading", { name: "Success criteria" }),
+    );
+    await userEvent.keyboard("X");
+    expect(lastPlan()?.title ?? "Faster checkout").toBe("Faster checkout");
+  });
+
+  it("changes nothing when Z is typed after the caret in 'Checkout' is left for a click on the success criteria heading", async () => {
+    const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
+    await userEvent.click(screen.getByText("Checkout"));
+    await userEvent.click(
+      screen.getByRole("heading", { name: "Success criteria" }),
+    );
+    await userEvent.keyboard("Z");
+    expect(lastPlan()).toBeUndefined();
+  });
+
   it("offers the intent placeholder above its actions, not on an empty paragraph left under them", async () => {
     const { screen } = await renderEmpty(BLANK_UNDER_INTENT_ACTIONS);
     await expect

@@ -72,10 +72,24 @@ function propsFor(editor: Editor) {
 
 /** A read-only plan is read and copied from, so it keeps every press. */
 function ignoresPress(view: EditorView, event: MouseEvent): boolean {
-  return (
+  const ignored =
     view.editable &&
-    (ignoresBesideBlocks(view, event) || ignoresSkeletonSpace(view, event))
-  );
+    (ignoresBesideBlocks(view, event) || ignoresSkeletonSpace(view, event));
+
+  if (ignored) {
+    leave(view);
+  }
+
+  return ignored;
+}
+
+/** A press the editor ignores still moves the person's attention away from where the caret was, so the editor lets go of focus: the next key must not write there. */
+function leave(view: EditorView): void {
+  const { dom } = view;
+
+  if (dom instanceof HTMLElement) {
+    dom.blur();
+  }
 }
 
 /** Text in a section's heading, panel or actions can be selected to copy it, which can select the block itself; Enter or typing then has nowhere to write, so it writes nothing rather than a paragraph beside the block. */
@@ -116,7 +130,7 @@ export function ignoresBesideBlocks(
   return true;
 }
 
-/** A press on a section's heading, panel or actions, away from their buttons, inputs and text, takes nothing either: the editor has no place to put the caret there. A press on text still starts a selection, so it can be copied. */
+/** A press on a section's heading, panel or actions, away from their buttons, inputs and selectable text, takes nothing either: the editor has no place to put the caret there. A press on selectable text still starts a selection, so it can be copied. */
 export function ignoresSkeletonSpace(
   view: EditorView,
   event: MouseEvent,
@@ -135,14 +149,18 @@ function isSkeletonSpace(view: EditorView, target: EventTarget | null) {
     target instanceof Element &&
     view.dom.contains(target) &&
     !target.closest(INTERACTIVE) &&
-    !holdsText(target) &&
+    !holdsSelectableText(target) &&
     SECTION_SKELETON.includes(contentTypeOf(target))
   );
 }
 
-function holdsText(target: Element): boolean {
-  return [...target.childNodes].some(
-    (child) => child instanceof Text && child.data.trim() !== "",
+/** Text a press could start selecting. A heading's title and hint cannot be selected, so a press on them would only focus the editor with its caret left wherever it was, and the next key would write there. */
+function holdsSelectableText(target: Element): boolean {
+  return (
+    getComputedStyle(target).userSelect !== "none" &&
+    [...target.childNodes].some(
+      (child) => child instanceof Text && child.data.trim() !== "",
+    )
   );
 }
 
