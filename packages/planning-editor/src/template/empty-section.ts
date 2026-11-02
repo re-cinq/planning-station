@@ -14,7 +14,7 @@ import {
 } from "prosemirror-state";
 import { Decoration, DecorationSet, type EditorView } from "prosemirror-view";
 
-import { holdsPaste, leave, leaveOnRelease } from "./focus-release.js";
+import { holdsPaste, leave } from "./focus-release.js";
 import { IS_APPLE } from "./platform.js";
 import { STRUCTURAL } from "./template-guard.js";
 import { SECTION_HEADING, topBlocks, type TopBlock } from "./top-blocks.js";
@@ -48,6 +48,9 @@ const SELECTABLE_TEXT_IN: readonly string[] = [
 
 /** Keys that write or delete, besides a typed character. */
 const EDITING_KEYS: readonly string[] = ["Enter", "Backspace", "Delete"];
+
+/** Control's chords that delete, transpose or open a line in text on Apple's systems; its others only move the caret. */
+const APPLE_CONTROL_EDITS: readonly string[] = ["d", "h", "k", "o", "t"];
 
 const MAIN_BUTTON = 0;
 const MIDDLE_BUTTON = 1;
@@ -86,10 +89,7 @@ function propsFor(editor: Editor) {
       editor.isEditable
         ? DecorationSet.create(state.doc, placeholders(state.doc, write))
         : DecorationSet.empty,
-    handleDOMEvents: {
-      mousedown: ignoresPress,
-      pointerdown: leavesDisabled,
-    },
+    handleDOMEvents: { mousedown: ignoresPress },
     handleClickOn: isSkeleton,
     handleKeyDown: ignoresKeysOnSkeleton,
   };
@@ -110,30 +110,6 @@ function ignoresPress(view: EditorView, event: MouseEvent): boolean {
   }
 
   return ignored;
-}
-
-/** A press on a disabled control in a section's skeleton sends no mouse events, so it never reaches `ignoresPress`; its pointer event does. The browser still focuses the editor around the control, so the editor lets go of focus once the press is released. */
-function leavesDisabled(view: EditorView, event: PointerEvent): boolean {
-  const { target } = event;
-  const disabled = target instanceof Element && target.matches(DISABLED);
-
-  if (disabled && view.editable && isSkeletonContent(target)) {
-    leavesPress(view, event);
-  }
-
-  return false;
-}
-
-function leavesPress(view: EditorView, event: PointerEvent): void {
-  leaveOnRelease(view, event);
-
-  if (event.button === MIDDLE_BUTTON) {
-    holdsPaste(view);
-  }
-}
-
-function isSkeletonContent(target: Element): boolean {
-  return SECTION_SKELETON.includes(contentTypeOf(target));
 }
 
 /** Text in a section's panel or actions can be selected to copy it, which leaves the editor focused with its caret where it was, or selects the block itself. A key that writes or deletes then has nowhere it belongs, so it does nothing, rather than act on that caret or put a paragraph beside the block. Keys typed into the panel's own input are the input's. */
@@ -182,11 +158,18 @@ function selectsSkeleton(selection: Selection): boolean {
   return SECTION_SKELETON.includes(type.name);
 }
 
-/** A shortcut does not write, except Control's on Apple's systems, which deletes and opens lines in text. */
-function writes({ key, metaKey, ctrlKey }: KeyboardEvent): boolean {
+function writes(event: KeyboardEvent): boolean {
+  const { key, metaKey } = event;
   const typed = EDITING_KEYS.includes(key) || [...key].length === 1;
 
-  return typed && !metaKey && (IS_APPLE || !ctrlKey);
+  return typed && !metaKey && !isControlShortcut(event);
+}
+
+/** A Control chord is a shortcut, except where it writes: AltGr, which sends Control with a character, and Control's editing keys on Apple's systems. */
+function isControlShortcut(event: KeyboardEvent): boolean {
+  const edits = IS_APPLE && APPLE_CONTROL_EDITS.includes(event.key);
+
+  return event.ctrlKey && !edits && !event.getModifierState("AltGraph");
 }
 
 /** A press beside the blocks, level only with a section's skeleton, neither focuses the editor nor selects a block; level with a line of text, or in a gap, it still puts the caret where the editor would. */

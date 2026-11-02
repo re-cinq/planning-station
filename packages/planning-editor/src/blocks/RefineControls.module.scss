@@ -31,10 +31,13 @@
   background: var(--ps-accent);
 }
 
+// A disabled button takes no press, so a press on it lands on the actions
+// around it, which the editor ignores like the rest of their space; the note
+// beside it says why it waits.
 .refine:disabled {
   color: var(--ps-fg-muted);
   border-color: var(--ps-border);
-  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .quiet {

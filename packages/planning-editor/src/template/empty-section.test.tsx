@@ -65,13 +65,6 @@ const pasteInto = (target: Element, text: string) => {
   );
 };
 
-const TOUCH = { pointerId: 7, pointerType: "touch", bubbles: true };
-
-const touchesThen = (target: Element, last: "pointerup" | "pointercancel") => {
-  target.dispatchEvent(new PointerEvent("pointerdown", TOUCH));
-  target.dispatchEvent(new PointerEvent(last, TOUCH));
-};
-
 const middlePressOn = (target: Element) => {
   target.dispatchEvent(
     new MouseEvent("mousedown", { button: 1, bubbles: true, cancelable: true }),
@@ -81,6 +74,19 @@ const middlePressOn = (target: Element) => {
 const greyedRefineOf = (
   screen: Awaited<ReturnType<typeof renderAsAna>>["screen"],
 ) => screen.getByRole("button", { name: "Refine this section" }).first();
+
+const pastesAfterHeldPress = async (key: string) => {
+  const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
+  const checkout = screen.getByText("Checkout").element();
+  await userEvent.click(checkout);
+  middlePressOn(
+    screen.getByRole("heading", { name: "Success criteria" }).element(),
+  );
+  checkout.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+  pasteInto(checkout, "X");
+
+  return lastPlan();
+};
 
 const renderReadOnly = async () => {
   const rendered = await renderAsAna(EMPTY_PLAN, { readOnly: true });
@@ -230,25 +236,6 @@ describe("emptySectionPlaceholder", () => {
     expect(lastPlan()).toBeUndefined();
   });
 
-  it("lets Z be written in 'Checkout' after a touch on the intent's disabled Refine button turned into a scroll", async () => {
-    const { screen, lastPlan } = await renderRefinable();
-    touchesThen(greyedRefineOf(screen).element(), "pointercancel");
-    await userEvent.click(screen.getByText("Checkout"));
-    await userEvent.keyboard("Z");
-    expect(intentText(lastPlan())).toContain("Z");
-  });
-
-  it("keeps the editor unfocused when a tap on the intent's disabled Refine button focuses it after the caret was in 'Checkout'", async () => {
-    const { screen } = await renderRefinable();
-    const checkout = screen.getByText("Checkout").element();
-    await userEvent.click(checkout);
-    touchesThen(greyedRefineOf(screen).element(), "pointerup");
-    checkout.closest<HTMLElement>("[contenteditable='true']")?.focus();
-    expect(checkout.closest("[contenteditable='true']")).not.toBe(
-      document.activeElement,
-    );
-  });
-
   it("pastes nothing into 'Checkout' when a middle press on the intent's disabled Refine button is released", async () => {
     const { screen, lastPlan } = await renderRefinable();
     const checkout = screen.getByText("Checkout").element();
@@ -279,17 +266,13 @@ describe("emptySectionPlaceholder", () => {
   });
 
   it("pastes 'X' into 'Checkout' from the keyboard after a middle press on the success criteria heading whose release was lost", async () => {
-    const { screen, lastPlan } = await renderEmpty(CHECKOUT_PLAN);
-    const checkout = screen.getByText("Checkout").element();
-    await userEvent.click(checkout);
-    middlePressOn(
-      screen.getByRole("heading", { name: "Success criteria" }).element(),
-    );
-    checkout.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "v", bubbles: true }),
-    );
-    pasteInto(checkout, "X");
-    expect(intentText(lastPlan())).toContain("X");
+    const plan = await pastesAfterHeldPress("v");
+    expect(intentText(plan)).toContain("X");
+  });
+
+  it("pastes nothing into 'Checkout' when only Shift is pressed while a middle press on the success criteria heading is held", async () => {
+    const plan = await pastesAfterHeldPress("Shift");
+    expect(plan).toBeUndefined();
   });
 
   it("writes nothing when the intent placeholder is right-clicked", async () => {

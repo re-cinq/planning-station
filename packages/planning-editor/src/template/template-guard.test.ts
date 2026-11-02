@@ -286,7 +286,15 @@ describe("ignoresKeysOnSkeleton", () => {
     }).toEqual({ enter: true, letter: true, emoji: true, copy: false });
   });
 
-  it("swallows Control-D while the intent panel itself is selected only where Control deletes text, on Apple's systems", () => {
-    expect(keyOn("d", { ctrlKey: true })).toBe(IS_APPLE);
+  it("swallows Control-D while the intent panel itself is selected only on Apple's systems, Control-A nowhere, and an AltGr '@' everywhere", () => {
+    expect({
+      controlD: keyOn("d", { ctrlKey: true }),
+      controlA: keyOn("a", { ctrlKey: true }),
+      altGr: keyOn("@", {
+        ctrlKey: true,
+        altKey: true,
+        modifierAltGraph: true,
+      }),
+    }).toEqual({ controlD: IS_APPLE, controlA: false, altGr: true });
   });
 });
