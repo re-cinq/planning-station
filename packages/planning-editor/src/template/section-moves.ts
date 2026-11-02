@@ -13,6 +13,7 @@ import type { EditorView } from "prosemirror-view";
 
 import { STRUCTURAL } from "./template-guard.js";
 import { SECTION_HEADING, topBlocks, type TopBlock } from "./top-blocks.js";
+import { IS_APPLE } from "./platform.js";
 
 type Direction = "up" | "down";
 
@@ -29,10 +30,6 @@ const TEXT_DEPTH = 3;
 
 /** A selected node one level up from the cursor: the content of a top-level block. A selected nested block sits deeper. */
 const NODE_DEPTH = 2;
-
-const IS_APPLE =
-  typeof navigator !== "undefined" &&
-  /Mac|iP(hone|[oa]d)/.test(navigator.platform);
 
 /** Moving a block with Mod-Shift-Arrow past a section's edge carries it over the section's actions, so it never lands under Refine. */
 export const sectionMoves = createExtension({

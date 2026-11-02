@@ -15,6 +15,7 @@ import {
 import { Decoration, DecorationSet, type EditorView } from "prosemirror-view";
 
 import { holdsPaste, leave, leaveOnRelease } from "./focus-release.js";
+import { IS_APPLE } from "./platform.js";
 import { STRUCTURAL } from "./template-guard.js";
 import { SECTION_HEADING, topBlocks, type TopBlock } from "./top-blocks.js";
 
@@ -117,10 +118,18 @@ function leavesDisabled(view: EditorView, event: PointerEvent): boolean {
   const disabled = target instanceof Element && target.matches(DISABLED);
 
   if (disabled && view.editable && isSkeletonContent(target)) {
-    leaveOnRelease(view);
+    leavesPress(view, event);
   }
 
   return false;
+}
+
+function leavesPress(view: EditorView, event: PointerEvent): void {
+  leaveOnRelease(view, event);
+
+  if (event.button === MIDDLE_BUTTON) {
+    holdsPaste(view);
+  }
 }
 
 function isSkeletonContent(target: Element): boolean {
@@ -173,10 +182,11 @@ function selectsSkeleton(selection: Selection): boolean {
   return SECTION_SKELETON.includes(type.name);
 }
 
+/** A shortcut does not write, except Control's on Apple's systems, which deletes and opens lines in text. */
 function writes({ key, metaKey, ctrlKey }: KeyboardEvent): boolean {
   const typed = EDITING_KEYS.includes(key) || [...key].length === 1;
 
-  return typed && !metaKey && !ctrlKey;
+  return typed && !metaKey && (IS_APPLE || !ctrlKey);
 }
 
 /** A press beside the blocks, level only with a section's skeleton, neither focuses the editor nor selects a block; level with a line of text, or in a gap, it still puts the caret where the editor would. */
@@ -322,10 +332,10 @@ function isWriting(block: TopBlock): boolean {
   return !NOT_WRITING.includes(block.type) && !isBlankParagraph(block);
 }
 
-/** Blank as planning-document's `isBlankParagraph` reads it: no text, and no children. */
+/** Blank as planning-document's `isBlankParagraph` reads it: no children, and nothing inline, not even a line break. */
 function isBlankParagraph({ node, content, type }: TopBlock): boolean {
   return (
-    type === PARAGRAPH && node.childCount === 1 && content?.textContent === ""
+    type === PARAGRAPH && node.childCount === 1 && content?.content.size === 0
   );
 }
 

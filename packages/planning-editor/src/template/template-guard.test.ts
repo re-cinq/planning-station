@@ -7,6 +7,7 @@ import { toEditorBlocks } from "../schema/block-bridge.js";
 import { planSchema } from "../schema/plan-schema.js";
 import { seeded, textBlock } from "../testing/fixtures.js";
 import { ignoresKeysOnSkeleton } from "./empty-section.js";
+import { IS_APPLE } from "./platform.js";
 import {
   bypassTemplate,
   headingSlots,
@@ -283,5 +284,9 @@ describe("ignoresKeysOnSkeleton", () => {
       emoji: keyOn("😀"),
       copy: keyOn("c", { metaKey: true }),
     }).toEqual({ enter: true, letter: true, emoji: true, copy: false });
+  });
+
+  it("swallows Control-D while the intent panel itself is selected only where Control deletes text, on Apple's systems", () => {
+    expect(keyOn("d", { ctrlKey: true })).toBe(IS_APPLE);
   });
 });
