@@ -145,6 +145,7 @@ function Failed({ refine, ask, reason }: Refining & { reason: string }) {
           disabled={refine.busyFor !== undefined}
         />
         <Quiet label="Dismiss" run={refine.discard} />
+        <WaitNote refine={refine} />
       </p>
     </section>
   );
@@ -187,7 +188,20 @@ function ProposalButtons({
       <Primary label={label} run={run} disabled={waiting} />
       {stale && <Quiet label="Apply anyway" run={refine.applyAnyway} />}
       <Quiet label="Discard" run={refine.discard} />
+      {stale && <WaitNote refine={refine} />}
     </p>
+  );
+}
+
+/** Why "Ask again" waits: a disabled button says nothing of its own, and takes no pointer. */
+function WaitNote({ refine }: Pick<Refining, "refine">) {
+  return (
+    refine.busyFor !== undefined && (
+      <span className={styles.note}>
+        The agent is refining another section for {refine.busyFor}; ask again
+        when it finishes
+      </span>
+    )
   );
 }
 

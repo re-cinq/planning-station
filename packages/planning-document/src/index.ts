@@ -4,6 +4,7 @@ export * from "./blocks/plan-blocks.js";
 export * from "./blocks/prose-blocks.js";
 export * from "./blocks/block-json.js";
 export * from "./blocks/block-hash.js";
+export * from "./blocks/blank-paragraph.js";
 export * from "./blocks/question-options.js";
 export * from "./plan/plan-meta.js";
 export * from "./plan/entities.js";

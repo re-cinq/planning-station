@@ -17,6 +17,8 @@ import { planSchema } from "./schema/plan-schema.js";
 import type { PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
 import { changeWidgets, type ChangeHosts } from "./schema/change-widgets.js";
+import { emptySectionPlaceholder } from "./template/empty-section.js";
+import { sectionMoves } from "./template/section-moves.js";
 import { templateGuard } from "./template/template-guard.js";
 
 export interface PlanEditorOptions {
@@ -54,7 +56,7 @@ function useCollaborativeEditor(
   return useCreateBlockNote(
     withCollaboration({
       schema: planSchema,
-      extensions: [templateGuard, changeWidgets(doc, hosts)],
+      extensions: planExtensions(doc, hosts),
       collaboration: {
         fragment: doc.getXmlFragment(PLAN_FRAGMENT),
         // No color until the editor settles one, so a newcomer never claims a color someone here holds.
@@ -65,6 +67,15 @@ function useCollaborativeEditor(
     }),
     [session],
   );
+}
+
+function planExtensions(doc: PlanSession["doc"], hosts: ChangeHosts) {
+  return [
+    templateGuard,
+    emptySectionPlaceholder,
+    sectionMoves,
+    changeWidgets(doc, hosts),
+  ];
 }
 
 function useEditedBlocks(

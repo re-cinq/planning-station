@@ -1,3 +1,4 @@
+import { isBlankParagraph } from "../blocks/blank-paragraph.js";
 import type { BlockJson } from "../blocks/block-json.js";
 import { shortHash } from "../lib/short-hash.js";
 import { partitionSections } from "../projection/partition.js";
@@ -12,12 +13,16 @@ export const CONVERSATION: readonly string[] = [
 
 export class SectionChangedError extends Error {}
 
-/** What a refine would rewrite in a section, as a hash: its written blocks, not the talk about them. */
+/** What a refine would rewrite in a section, as a hash: its written blocks, not the talk about them, nor a blank paragraph that says nothing. */
 export function sectionHash(
   blocks: readonly BlockJson[],
   slot: string,
 ): string {
-  return shortHash(JSON.stringify(writtenIn(blocks, slot)));
+  const said = writtenIn(blocks, slot).filter(
+    (block) => !isBlankParagraph(block),
+  );
+
+  return shortHash(JSON.stringify(said));
 }
 
 export function writtenIn(
