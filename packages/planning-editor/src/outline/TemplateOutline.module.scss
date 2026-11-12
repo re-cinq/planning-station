@@ -10,13 +10,78 @@
   font-weight: var(--ps-fw-label);
 }
 
+.progress {
+  margin: 0 0 var(--ps-space-hint);
+  color: var(--ps-fg-muted);
+}
+
+.bar {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-bottom: var(--ps-space-list);
+  appearance: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--ps-radius);
+  background: var(--ps-rule);
+  accent-color: var(--ps-accent);
+
+  &::-webkit-progress-bar {
+    background: var(--ps-rule);
+  }
+
+  &::-webkit-progress-value {
+    background: var(--ps-accent);
+  }
+
+  &::-moz-progress-bar {
+    background: var(--ps-accent);
+  }
+}
+
 .slots {
   display: grid;
   gap: var(--ps-space-inline);
   margin: 0;
-  // Room for a two-digit number, which the sidebar's scroll box would otherwise clip.
-  padding-left: calc(var(--ps-space-list) + 1ch);
+  padding-left: 0;
+  list-style: none;
   font-variant-numeric: tabular-nums;
+}
+
+.slot {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: var(--ps-space-inline);
+  align-items: baseline;
+}
+
+// Three shapes, so colour is never the only signal.
+.mark {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  font-size: var(--ps-fs-label);
+  font-weight: var(--ps-fw-label);
+  line-height: var(--ps-lh-heading);
+  align-self: center;
+
+  &[data-state="ready"] {
+    color: var(--ps-bg);
+    background: var(--ps-accent);
+  }
+
+  &[data-state="problem"] {
+    color: var(--ps-bg);
+    background: var(--ps-danger);
+  }
+
+  &[data-state="missing"] {
+    border: 1.5px solid var(--ps-fg-muted);
+  }
 }
 
 .title,
@@ -60,17 +125,22 @@
 }
 
 .required {
+  grid-column: 3;
   color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-label);
 }
 
 // Not an error — the plan is fine, it just has decided input nobody has written in yet.
 .settled {
+  grid-column: 2 / -1;
   color: var(--ps-warning);
 }
 
 .problems {
+  grid-column: 2 / -1;
   margin: 0;
-  padding-left: var(--ps-space-list);
+  padding-left: 0;
+  list-style: none;
   color: var(--ps-danger);
 }
 

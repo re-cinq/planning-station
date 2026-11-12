@@ -19,10 +19,19 @@ import { EMPTY_SECTION_TEXT } from "./template/empty-section.js";
 
 const WIDE = { width: 1280, height: 900 };
 const PADDING_INSET = 4;
-const writeInIntent = { name: `${EMPTY_SECTION_TEXT} in ${FIRST_TITLE}` };
 const EMPTY_PLAN = planSeed("performance");
 const BLANK_INTENT = planSeed("performance", {
   intent: [textBlock("paragraph", {}, "")],
+});
+const COMMENTED_INTENT = planSeed("performance", {
+  intent: [
+    textBlock("paragraph", {}, "Checkout"),
+    textBlock(
+      "comment",
+      { commentId: "c1", author: "Ben", at: "2026-09-18T09:12:00.000Z" },
+      "Support tags this weekly.",
+    ),
+  ],
 });
 const REFINE_NOTE = "Answer a question or resolve a thread to refine";
 
@@ -41,6 +50,12 @@ const editorOf = (container: HTMLElement): HTMLElement => {
 };
 
 const boxOf = (element: Element) => element.getBoundingClientRect();
+
+const paddingsOf = (element: HTMLElement) => {
+  const { paddingLeft, paddingRight } = getComputedStyle(element);
+
+  return { left: paddingLeft, right: paddingRight };
+};
 
 const overlapVertically = (first: DOMRect, second: DOMRect) =>
   first.top < second.bottom && second.top < first.bottom;
@@ -108,14 +123,14 @@ describe("the plan's layout, themed, on a wide page", () => {
     await page.viewport(WIDE.width, WIDE.height);
   });
 
-  it("puts the intent comment box on the same row as the intent placeholder", async () => {
+  it("puts the Comment button on the same row as the intent heading", async () => {
     const { screen } = await renderEmpty();
-    const comment = screen.getByRole("textbox", {
+    const comment = screen.getByRole("button", {
       name: `Comment on ${FIRST_TITLE}`,
     });
-    const placeholder = screen.getByRole("button", writeInIntent);
+    const heading = screen.getByRole("heading", { name: FIRST_TITLE });
     expect(
-      overlapVertically(boxOf(comment.element()), boxOf(placeholder.element())),
+      overlapVertically(boxOf(comment.element()), boxOf(heading.element())),
     ).toBe(true);
   });
 
@@ -149,23 +164,25 @@ describe("the plan's layout, themed, on a wide page", () => {
     expect(pressed).toEqual(NOTHING_TAKEN);
   });
 
-  it("neither focuses the editor, selects a block nor takes an Enter when the padding level with the intent comment box is pressed", async () => {
-    const pressed = await pressPaddingBeside((screen) =>
-      screen.getByRole("textbox", { name: `Comment on ${FIRST_TITLE}` }),
-    );
-    expect(pressed).toEqual(NOTHING_TAKEN);
+  it("gives the plan the same padding on both sides when it holds no comment", async () => {
+    const { screen } = await renderEmpty();
+    const { left, right } = paddingsOf(editorOf(screen.container));
+    expect(right).toBe(left);
   });
 
-  it("puts the intent comment box on the same row as an empty intent paragraph", async () => {
-    const { screen } = await renderEmpty(BLANK_INTENT);
-    const comment = screen.getByRole("textbox", {
-      name: `Comment on ${FIRST_TITLE}`,
-    });
-    const marked = screen.container.querySelector("[data-plan-placeholder]");
-    expect(
-      marked !== null &&
-        overlapVertically(boxOf(comment.element()), boxOf(marked)),
-    ).toBe(true);
+  it("opens a margin on the right of the text once the plan holds a comment", async () => {
+    const { screen } = await renderEmpty(COMMENTED_INTENT);
+    const { left, right } = paddingsOf(editorOf(screen.container));
+    expect(parseFloat(right)).toBeGreaterThan(parseFloat(left));
+  });
+
+  it("floats the comment into the margin beside its section", async () => {
+    const { screen } = await renderEmpty(COMMENTED_INTENT);
+    const heading = screen.getByRole("heading", { name: FIRST_TITLE });
+    const comment = screen.getByLabelText("Comment by Ben");
+    expect(boxOf(comment.element()).left).toBeGreaterThanOrEqual(
+      boxOf(heading.element()).right,
+    );
   });
 
   it("takes nothing when the space between 'Targets' and the success criteria's actions, which is the actions' own, is pressed", async () => {

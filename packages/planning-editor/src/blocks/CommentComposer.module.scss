@@ -1,17 +1,8 @@
-.panel {
+.composer {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--ps-space-inline);
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin: 0 0 var(--ps-space-list);
-}
-
-.commentBox {
-  display: flex;
-  flex: 1 1 12rem;
   gap: var(--ps-space-hint);
+  width: 100%;
+  margin: var(--ps-space-inline) 0 var(--ps-space-list);
 }
 
 .input {

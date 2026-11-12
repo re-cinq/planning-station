@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { render } from "vitest-browser-react";
-import { templateFor } from "@re-cinq/planning-document";
+import { templateFor, type SectionSlot } from "@re-cinq/planning-document";
 
 import { TemplateOutline } from "./TemplateOutline.js";
 
 const TEMPLATE = templateFor("performance");
+
+const alwaysRequired = (slot: SectionSlot) => ({
+  ...slot,
+  required: "always" as const,
+});
 
 const HEADINGS = TEMPLATE.slots.map(({ slot, title }) => ({ slot, title }));
 
@@ -30,7 +35,10 @@ describe("TemplateOutline", () => {
     await expect
       .element(
         screen
-          .getByRole("listitem", { name: "Success criteria", exact: true })
+          .getByRole("listitem", {
+            name: "Success criteria, needs work",
+            exact: true,
+          })
           .getByText('"Success criteria" needs at least 1 kpi'),
       )
       .toBeVisible();
@@ -41,13 +49,17 @@ describe("TemplateOutline", () => {
       <TemplateOutline
         template={TEMPLATE}
         report={{ passed: true, phase: "approval", problems: [] }}
+        sections={HEADINGS}
         settled={new Map([["kpis", 2]])}
       />,
     );
     await expect
       .element(
         screen
-          .getByRole("listitem", { name: "Success criteria", exact: true })
+          .getByRole("listitem", {
+            name: "Success criteria, ready",
+            exact: true,
+          })
           .getByText("2 settled inputs waiting for a refine"),
       )
       .toBeVisible();
@@ -107,10 +119,15 @@ describe("TemplateOutline", () => {
       />,
     );
     const entries = [...screen.container.querySelectorAll("ol > li")];
-    expect(entries.slice(0, 3).map((entry) => entry.textContent)).toEqual([
-      "What we want and why required",
-      "Rollout",
-      "Success criteria required",
+    expect(
+      entries.slice(0, 3).map((entry) => ({
+        label: entry.getAttribute("aria-label"),
+        required: entry.textContent.includes("required"),
+      })),
+    ).toEqual([
+      { label: "What we want and why, ready", required: true },
+      { label: "Rollout, ready", required: false },
+      { label: "Success criteria, ready", required: true },
     ]);
   });
 
@@ -140,10 +157,82 @@ describe("TemplateOutline", () => {
       />,
     );
     await expect
-      .element(screen.getByRole("listitem", { name: "Success criteria" }))
+      .element(
+        screen.getByRole("listitem", {
+          name: "Success criteria, not in the plan",
+        }),
+      )
       .toBeVisible();
     expect(
       screen.getByRole("button", { name: "Success criteria" }).query(),
     ).toBeNull();
+  });
+
+  it("says 2 of 3 required sections ready", async () => {
+    const firstThree = TEMPLATE.slots.slice(0, 3);
+    const threeRequired = {
+      ...TEMPLATE,
+      slots: firstThree.map(alwaysRequired),
+    };
+    const screen = await render(
+      <TemplateOutline
+        template={threeRequired}
+        report={{
+          passed: false,
+          phase: "approval",
+          problems: [
+            { code: "missing-block", slot: "scope", message: "needs content" },
+          ],
+        }}
+        sections={HEADINGS}
+      />,
+    );
+    await expect
+      .element(screen.getByText("2 of 3 required sections ready"))
+      .toBeVisible();
+    expect(screen.getByRole("progressbar").element()).toMatchObject({
+      value: 2,
+      max: 3,
+    });
+  });
+
+  it("marks Prototype as needs work", async () => {
+    const featureTemplate = templateFor("feature");
+    const screen = await render(
+      <TemplateOutline
+        template={featureTemplate}
+        report={{
+          passed: false,
+          phase: "approval",
+          problems: [
+            { code: "missing-block", slot: "prototype", message: "add one" },
+          ],
+        }}
+        sections={featureTemplate.slots.map(({ slot, title }) => ({
+          slot,
+          title,
+        }))}
+      />,
+    );
+    await expect
+      .element(screen.getByRole("listitem", { name: "Prototype, needs work" }))
+      .toBeVisible();
+  });
+
+  it("shows no progress line on an approved plan", async () => {
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        sections={HEADINGS}
+        approval={{
+          mode: "manual",
+          approvedBy: "Ana",
+          approvedAt: "2026-09-21T14:05:00.000Z",
+          version: 3,
+        }}
+      />,
+    );
+    expect(screen.container.textContent).not.toContain("required sections");
   });
 });
