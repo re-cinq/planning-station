@@ -128,7 +128,10 @@ describe("PlanEditor", () => {
     const titles = [...outline.element().querySelectorAll("ol > li")].map(
       (entry) => entry.getAttribute("aria-label"),
     );
-    expect(titles.slice(1, 3)).toEqual(["Success criteria", "Rollout"]);
+    expect(titles.slice(1, 3)).toEqual([
+      "Success criteria, needs work",
+      "Rollout, ready",
+    ]);
   });
 
   it("scrolls the last section's heading into view when its outline title is clicked", async () => {
@@ -222,7 +225,7 @@ describe("PlanEditor", () => {
     );
     const waiting = screen
       .getByRole("navigation", { name: "Plan outline" })
-      .getByRole("listitem", { name: FIRST_TITLE, exact: true })
+      .getByRole("listitem", { name: `${FIRST_TITLE}, ready`, exact: true })
       .getByText("1 settled input waiting for a refine");
     const thread = screen.getByLabelText("Comment by Ben");
     await expect.element(thread).toBeVisible();

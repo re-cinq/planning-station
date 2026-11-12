@@ -6,6 +6,34 @@
   user-select: none;
 }
 
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ps-space-inline);
+}
+
+.comment {
+  padding: var(--ps-space-hint) var(--ps-space-inline);
+  color: var(--ps-fg-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-label);
+  font-weight: var(--ps-fw-label);
+  cursor: pointer;
+  transition:
+    border-color var(--ps-transition),
+    background var(--ps-transition);
+}
+
+.comment:hover,
+.comment[aria-expanded="true"] {
+  border-color: var(--ps-border-hover);
+  background: var(--ps-bg-hover);
+}
+
 // Nested to outrank BlockNote's `.bn-default-styles h2, p` reset.
 .heading .title {
   margin: 0;

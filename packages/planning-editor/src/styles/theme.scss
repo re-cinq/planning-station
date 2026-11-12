@@ -87,25 +87,34 @@
   display: none;
 }
 
-// Comments and a section's panel lead the section, so on a page wide enough
-// they float into a margin beside it rather than interrupting its text.
+// The section panel draws nothing any more; it stays in stored plans only.
+.ps-editor
+  .bn-block-outer:has(
+    > .bn-block
+      > .react-renderer
+      > .bn-block-content[data-content-type="section-panel"]
+  ) {
+  display: none;
+}
+
+// Comments lead the section, so on a page wide enough they float into a
+// margin beside it rather than interrupting its text. The margin exists only
+// once the plan holds a comment.
 .ps-editor .bn-container {
   container: plan-page / inline-size;
 }
 
 @container plan-page (width >= 52rem) {
-  .ps-editor .bn-editor {
+  .ps-editor .bn-editor:has(.bn-block-content[data-content-type="comment"]) {
     padding-right: calc(1.5 * var(--ps-space-page) + var(--ps-margin-notes));
   }
 
   .ps-editor
+    .bn-editor:has(.bn-block-content[data-content-type="comment"])
     .bn-block-outer:has(
       > .bn-block
         > .react-renderer
-        > .bn-block-content:is(
-          [data-content-type="comment"],
-          [data-content-type="section-panel"]
-        )
+        > .bn-block-content[data-content-type="comment"]
     ) {
     float: right;
     clear: right;

@@ -12,6 +12,12 @@ import {
   type PlanSectionHeading,
 } from "./outline-sections.js";
 import { problemsBySlot } from "./problems-by-slot.js";
+import {
+  requiredProgress,
+  sectionState,
+  type RequiredProgress,
+  type SectionState,
+} from "./section-state.js";
 import styles from "./TemplateOutline.module.scss";
 
 export interface TemplateOutlineProps {
@@ -38,15 +44,47 @@ export function TemplateOutline({
   children,
   ...slots
 }: TemplateOutlineProps) {
+  const rows = slotRows(slots);
+
   return (
     <nav className={styles.outline} aria-label="Plan outline">
-      <p className={styles.phase}>
-        {approval ? approvedLine(approval) : readinessLine(slots.report)}
-      </p>
-      <OutlineSlots {...slots} />
+      <p className={styles.phase}>{phaseLine(approval, slots.report)}</p>
+      {!approval && <Progress {...requiredProgress(rows)} />}
+      <ol className={styles.slots}>
+        {rows.map((row) => (
+          <OutlineSlot key={row.section.slot} {...row} />
+        ))}
+      </ol>
       {children && <div className={styles.footer}>{children}</div>}
     </nav>
   );
+}
+
+function Progress({ ready, total }: RequiredProgress) {
+  if (total === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <p className={styles.progress}>
+        {ready} of {total} required sections ready
+      </p>
+      <progress
+        className={styles.bar}
+        aria-label="Required sections ready"
+        value={ready}
+        max={total}
+      />
+    </>
+  );
+}
+
+function phaseLine(
+  approval: PlanMeta["approval"],
+  report: ValidationReport,
+): string {
+  return approval ? approvedLine(approval) : readinessLine(report);
 }
 
 function readinessLine(report: ValidationReport): string {
@@ -70,16 +108,6 @@ type OutlineSlotsProps = Pick<
   TemplateOutlineProps,
   "template" | "report" | "sections" | "droppedSlots" | "settled" | "onLocate"
 >;
-
-function OutlineSlots(props: OutlineSlotsProps) {
-  return (
-    <ol className={styles.slots}>
-      {slotRows(props).map((row) => (
-        <OutlineSlot key={row.section.slot} {...row} />
-      ))}
-    </ol>
-  );
-}
 
 function slotRows({
   template,
@@ -107,22 +135,58 @@ interface OutlineSlotProps {
   onLocate?: (slot: string) => void;
 }
 
+const STATE_PHRASES: Readonly<Record<SectionState, string>> = {
+  ready: "ready",
+  problem: "needs work",
+  missing: "not in the plan",
+};
+
+const STATE_MARKS: Readonly<Record<SectionState, string>> = {
+  ready: "✓",
+  problem: "!",
+  missing: "",
+};
+
 function OutlineSlot({ problems, settled, ...locatable }: OutlineSlotProps) {
   const { section } = locatable;
+  const state = sectionState(section, problems);
 
   return (
-    <li aria-label={section.title}>
+    <li
+      className={styles.slot}
+      aria-label={`${section.title}, ${STATE_PHRASES[state]}`}
+    >
+      <SlotMark state={state} />
       <SlotTitle {...locatable} />
-      {section.required && <span className={styles.required}> required</span>}
+      {section.required && <span className={styles.required}>required</span>}
+      <SlotNotes problems={problems} settled={settled} />
+    </li>
+  );
+}
+
+function SlotMark({ state }: { state: SectionState }) {
+  return (
+    <span className={styles.mark} aria-hidden="true" data-state={state}>
+      {STATE_MARKS[state]}
+    </span>
+  );
+}
+
+function SlotNotes({
+  problems,
+  settled,
+}: Pick<OutlineSlotProps, "problems" | "settled">) {
+  return (
+    <>
       {settled > 0 && (
-        <span className={styles.settled}> {settledPhrase(settled)}</span>
+        <span className={styles.settled}>{settledPhrase(settled)}</span>
       )}
       <ul className={styles.problems}>
         {problems.map((problem) => (
           <li key={`${problem.code}-${problem.message}`}>{problem.message}</li>
         ))}
       </ul>
-    </li>
+    </>
   );
 }
 

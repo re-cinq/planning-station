@@ -221,10 +221,9 @@ sequenceDiagram
 flowchart TD
   title["H1 — the feature's name (editable, renames the plan)"]
   subgraph section["For every template section"]
-    heading["H2 — the section's title and its hint"]
-    subgraph margin["right margin"]
+    heading["H2 — the section's title, a Comment button and its hint"]
+    subgraph margin["right margin, only once the plan holds a comment"]
       comments["comment threads: reply, resolve, reopen"]
-      panel["panel: add a comment"]
     end
     body["everything people write, freely editable"]
     questions["the agent's questions: pick a suggestion or write an answer"]
@@ -234,11 +233,14 @@ flowchart TD
   title --> section
 ```
 
-The title and every heading and panel are fixed by the template: they cannot be
-deleted, duplicated or moved, and nothing can be written between the title and
-the first section. In the document a section is its heading, then its comments
-and its panel, which float into the margin beside the text, then the content.
-Everything in the content is ordinary, collaborative text.
+The title and every heading are fixed by the template: they cannot be deleted,
+duplicated or moved, and nothing can be written between the title and the first
+section. The heading's Comment button opens a one-line box under it, and sending
+it adds a comment. In the document a section is its heading, then its comments,
+which float into a margin beside the text (the margin exists only once the plan
+holds a comment, so a plan without one uses the full width), then the content.
+Plans saved with the old section panel still load; it draws nothing. Everything
+in the content is ordinary, collaborative text.
 
 ## Scenario: refining one section with your agent
 
@@ -304,6 +306,11 @@ not placed a cursor yet is listed but not clickable. Pass `showPresence={false}`
 to hide the list; the cursors stay. The sidebar column shows while either the
 outline or the participants are on; hide both for a single column. On a narrow
 screen the sidebar moves above the document.
+
+The outline marks each section ready, needs work (it has a problem) or not in
+the plan, with a different shape for each, and before approval says how many
+required sections are ready ("4 of 5 required sections ready") beside a
+progress bar.
 
 ## Scenario: a preview, a version view, or a test without a server
 

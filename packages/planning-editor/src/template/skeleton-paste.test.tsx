@@ -111,6 +111,9 @@ describe("a paste on a section's skeleton", () => {
   it("leaves a paste into the intent comment box to the box, after a word of the intent's Refine note is double-clicked", async () => {
     const { screen } = await renderRefinable();
     await userEvent.dblClick(screen.getByText(REFINE_NOTE).first());
+    await userEvent.click(
+      screen.getByRole("button", { name: `Comment on ${FIRST_TITLE}` }),
+    );
     const box = screen.getByRole("textbox", {
       name: `Comment on ${FIRST_TITLE}`,
     });
