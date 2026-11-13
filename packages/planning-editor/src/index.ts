@@ -31,3 +31,4 @@ export {
 export { bypassTemplate } from "./template/template-guard.js";
 export type { Mockup, PlanEditorAdapters } from "./blocks/adapters.js";
 export type { RefineRequest } from "./blocks/plan-actions.js";
+export type { RefineFailure } from "./session/refine-failures.js";

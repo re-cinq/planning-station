@@ -80,23 +80,37 @@ function reasonOf(error: unknown): string {
 }
 
 function RefineButton({ refine, ask, refusal }: Refining) {
-  const ready = refine.settled > 0 && refine.busyFor === undefined;
+  const nothingToRefine = refine.settled === 0 && refine.busyFor === undefined;
 
   return (
     <>
       {refusal && <Refusal reason={refusal} />}
-      <p className={styles.bar}>
-        <button
-          type="button"
-          className={styles.refine}
-          disabled={!ready}
-          onClick={ask}
-        >
-          Refine this section
-        </button>
-        <span className={styles.note}>{buttonNote(refine)}</span>
-      </p>
+      {nothingToRefine ? (
+        <NothingToRefine />
+      ) : (
+        <RefineBar refine={refine} ask={ask} />
+      )}
     </>
+  );
+}
+
+function NothingToRefine() {
+  return (
+    <p className={styles.hint}>
+      Nothing for the agent to refine yet. Answer a question in this section or
+      resolve a comment, and Refine appears here.
+    </p>
+  );
+}
+
+function RefineBar({ refine, ask }: Pick<Refining, "refine" | "ask">) {
+  const ready = refine.settled > 0 && refine.busyFor === undefined;
+
+  return (
+    <p className={styles.bar}>
+      <Primary label="Refine this section" run={ask} disabled={!ready} />
+      <span className={styles.note}>{buttonNote(refine)}</span>
+    </p>
   );
 }
 
@@ -113,9 +127,7 @@ function buttonNote(refine: SectionRefine): string {
     return `The agent is refining another section for ${refine.busyFor}; refine this one when it finishes`;
   }
 
-  return refine.settled > 0
-    ? `uses ${settledPhrase(refine)}`
-    : "Answer a question or resolve a thread to refine";
+  return `uses ${settledPhrase(refine)}`;
 }
 
 function Asked({ refine, askedBy }: Refining & { askedBy: string }) {

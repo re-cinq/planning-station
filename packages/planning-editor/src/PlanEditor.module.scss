@@ -22,8 +22,10 @@
 
 .sidebar {
   position: sticky;
-  top: var(--ps-space-layout);
-  max-height: calc(100dvh - 2 * var(--ps-space-layout));
+  top: calc(var(--ps-sticky-top, 0px) + var(--ps-space-layout));
+  max-height: calc(
+    100dvh - var(--ps-sticky-top, 0px) - 2 * var(--ps-space-layout)
+  );
   overflow-y: auto;
 }
 

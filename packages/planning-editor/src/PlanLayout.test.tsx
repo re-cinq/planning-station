@@ -1,7 +1,7 @@
 import "@blocknote/ariakit/style.css";
 import "./styles/theme.scss";
 
-import { beforeAll, describe, it, expect } from "vitest";
+import { afterEach, beforeAll, describe, it, expect } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { enforceTrue } from "@re-cinq/planning-document/lib/enforce.js";
 
@@ -19,6 +19,7 @@ import { EMPTY_SECTION_TEXT } from "./template/empty-section.js";
 
 const WIDE = { width: 1280, height: 900 };
 const PADDING_INSET = 4;
+const HOST_BAR_HEIGHT = 64;
 const EMPTY_PLAN = planSeed("performance");
 const BLANK_INTENT = planSeed("performance", {
   intent: [textBlock("paragraph", {}, "")],
@@ -33,7 +34,8 @@ const COMMENTED_INTENT = planSeed("performance", {
     ),
   ],
 });
-const REFINE_NOTE = "Answer a question or resolve a thread to refine";
+const REFINE_NOTE =
+  "Nothing for the agent to refine yet. Answer a question in this section or resolve a comment, and Refine appears here.";
 
 const writtenIn = (plan: PlanDocument | undefined) =>
   (plan?.sections ?? []).flatMap(({ blocks }) => writtenBlocks(blocks)).length;
@@ -121,6 +123,10 @@ const kpisOf = (plan: PlanDocument | undefined) => {
 describe("the plan's layout, themed, on a wide page", () => {
   beforeAll(async () => {
     await page.viewport(WIDE.width, WIDE.height);
+  });
+
+  afterEach(() => {
+    document.body.style.removeProperty("--ps-sticky-top");
   });
 
   it("puts the Comment button on the same row as the intent heading", async () => {
@@ -233,6 +239,19 @@ describe("the plan's layout, themed, on a wide page", () => {
     });
     await userEvent.dblClick(screen.getByText(REFINE_NOTE).first());
     expect(window.getSelection()?.toString().trim()).not.toBe("");
+  });
+
+  it("starts the outline below a host bar 64px tall", async () => {
+    document.body.style.setProperty("--ps-sticky-top", "64px");
+    const { screen } = await renderEmpty();
+    const sidebar = screen.container.querySelector("aside");
+    const layoutGap = parseFloat(
+      getComputedStyle(screen.container.firstElementChild!).rowGap,
+    );
+
+    expect(parseFloat(getComputedStyle(sidebar!).top)).toBe(
+      HOST_BAR_HEIGHT + layoutGap,
+    );
   });
 
   it("shows 'Write here…' on an empty intent paragraph", async () => {

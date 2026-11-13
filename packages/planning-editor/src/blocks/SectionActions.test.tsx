@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { userEvent } from "vitest/browser";
+import { userEvent, type Locator } from "vitest/browser";
 
 import type { PlanEditorProps } from "../PlanEditor.js";
 import { planSeed, renderAsAna, textBlock } from "../testing/fixtures.js";
@@ -43,9 +43,9 @@ describe("SectionActions", () => {
 
   it("puts Refine under the section's questions", async () => {
     const { screen } = await renderPlan({ onRefine: vi.fn() });
-    const question = screen.getByText("How fast must the price step be?");
+    const question = screen.getByText("Is 400 ms enough?");
     const refine = screen
-      .getByLabelText("Open questions actions")
+      .getByLabelText("Success criteria actions")
       .getByRole("button", { name: "Refine this section" });
     expect(question.element().compareDocumentPosition(refine.element())).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
@@ -97,5 +97,71 @@ describe("SectionActions remove", () => {
       actions: screen.getByLabelText("Prototype actions").query(),
       listed: listed.query(),
     }).toEqual({ actions: null, listed: null });
+  });
+
+  const OPERATES = "Who operates it";
+
+  const askToRemoveOperates = async () => {
+    const rendered = await renderPlan();
+    await userEvent.click(removeButton(rendered.screen, OPERATES));
+
+    return {
+      ...rendered,
+      dialog: rendered.screen.getByRole("dialog", {
+        name: `Remove ${OPERATES}?`,
+      }),
+    };
+  };
+
+  it("asks in a dialog before removing Who operates it", async () => {
+    const { dialog, lastPlan } = await askToRemoveOperates();
+    const opened = dialog.element() as HTMLDialogElement;
+
+    expect({
+      modal: opened.matches(":modal"),
+      focused: document.activeElement?.textContent,
+      explained: opened.textContent.includes(
+        "Its content, comments and questions are deleted.",
+      ),
+      droppedSlots: lastPlan()?.droppedSlots,
+    }).toEqual({
+      modal: true,
+      focused: "Cancel",
+      explained: true,
+      droppedSlots: undefined,
+    });
+  });
+
+  it("removes Who operates it only after Remove is pressed", async () => {
+    const { dialog, lastPlan } = await askToRemoveOperates();
+    await userEvent.click(dialog.getByRole("button", { name: "Remove" }));
+
+    await expect.poll(() => lastPlan()?.droppedSlots).toEqual(["ownership"]);
+  });
+
+  const dismissedBy = async (dismiss: (dialog: Locator) => Promise<void>) => {
+    const { screen, dialog, lastPlan } = await askToRemoveOperates();
+    await dismiss(dialog);
+    await expect.poll(() => dialog.query()).toBeNull();
+
+    return { kept: removeButton(screen, OPERATES), lastPlan };
+  };
+
+  it("keeps Who operates it when the dialog is cancelled", async () => {
+    const { kept, lastPlan } = await dismissedBy((dialog) =>
+      userEvent.click(dialog.getByRole("button", { name: "Cancel" })),
+    );
+
+    expect(lastPlan()).toBeUndefined();
+    await expect.element(kept).toBeVisible();
+  });
+
+  it("keeps Who operates it when the dialog is closed with Escape", async () => {
+    const { kept, lastPlan } = await dismissedBy(() =>
+      userEvent.keyboard("{Escape}"),
+    );
+
+    expect(lastPlan()).toBeUndefined();
+    await expect.element(kept).toBeVisible();
   });
 });

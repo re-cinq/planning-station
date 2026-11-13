@@ -1,3 +1,5 @@
+@use "../styles/button-states";
+
 .actions {
   display: flex;
   width: 100%;
@@ -17,27 +19,74 @@
   border-radius: var(--ps-radius);
   cursor: pointer;
   transition: color var(--ps-transition);
-}
 
-.remove:hover {
-  color: var(--ps-fg);
-  border-color: var(--ps-border);
+  @include button-states.states(var(--ps-fg), transparent, var(--ps-border));
 }
 
 .confirm {
-  display: flex;
-  flex: 1 1 100%;
-  flex-wrap: wrap;
-  gap: var(--ps-space-list);
-  align-items: center;
-  padding: var(--ps-space-inline);
-  background: var(--ps-bg);
+  width: min(24rem, calc(100vw - 2 * var(--ps-space-layout)));
+  padding: var(--ps-space-list);
+  color: var(--ps-fg);
+  background: var(--ps-bg-elevated);
   border: 1px solid var(--ps-border);
   border-radius: var(--ps-radius);
+  box-shadow: var(--ps-shadow);
 }
 
-.question {
-  flex: 1 1 100%;
-  margin: 0;
-  font-size: var(--ps-fs-label);
+.confirm::backdrop {
+  background: var(--ps-backdrop);
+}
+
+// Nested to outrank BlockNote's `.bn-default-styles h3, p` reset.
+.confirm .question {
+  margin: 0 0 var(--ps-space-inline);
+  font-size: var(--ps-fs-body);
+  font-weight: var(--ps-fw-section);
+  line-height: var(--ps-lh-heading);
+}
+
+.confirm .explanation {
+  margin: 0 0 var(--ps-space-list);
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-hint);
+}
+
+.choices {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ps-space-inline);
+}
+
+.cancel,
+.danger {
+  padding: var(--ps-space-inline) var(--ps-space-list);
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-hint);
+  font-weight: var(--ps-fw-label);
+  cursor: pointer;
+}
+
+.cancel {
+  color: var(--ps-fg);
+  background: transparent;
+  border: 1px solid var(--ps-border);
+
+  @include button-states.states(
+    var(--ps-fg),
+    var(--ps-bg-hover),
+    var(--ps-border-hover)
+  );
+}
+
+.danger {
+  color: var(--ps-fg-on-accent);
+  background: var(--ps-danger);
+  border: 1px solid var(--ps-danger);
+
+  @include button-states.states(
+    var(--ps-fg-on-accent),
+    var(--ps-danger),
+    var(--ps-danger)
+  );
 }

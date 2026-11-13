@@ -1,3 +1,5 @@
+@use "../styles/button-states";
+
 .question {
   width: 100%;
   padding: var(--ps-space-inline);
@@ -51,11 +53,12 @@
   font-size: var(--ps-fs-label);
   cursor: pointer;
   transition: border-color var(--ps-transition);
-}
 
-.suggestion:hover {
-  border-color: var(--ps-accent);
-  background: var(--ps-bg-hover);
+  @include button-states.states(
+    var(--ps-accent),
+    var(--ps-bg-hover),
+    var(--ps-accent)
+  );
 }
 
 .answerBox {
@@ -93,8 +96,10 @@
   font-weight: var(--ps-fw-label);
   cursor: pointer;
   transition: background var(--ps-transition);
-}
 
-.answerButton:hover {
-  background: var(--ps-accent-hover);
+  @include button-states.states(
+    var(--ps-fg-on-accent),
+    var(--ps-accent-hover),
+    var(--ps-accent-hover)
+  );
 }

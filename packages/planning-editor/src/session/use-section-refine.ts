@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   previewProposal,
   refineInputs,
@@ -19,6 +19,7 @@ import {
 import type { Doc } from "yjs";
 
 import { blocksOf } from "./doc-blocks.js";
+import { useDocVersion } from "./use-doc-version.js";
 
 export interface RefineAsked {
   inputs: RefineInputs;
@@ -87,17 +88,4 @@ function actionsFor(doc: Doc, slot: string, inputs: RefineInputs) {
     applyAnyway: () => void applyRefineAnyway(doc, slot),
     discard: () => discardRefine(doc, slot),
   };
-}
-
-function useDocVersion(doc: Doc): number {
-  const [version, setVersion] = useState(0);
-
-  useEffect(() => {
-    const bump = () => setVersion((current) => current + 1);
-    doc.on("update", bump);
-
-    return () => doc.off("update", bump);
-  }, [doc]);
-
-  return version;
 }

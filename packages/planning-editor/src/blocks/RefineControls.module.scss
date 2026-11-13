@@ -1,3 +1,5 @@
+@use "../styles/button-states";
+
 .bar {
   display: flex;
   flex-wrap: wrap;
@@ -7,6 +9,12 @@
 }
 
 .note {
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-hint);
+}
+
+.hint {
+  margin: 0;
   color: var(--ps-fg-muted);
   font-size: var(--ps-fs-hint);
 }
@@ -49,11 +57,12 @@
   font: inherit;
   font-size: var(--ps-fs-hint);
   cursor: pointer;
-}
 
-.quiet:hover {
-  color: var(--ps-fg);
-  border-color: var(--ps-border-hover);
+  @include button-states.states(
+    var(--ps-fg),
+    transparent,
+    var(--ps-border-hover)
+  );
 }
 
 .proposal {

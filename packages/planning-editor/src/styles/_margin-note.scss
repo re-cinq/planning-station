@@ -1,6 +1,8 @@
 // What every note in the margin shares, a comment's or a finding's: the card,
 // the byline above its text and the text buttons under it.
 
+@use "button-states";
+
 @mixin card {
   width: 100%;
   margin-bottom: var(--ps-space-inline);
@@ -19,13 +21,7 @@
   font-size: var(--ps-fs-label);
 }
 
-@mixin actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ps-space-list);
-  align-items: center;
-  margin-top: var(--ps-space-hint);
-
+@mixin text-buttons {
   button {
     padding: 0;
     color: var(--ps-accent);
@@ -35,10 +31,21 @@
     font-size: var(--ps-fs-label);
     font-weight: var(--ps-fw-label);
     cursor: pointer;
+
+    @include button-states.states(var(--ps-accent-hover), none);
   }
 
   button:hover {
-    color: var(--ps-accent-hover);
     text-decoration: underline;
   }
+}
+
+@mixin actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-list);
+  align-items: center;
+  margin-top: var(--ps-space-hint);
+
+  @include text-buttons;
 }

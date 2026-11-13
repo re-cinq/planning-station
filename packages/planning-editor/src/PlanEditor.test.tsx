@@ -8,8 +8,13 @@ import {
 } from "@re-cinq/planning-document";
 import { writtenBlocks } from "@re-cinq/planning-document/testing";
 
+import { askRefine, discardRefine, failRefine } from "@re-cinq/planning-yjs";
+
 import { PlanEditor, type PlanEditorProps } from "./PlanEditor.js";
+import type { RefineFailure } from "./session/refine-failures.js";
+import { createMemoryHub } from "./session/memory-hub.js";
 import {
+  ANA,
   CHECKOUT_PLAN as SEED,
   editingAna,
   FIRST_TITLE,
@@ -68,6 +73,32 @@ const renderPlan = async (extra: Partial<PlanEditorProps> = {}) => {
   await expect.element(screen.getByRole("heading", firstHeading)).toBeVisible();
 
   return { screen, lastPlan };
+};
+
+const AGENT_CRASHED = "the agent crashed before its first turn";
+
+const renderWithFailureReports = async () => {
+  const hub = createMemoryHub(SEED);
+  const onRefineFailures =
+    vi.fn<(failures: readonly RefineFailure[]) => void>();
+  const screen = await render(
+    <PlanEditor
+      transport={hub.connect()}
+      user={ANA}
+      onRefineFailures={onRefineFailures}
+    />,
+  );
+  await expect.element(screen.getByRole("heading", firstHeading)).toBeVisible();
+
+  return { hub, onRefineFailures };
+};
+
+const renderWithFailedRefine = async () => {
+  const rendered = await renderWithFailureReports();
+  askRefine(rendered.hub.doc, { slot: "kpis", askedBy: "Ben" });
+  failRefine(rendered.hub.doc, { slot: "kpis", reason: AGENT_CRASHED });
+
+  return rendered;
 };
 
 const headingTitles = (container: HTMLElement) =>
@@ -233,6 +264,24 @@ describe("PlanEditor", () => {
 
     await userEvent.click(thread.getByRole("button", { name: "Resolve" }));
     await expect.element(waiting).toBeVisible();
+  });
+
+  it("reports Success criteria's failed refine to the host", async () => {
+    const { onRefineFailures } = await renderWithFailedRefine();
+
+    await expect
+      .poll(() => lastCallOf(onRefineFailures))
+      .toEqual([
+        { slot: "kpis", title: "Success criteria", reason: AGENT_CRASHED },
+      ]);
+  });
+
+  it("reports no failures once the failed refine is dismissed", async () => {
+    const { hub, onRefineFailures } = await renderWithFailedRefine();
+    await expect.poll(() => lastCallOf(onRefineFailures)).toHaveLength(1);
+    discardRefine(hub.doc, "kpis");
+
+    await expect.poll(() => lastCallOf(onRefineFailures)).toEqual([]);
   });
 
   it("shows Ben the words Ana types into the intent", async () => {
