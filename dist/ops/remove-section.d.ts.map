@@ -1,0 +1,1 @@
+{"version":3,"file":"remove-section.d.ts","sourceRoot":"","sources":["../../src/ops/remove-section.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yBAAyB,CAAC;AAOzD,OAAO,KAAK,EAAE,OAAO,EAAE,MAAM,gBAAgB,CAAC;AAE9C,4FAA4F;AAC5F,wBAAgB,aAAa,CAC3B,MAAM,EAAE,SAAS,EAAE,EACnB,EAAE,EAAE,OAAO,CAAC,OAAO,EAAE;IAAE,EAAE,EAAE,gBAAgB,CAAA;CAAE,CAAC,GAC7C,SAAS,EAAE,CAUb"}
