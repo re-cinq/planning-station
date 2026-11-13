@@ -86,15 +86,31 @@ const isUsed = (block: BlockJson) =>
   (block.type === "question" || block.type === "comment") && block.props.used;
 
 describe("RefineControls", () => {
-  it("keeps Refine disabled for Success criteria, which has nothing answered or resolved", async () => {
+  it("offers no Refine button for Success criteria, which has nothing settled", async () => {
+    const { screen } = await renderPlan(() => vi.fn());
+    await expect
+      .element(screen.getByLabelText("Success criteria actions"))
+      .toBeVisible();
+
+    expect(
+      screen
+        .getByLabelText("Success criteria actions")
+        .getByRole("button", { name: "Refine this section" })
+        .query(),
+    ).toBeNull();
+  });
+
+  it("says how to get Refine for Success criteria, which has nothing settled", async () => {
     const { screen } = await renderPlan(() => vi.fn());
     await expect
       .element(
         screen
           .getByLabelText("Success criteria actions")
-          .getByRole("button", { name: "Refine this section" }),
+          .getByText(
+            "Nothing for the agent to refine yet. Answer a question in this section or resolve a comment, and Refine appears here.",
+          ),
       )
-      .toBeDisabled();
+      .toBeVisible();
   });
 
   it("says Refine uses 1 answer and 1 resolved thread in the open questions", async () => {

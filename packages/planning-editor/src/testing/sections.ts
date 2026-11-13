@@ -1,7 +1,9 @@
 import { expect } from "vitest";
 import type { PlanDocument } from "@re-cinq/planning-document";
+import { askRefine } from "@re-cinq/planning-yjs";
 import { blockText, writtenBlocks } from "@re-cinq/planning-document/testing";
 
+import { createMemoryHub } from "../session/memory-hub.js";
 import {
   CHECKOUT_PLAN,
   FIRST_TITLE,
@@ -20,7 +22,8 @@ export const renderEmpty = async (seed = EMPTY_PLAN) => {
   return rendered;
 };
 
-export const REFINE_NOTE = "Answer a question or resolve a thread to refine";
+export const REFINE_NOTE =
+  "Nothing for the agent to refine yet. Answer a question in this section or resolve a comment, and Refine appears here.";
 
 export const renderRefinable = async () => {
   const rendered = await renderAsAna(CHECKOUT_PLAN, {
@@ -28,6 +31,19 @@ export const renderRefinable = async () => {
   });
   const { screen } = rendered;
   await expect.element(screen.getByText(REFINE_NOTE).first()).toBeVisible();
+
+  return rendered;
+};
+
+/** The intent's Refine button stays, disabled, while the agent refines another section. */
+export const renderRefineBlocked = async () => {
+  const hub = createMemoryHub(CHECKOUT_PLAN);
+  const rendered = await renderAsAna(CHECKOUT_PLAN, {
+    transport: hub.connect(),
+    onRefine: () => Promise.resolve(),
+  });
+  askRefine(hub.doc, { slot: "kpis", askedBy: "Ben" });
+  await expect.element(greyedRefineOf(rendered.screen)).toBeDisabled();
 
   return rendered;
 };

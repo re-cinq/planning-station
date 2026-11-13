@@ -14,10 +14,12 @@ import {
 } from "../testing/fixtures.js";
 import {
   EMPTY_PLAN,
+  greyedRefineOf,
   intentOf,
   REFINE_NOTE,
   renderEmpty,
   renderRefinable,
+  renderRefineBlocked,
 } from "../testing/sections.js";
 import { EMPTY_SECTION_TEXT } from "./empty-section.js";
 
@@ -150,12 +152,9 @@ describe("emptySectionPlaceholder", () => {
   });
 
   it("changes nothing when Z is typed after the caret in 'Checkout' is left for a click on the intent's disabled Refine button", async () => {
-    const { screen, lastPlan } = await renderRefinable();
+    const { screen, lastPlan } = await renderRefineBlocked();
     await userEvent.click(screen.getByText("Checkout"));
-    await userEvent.click(
-      screen.getByRole("button", { name: "Refine this section" }).first(),
-      { force: true },
-    );
+    await userEvent.click(greyedRefineOf(screen), { force: true });
     await userEvent.keyboard("Z");
     expect(lastPlan()).toBeUndefined();
   });

@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import { isRemovableSlot } from "@re-cinq/planning-document";
 import type { Doc } from "yjs";
 
@@ -89,18 +89,51 @@ interface ConfirmRemoveProps {
   onCancel: () => void;
 }
 
+/** A modal dialog, so the page behind it takes no press and Escape closes it without removing. */
 function ConfirmRemove({ title, onConfirm, onCancel }: ConfirmRemoveProps) {
-  const question = `Remove ${title}?`;
+  const dialog = useModalRef();
+  const headingId = useId();
 
   return (
-    <div className={styles.confirm} role="dialog" aria-label={question}>
-      <p className={styles.question}>
-        {question} Its content, comments and questions are deleted.
+    <dialog
+      ref={dialog}
+      className={styles.confirm}
+      aria-labelledby={headingId}
+      onClose={onCancel}
+    >
+      <h3 id={headingId} className={styles.question}>
+        Remove {title}?
+      </h3>
+      <p className={styles.explanation}>
+        Its content, comments and questions are deleted.
       </p>
-      <button type="button" onClick={onCancel}>
+      <RemoveChoices onConfirm={onConfirm} onCancel={onCancel} />
+    </dialog>
+  );
+}
+
+function useModalRef() {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => dialog.current?.showModal(), []);
+
+  return dialog;
+}
+
+function RemoveChoices({
+  onConfirm,
+  onCancel,
+}: Pick<ConfirmRemoveProps, "onConfirm" | "onCancel">) {
+  return (
+    <div className={styles.choices}>
+      <button
+        type="button"
+        className={styles.cancel}
+        autoFocus
+        onClick={onCancel}
+      >
         Cancel
       </button>
-      <button type="button" onClick={onConfirm}>
+      <button type="button" className={styles.danger} onClick={onConfirm}>
         Remove
       </button>
     </div>

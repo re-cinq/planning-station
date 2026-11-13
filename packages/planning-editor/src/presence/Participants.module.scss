@@ -1,3 +1,5 @@
+@use "../styles/button-states";
+
 .participants {
   display: grid;
   gap: var(--ps-space-inline);
@@ -31,9 +33,10 @@
   font: inherit;
   cursor: pointer;
 
+  @include button-states.states(var(--ps-fg), none);
+
   &:hover,
   &:focus-visible {
-    color: var(--ps-fg);
     text-decoration: underline;
   }
 }

@@ -31,6 +31,8 @@ export interface TemplateOutlineProps {
   approval?: PlanMeta["approval"];
   /** Per slot, settled input no refine has used. Resolving a thread decides it; only a refine writes it in, so without this the outline reads as handled while nothing was written. */
   settled?: ReadonlyMap<string, number>;
+  /** Per slot, why the agent's last refine of that section failed. */
+  failed?: ReadonlyMap<string, string>;
   /** Brings a section's heading into view; without it the titles are plain text. */
   onLocate?: (slot: string) => void;
   children?: ReactNode;
@@ -38,6 +40,7 @@ export interface TemplateOutlineProps {
 
 const NO_SECTIONS: readonly PlanSectionHeading[] = [];
 const NO_SETTLED: ReadonlyMap<string, number> = new Map();
+const NO_FAILURES: ReadonlyMap<string, string> = new Map();
 
 export function TemplateOutline({
   approval = null,
@@ -106,7 +109,13 @@ function dateOf(iso: string): string {
 
 type OutlineSlotsProps = Pick<
   TemplateOutlineProps,
-  "template" | "report" | "sections" | "droppedSlots" | "settled" | "onLocate"
+  | "template"
+  | "report"
+  | "sections"
+  | "droppedSlots"
+  | "settled"
+  | "failed"
+  | "onLocate"
 >;
 
 function slotRows({
@@ -115,6 +124,7 @@ function slotRows({
   sections = NO_SECTIONS,
   droppedSlots,
   settled = NO_SETTLED,
+  failed = NO_FAILURES,
   onLocate,
 }: OutlineSlotsProps): OutlineSlotProps[] {
   const problems = problemsBySlot(report.problems);
@@ -124,6 +134,7 @@ function slotRows({
     section,
     problems: problems.get(section.slot) ?? [],
     settled: settled.get(section.slot) ?? 0,
+    failure: failed.get(section.slot),
     onLocate,
   }));
 }
@@ -132,6 +143,7 @@ interface OutlineSlotProps {
   section: OutlineSection;
   problems: readonly Problem[];
   settled: number;
+  failure?: string;
   onLocate?: (slot: string) => void;
 }
 
@@ -147,7 +159,12 @@ const STATE_MARKS: Readonly<Record<SectionState, string>> = {
   missing: "",
 };
 
-function OutlineSlot({ problems, settled, ...locatable }: OutlineSlotProps) {
+function OutlineSlot({
+  problems,
+  settled,
+  failure,
+  ...locatable
+}: OutlineSlotProps) {
   const { section } = locatable;
   const state = sectionState(section, problems);
 
@@ -159,7 +176,7 @@ function OutlineSlot({ problems, settled, ...locatable }: OutlineSlotProps) {
       <SlotMark state={state} />
       <SlotTitle {...locatable} />
       {section.required && <span className={styles.required}>required</span>}
-      <SlotNotes problems={problems} settled={settled} />
+      <SlotNotes problems={problems} settled={settled} failure={failure} />
     </li>
   );
 }
@@ -175,12 +192,12 @@ function SlotMark({ state }: { state: SectionState }) {
 function SlotNotes({
   problems,
   settled,
-}: Pick<OutlineSlotProps, "problems" | "settled">) {
+  failure,
+}: Pick<OutlineSlotProps, "problems" | "settled" | "failure">) {
   return (
     <>
-      {settled > 0 && (
-        <span className={styles.settled}>{settledPhrase(settled)}</span>
-      )}
+      <WarningNote text={settled > 0 && settledPhrase(settled)} />
+      <WarningNote text={failure && `Refine failed: ${failure}`} />
       <ul className={styles.problems}>
         {problems.map((problem) => (
           <li key={`${problem.code}-${problem.message}`}>{problem.message}</li>
@@ -188,6 +205,10 @@ function SlotNotes({
       </ul>
     </>
   );
+}
+
+function WarningNote({ text }: { text?: string | false }) {
+  return text && <span className={styles.settled}>{text}</span>;
 }
 
 // A section the plan lacks has no heading to go to, so its title stays text.

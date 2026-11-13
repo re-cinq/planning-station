@@ -1,3 +1,5 @@
+@use "../styles/button-states";
+
 .composer {
   display: flex;
   gap: var(--ps-space-hint);
@@ -35,9 +37,10 @@
   transition:
     border-color var(--ps-transition),
     background var(--ps-transition);
-}
 
-.send:hover {
-  border-color: var(--ps-border-hover);
-  background: var(--ps-bg-hover);
+  @include button-states.states(
+    var(--ps-fg),
+    var(--ps-bg-hover),
+    var(--ps-border-hover)
+  );
 }

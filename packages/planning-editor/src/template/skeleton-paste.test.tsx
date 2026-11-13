@@ -9,9 +9,11 @@ import {
   REFINE_NOTE,
   renderEmpty,
   renderRefinable,
+  renderRefineBlocked,
 } from "../testing/sections.js";
 
 type RefinableScreen = Awaited<ReturnType<typeof renderRefinable>>["screen"];
+type RenderRefine = typeof renderRefinable | typeof renderRefineBlocked;
 
 const middlePressOn = (target: Element) => {
   target.dispatchEvent(
@@ -34,8 +36,9 @@ const pastesAfterHeldPress = async (key: string) => {
 
 const pastesOnMiddleRelease = async (
   pick: (screen: RefinableScreen) => Parameters<typeof userEvent.click>[0],
+  render: RenderRefine = renderRefinable,
 ) => {
-  const { screen, lastPlan } = await renderRefinable();
+  const { screen, lastPlan } = await render();
   const checkout = screen.getByText("Checkout").element();
   await userEvent.click(checkout);
   document.addEventListener("pointerup", () => pasteInto(checkout, "X"), {
@@ -62,8 +65,9 @@ describe("a paste on a section's skeleton", () => {
   });
 
   it("pastes nothing into 'Checkout' when a middle press on the intent's disabled Refine button is released", async () => {
-    const plan = await pastesOnMiddleRelease((screen) =>
-      greyedRefineOf(screen),
+    const plan = await pastesOnMiddleRelease(
+      (screen) => greyedRefineOf(screen),
+      renderRefineBlocked,
     );
     expect(plan).toBeUndefined();
   });

@@ -1,0 +1,14 @@
+// A host's `button:hover` (0,1,1) outranks a module class (0,1,0) on every
+// property the class does not set for that state, so each state of a package
+// button names the colours itself instead of inheriting the host's.
+
+@mixin states($color, $background, $border-color: null) {
+  &:hover,
+  &:focus-visible,
+  &:active {
+    color: $color;
+    background: $background;
+    border-color: $border-color;
+    box-shadow: none;
+  }
+}

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { PlanDocument } from "@re-cinq/planning-document";
 
+import "../styles/theme.scss";
 import type { PlanEditorProps } from "../PlanEditor.js";
 import { planSeed, renderAsAna, textBlock } from "../testing/fixtures.js";
 
@@ -10,6 +11,7 @@ const SEED = planSeed("feature", {
 });
 
 const OPEN_COMMENT = { name: "Comment on What we want and why" };
+const TRANSPARENT = /^(transparent|rgba\(\d+, \d+, \d+, 0\))$/;
 const CLOSE_COMMENT = { name: "Close comment on What we want and why" };
 
 const renderPlan = async (extra: Partial<PlanEditorProps> = {}) => {
@@ -97,5 +99,17 @@ describe("SectionHeading comment composer", () => {
     await expect
       .element(screen.getByRole("button", CLOSE_COMMENT))
       .toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("draws the Comment button with a border before it is hovered", async () => {
+    const { screen } = await renderPlan();
+    await userEvent.unhover(screen.getByRole("button", OPEN_COMMENT));
+    const button = screen.getByRole("button", OPEN_COMMENT).element();
+    const { borderTopStyle, borderTopColor } = getComputedStyle(button);
+
+    expect({ borderTopStyle, borderTopColor }).toEqual({
+      borderTopStyle: "solid",
+      borderTopColor: expect.not.stringMatching(TRANSPARENT),
+    });
   });
 });

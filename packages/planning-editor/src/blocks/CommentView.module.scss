@@ -63,6 +63,8 @@
   background: var(--ps-bg);
   border: 1px solid var(--ps-border);
   border-radius: var(--ps-radius);
+
+  @include margin-note.text-buttons;
 }
 
 // Nested to outrank BlockNote's `.bn-default-styles p` reset.

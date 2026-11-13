@@ -235,4 +235,22 @@ describe("TemplateOutline", () => {
     );
     expect(screen.container.textContent).not.toContain("required sections");
   });
+
+  it("says Refine failed under the section whose refine failed", async () => {
+    const screen = await render(
+      <TemplateOutline
+        template={TEMPLATE}
+        report={{ passed: true, phase: "approval", problems: [] }}
+        sections={HEADINGS}
+        failed={new Map([["kpis", "the agent crashed"]])}
+      />,
+    );
+    await expect
+      .element(
+        screen
+          .getByRole("listitem", { name: "Success criteria, ready" })
+          .getByText("Refine failed: the agent crashed"),
+      )
+      .toBeVisible();
+  });
 });

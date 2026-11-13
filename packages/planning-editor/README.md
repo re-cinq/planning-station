@@ -235,7 +235,7 @@ flowchart TD
 
 The title and every heading are fixed by the template: they cannot be deleted,
 duplicated or moved, and nothing can be written between the title and the first
-section. The heading's Comment button opens a one-line box under it, and sending
+section. The heading's outlined Comment button opens a one-line box under it, and sending
 it adds a comment. In the document a section is its heading, then its comments,
 which float into a margin beside the text (the margin exists only once the plan
 holds a comment, so a plan without one uses the full width), then the content.
@@ -250,8 +250,9 @@ refine never writes straight in:
 
 1. **It works from what is settled.** The button is enabled once the section
    has an answered question or a resolved thread, and says what it will use
-   ("uses 2 answers, 1 resolved thread"). Open questions and threads go to the
-   agent as talk to leave alone.
+   ("uses 2 answers, 1 resolved thread"). Until then the section shows no
+   button, only a hint saying to answer a question or resolve a comment. Open
+   questions and threads go to the agent as talk to leave alone.
 2. **Everyone sees it asked.** The ask lands in the shared document, so every
    tab shows "The agent is refining this for Ana…" until the answer arrives. A
    rejected `onRefine` promise withdraws it.
@@ -310,7 +311,11 @@ screen the sidebar moves above the document.
 The outline marks each section ready, needs work (it has a problem) or not in
 the plan, with a different shape for each, and before approval says how many
 required sections are ready ("4 of 5 required sections ready") beside a
-progress bar.
+progress bar. Under a section whose last refine failed it says "Refine failed:"
+and the agent's reason. Pass `onRefineFailures` to learn the same thing in your
+own page: it receives `{ slot, title, reason }` for each failed section, once on
+mount and again only when that list changes, so you can show a warning that
+names them.
 
 ## Scenario: a preview, a version view, or a test without a server
 
@@ -386,6 +391,11 @@ tokens at all and follows your theme the moment they exist:
 | accent and states                | `--accent`, `--accent-hover`, `--success`, `--warning`, `--danger`                            |
 | type                             | `--font-sans`, `--font-mono`, `--fs-xs`, `--fs-sm`, `--fs-lg`, `--fw-semibold`                |
 | rhythm and shape                 | `--space-2`, `--space-3`, `--space-5`, `--space-6`, `--radius-sm`, `--shadow`, `--transition` |
+
+One more token has no default and is yours to set: `--ps-sticky-top`, the height
+of a bar the host pins above the editor. The sticky outline starts below it, and
+a heading the outline scrolls to stops below it, instead of both sliding under
+the bar. Leave it unset when nothing is pinned.
 
 BlockNote's own `--bn-*` variables are all derived from those tokens, so a theme
 switch needs no work on your side: change your tokens (or flip

@@ -30,6 +30,10 @@ import { scrollToCursor } from "./presence/scroll-to-cursor.js";
 import { useSharedPresence } from "./presence/use-presence.js";
 import type { PlanTransport, PlanUser } from "./session/plan-events.js";
 import type { PlanSession } from "./session/plan-session.js";
+import {
+  useRefineFailures,
+  type RefineFailure,
+} from "./session/refine-failures.js";
 import { SessionNotice } from "./session/SessionNotice.js";
 import { usePlanChanges } from "./session/use-plan-changes.js";
 import { usePlanSession, useSessionState } from "./session/use-plan-session.js";
@@ -53,6 +57,8 @@ export interface PlanEditorProps {
   onValidation?: (report: ValidationReport) => void;
   /** A section's Refine button: hand it to the planning agent, which answers with a proposal; a rejection withdraws the ask. */
   onRefine?: (request: RefineRequest) => Promise<void>;
+  /** The sections whose last refine failed, with the agent's reason: called on mount and whenever that list changes, so the host can warn about them. */
+  onRefineFailures?: (failures: readonly RefineFailure[]) => void;
   adapters?: PlanEditorAdapters;
   className?: string;
 }
@@ -72,7 +78,7 @@ type Panes = { showOutline: boolean; showPresence: boolean };
 
 type LayoutProps = Pick<
   WorkspaceProps,
-  "meta" | "template" | "readOnly" | "outlineFooter"
+  "meta" | "template" | "readOnly" | "outlineFooter" | "onRefineFailures"
 > &
   Panes & {
     editor: PlanBlockNoteEditor;
@@ -179,18 +185,22 @@ function editing(
   };
 }
 
-function WorkspaceLayout(view: LayoutProps) {
+function WorkspaceLayout({ onRefineFailures, ...view }: LayoutProps) {
   const titles = useSectionTitles(view.sections);
+  const failed = useRefineFailures(view.doc, titles, onRefineFailures);
 
   return (
     <SectionTitlesContext value={titles}>
       <EditorSurface {...view} />
-      <Sidebar {...view} titles={titles} />
+      <Sidebar {...view} titles={titles} failed={failed} />
     </SectionTitlesContext>
   );
 }
 
-type SidebarProps = LayoutProps & { titles: ReadonlyMap<string, string> };
+type SidebarProps = Omit<LayoutProps, "onRefineFailures"> & {
+  titles: ReadonlyMap<string, string>;
+  failed: ReadonlyMap<string, string>;
+};
 
 // Participants sit above the outline so a name can be followed to its cursor while the outline stays put.
 function Sidebar({ showPresence, showOutline, ...view }: SidebarProps) {
@@ -243,7 +253,7 @@ type OutlinePaneProps = Pick<
   | "sections"
   | "droppedSlots"
   | "outlineFooter"
->;
+> & { failed: ReadonlyMap<string, string> };
 
 function OutlinePane({
   editor,
