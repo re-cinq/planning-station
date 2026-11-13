@@ -3,6 +3,13 @@ import { z } from "zod";
 import {
   FINDING_SEVERITIES,
   KPI_DIRECTIONS,
+  MOCKUP_CAPTION_MAX,
+  MOCKUP_FORMATS,
+  MOCKUP_HEIGHT_DEFAULT,
+  MOCKUP_HEIGHT_MAX,
+  MOCKUP_HEIGHT_MIN,
+  MOCKUP_KINDS,
+  MOCKUP_MARKUP_MAX,
   PROTOTYPE_MATURITIES,
   QUESTION_KINDS,
 } from "../blocks/plan-block-configs.js";
@@ -25,6 +32,31 @@ export const prototypeInputSchema = z.object({
   agreedBy: z.string().default(""),
   notes: z.string().default(""),
 });
+
+const SCRIPT_TAG = /<script/i;
+
+const isSvgWhenSvg = ({ format, markup }: { format: string; markup: string }) =>
+  format !== "svg" || markup.trim().startsWith("<svg");
+
+export const mockupInputSchema = z
+  .object({
+    mockupId: z.string().regex(/^m-[a-z0-9-]+$/),
+    kind: z.enum(MOCKUP_KINDS),
+    format: z.enum(MOCKUP_FORMATS),
+    caption: z.string().min(1).max(MOCKUP_CAPTION_MAX),
+    markup: z
+      .string()
+      .min(1)
+      .max(MOCKUP_MARKUP_MAX)
+      .refine((markup) => !SCRIPT_TAG.test(markup), "markup holds a script"),
+    height: z
+      .number()
+      .int()
+      .min(MOCKUP_HEIGHT_MIN)
+      .max(MOCKUP_HEIGHT_MAX)
+      .default(MOCKUP_HEIGHT_DEFAULT),
+  })
+  .refine(isSvgWhenSvg, "svg markup starts with <svg");
 
 const customSlotSchema = z.string().startsWith(CUSTOM_SLOT_PREFIX);
 
@@ -82,6 +114,7 @@ export const agentOpSchema = z.discriminatedUnion("op", [
   }),
   z.object({ op: z.literal("upsert-kpi"), kpi: kpiInputSchema }),
   z.object({ op: z.literal("set-prototype"), prototype: prototypeInputSchema }),
+  z.object({ op: z.literal("add-mockup"), mockup: mockupInputSchema }),
   z.object({
     op: z.literal("add-section"),
     slot: customSlotSchema,
@@ -103,6 +136,7 @@ export const agentOpsSchema = z.array(agentOpSchema);
 
 export type KpiInput = z.infer<typeof kpiInputSchema>;
 export type PrototypeInput = z.infer<typeof prototypeInputSchema>;
+export type MockupInput = z.infer<typeof mockupInputSchema>;
 export type QuestionInput = z.infer<typeof questionInputSchema>;
 export type FindingInput = z.infer<typeof findingInputSchema>;
 export type AgentOp = z.infer<typeof agentOpSchema>;

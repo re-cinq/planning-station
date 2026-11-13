@@ -4,6 +4,7 @@ import {
   fenceOpening,
   isPlanFence,
   isReadOnly,
+  isSketchFence,
   parseHeading,
   type FenceOpening,
   type PlanFence,
@@ -50,10 +51,20 @@ class MarkdownReader {
   private readonly sections: OpenSection[] = [];
   private fence: OpenFence | null = null;
   private codeMarker: string | null = null;
+  /** A sketch's fence is read-only: its lines are skipped, never prose. */
+  private sketchMarker: string | null = null;
 
   read(line: string): void {
     if (this.fence) {
       this.inFence(this.fence, line);
+
+      return;
+    }
+
+    if (this.sketchMarker !== null) {
+      this.sketchMarker = closesFence(line, this.sketchMarker)
+        ? null
+        : this.sketchMarker;
 
       return;
     }
@@ -115,8 +126,9 @@ class MarkdownReader {
   private inSection(line: string): void {
     this.open(fenceOpening(line));
 
-    // A plan fence or the conversation ends the prose before it, as a blank line would.
-    const breaks = this.fence !== null || isReadOnly(line);
+    // A plan fence, a sketch or the conversation ends the prose before it, as a blank line would.
+    const breaks =
+      this.fence !== null || this.sketchMarker !== null || isReadOnly(line);
     this.sections.at(-1)?.lines.push(breaks ? "" : line);
   }
 
@@ -127,6 +139,12 @@ class MarkdownReader {
 
     if (isPlanFence(opening.tag)) {
       this.fence = { ...opening, tag: opening.tag, lines: [], closed: false };
+
+      return;
+    }
+
+    if (isSketchFence(opening.tag)) {
+      this.sketchMarker = opening.marker;
 
       return;
     }

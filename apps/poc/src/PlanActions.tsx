@@ -3,6 +3,7 @@ import type { RefineRequest } from "@re-cinq/planning-editor";
 
 import styles from "./App.module.scss";
 import { agentProposes, agentWrites, type PlanServer } from "./plan-server.js";
+import { SAMPLE_SKETCHES } from "./sample-plan.js";
 
 const THINKING_MS = 1500;
 
@@ -40,6 +41,15 @@ export async function refineSection(
     uses,
     ops: [{ op: "append-to-section", slot, paragraphs: decisionsOf(inputs) }],
   });
+}
+
+/** A stand-in sketch agent: it takes a moment, then draws the sample sketches into the Prototype section. */
+export async function generatePrototype(server: PlanServer): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, THINKING_MS));
+  await agentWrites(
+    server,
+    SAMPLE_SKETCHES.map((mockup) => ({ op: "add-mockup", mockup })),
+  );
 }
 
 function decisionsOf({ answered, resolved }: RefineInputs): string[] {

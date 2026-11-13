@@ -121,4 +121,16 @@ describe("a host's button styles", () => {
   it("keeps a host's button hover colour off the Remove button of the removal dialog", async () => {
     expect(await hoveredUnderHostStyles(renderRemoveDialog)).toBe(false);
   });
+
+  it("keeps a host's button hover colour off the Generate prototype button", async () => {
+    expect(await hoveredUnderHostStyles(renderGenerate)).toBe(false);
+  });
 });
+
+async function renderGenerate() {
+  const { screen } = await renderAsAna(planSeed("feature"), {
+    onGeneratePrototype: () => Promise.resolve(),
+  });
+
+  return screen.getByRole("button", { name: "Generate prototype" });
+}

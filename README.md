@@ -227,7 +227,7 @@ POST /api/plans/:id/agent-edits
 ```
 
 The ops are semantic and keyed by id (`set-section-text`, `append-to-section`,
-`upsert-kpi`, `set-prototype`), so a second pass **revises** the plan instead
+`upsert-kpi`, `set-prototype`, `add-mockup`), so a second pass **revises** the plan instead
 of replacing it, and lands in the live document while people are reading it.
 Give the agent `GET /api/plans/:id` to read the current plan first, and it can
 answer questions people left in the plan rather than starting over.
@@ -383,7 +383,8 @@ is not ready. Persistence is the host's: implement `PlanStore` and check it with
 ## How the agent writes
 
 The planning agent never rewrites a plan wholesale. It sends id-stable ops
-(`set-section-text`, `append-to-section`, `upsert-kpi`, `set-prototype`) to
+(`set-section-text`, `append-to-section`, `upsert-kpi`, `set-prototype`,
+`add-mockup` for a sketch in the Prototype section) to
 `POST /api/plans/:id/agent-edits`, and the library applies them to the **live**
 document, replacing only the blocks that changed, so the people reading it see
 the change arrive and keep their cursors.

@@ -350,6 +350,26 @@ the sandboxing policy stays yours:
 />
 ```
 
+A mockup hands the renderer its `kind` (architecture, flow, ui, data-model,
+states, api, text-output, or `""` on an older block), `caption`, `format`
+(`svg`, `mermaid`, `html` or `text`), `markup` and `height`. The editor captions
+the figure with the caption, or "Sketch", and the kind as a small label.
+
+## Scenario: asking the agent to draw the prototype
+
+Pass `onGeneratePrototype` and an editable plan's empty Prototype section offers
+a Generate prototype button above its Refine hint. While the promise is pending
+the button reads "Asking the agent…"; a rejection's message is shown under it.
+Once the section holds a sketch or a prototype, the button goes.
+
+```tsx
+<PlanEditor
+  transport={transport}
+  user={user}
+  onGeneratePrototype={() => askAgentToSketch(planId)}
+/>
+```
+
 ## Scenario: showing what a version changed
 
 ```tsx

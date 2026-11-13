@@ -7,7 +7,21 @@ export const PROTOTYPE_MATURITIES = [
   "running-prototype",
   "pre-prod",
 ] as const;
-export const MOCKUP_FORMATS = ["svg", "mermaid", "html"] as const;
+export const MOCKUP_FORMATS = ["svg", "mermaid", "html", "text"] as const;
+export const MOCKUP_KINDS = [
+  "architecture",
+  "flow",
+  "ui",
+  "data-model",
+  "states",
+  "api",
+  "text-output",
+] as const;
+export const MOCKUP_MARKUP_MAX = 60_000;
+export const MOCKUP_CAPTION_MAX = 120;
+export const MOCKUP_HEIGHT_DEFAULT = 320;
+export const MOCKUP_HEIGHT_MIN = 80;
+export const MOCKUP_HEIGHT_MAX = 2000;
 export const QUESTION_KINDS = ["text", "choice"] as const;
 export const FINDING_SEVERITIES = ["blocker", "warning"] as const;
 
@@ -73,9 +87,13 @@ export const PLAN_BLOCK_CONFIGS = {
     type: "mockup",
     content: "none",
     propSchema: {
+      mockupId: { default: "" },
+      // Blocks written before sketches had kinds carry "".
+      kind: { default: "", values: ["", ...MOCKUP_KINDS] },
+      caption: { default: "" },
       format: { default: "svg", values: MOCKUP_FORMATS },
       markup: { default: "" },
-      height: { default: 320 },
+      height: { default: MOCKUP_HEIGHT_DEFAULT },
     },
   },
   question: {

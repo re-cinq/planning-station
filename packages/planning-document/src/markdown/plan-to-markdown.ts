@@ -13,10 +13,10 @@ import type { PlanTemplate } from "../template/template.js";
 import { kpiInputOf, prototypeInputOf, sectionTitle } from "./live-section.js";
 import {
   fenced,
-  mockupNote,
   planHeading,
   quoted,
   sectionHeading,
+  sketchLines,
 } from "../ops/markdown-syntax.js";
 import { writeProse } from "./write-prose.js";
 
@@ -37,7 +37,7 @@ const RENDERERS: { [Kind in PlanBlockKind]: Render<Kind> } = {
   answer: NOTHING,
   kpi: (block) => fenced("kpi", kpiInputOf(block)),
   prototype: (block) => fenced("prototype", prototypeInputOf(block)),
-  mockup: (block) => [mockupNote(block.props.format)],
+  mockup: (block) => sketchLines(block.props),
   question: (block, answers) => [
     quoted("Question", ` (${block.props.questionId}): ${oneLine(block)}`),
     ...(answers.get(block.props.questionId) ?? []).map((answer) =>

@@ -59,6 +59,8 @@ export interface PlanEditorProps {
   onRefine?: (request: RefineRequest) => Promise<void>;
   /** The sections whose last refine failed, with the agent's reason: called on mount and whenever that list changes, so the host can warn about them. */
   onRefineFailures?: (failures: readonly RefineFailure[]) => void;
+  /** An empty Prototype section's Generate prototype button: ask the agent to draw it; a rejection's message is shown under the button. */
+  onGeneratePrototype?: () => Promise<void>;
   adapters?: PlanEditorAdapters;
   className?: string;
 }
@@ -156,6 +158,7 @@ function PlanWorkspace({
   validationPhase = "approval",
   onValidation,
   onRefine,
+  onGeneratePrototype,
   ...props
 }: WorkspaceProps) {
   const { session, user } = props;
@@ -163,9 +166,10 @@ function PlanWorkspace({
   const live = editing(session, editor, hosts);
   const report = usePlanValidation(plan, validationPhase, onValidation);
   useSharedPresence(editor, session.awareness);
+  const actions = { user, onRefine, onGeneratePrototype, doc: session.doc };
 
   return (
-    <PlanActionsContext value={{ user, onRefine, doc: session.doc }}>
+    <PlanActionsContext value={actions}>
       <WorkspaceLayout {...props} {...live} {...plan} report={report} />
     </PlanActionsContext>
   );

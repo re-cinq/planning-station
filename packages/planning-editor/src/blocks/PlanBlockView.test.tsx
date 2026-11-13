@@ -71,4 +71,26 @@ describe("PlanBlockView", () => {
     });
     await expect.element(screen.getByText("host renders svg")).toBeVisible();
   });
+
+  it('captions sketch m-ui-1 with "Loop switch row"', async () => {
+    const { screen } = await renderAsAna(SKETCHED);
+    const figure = screen.getByRole("figure", { name: /Loop switch row/ });
+    await expect.element(figure.getByText("ui", { exact: true })).toBeVisible();
+  });
+});
+
+const SKETCHED = planSeed("feature", {
+  prototype: [
+    textBlock(
+      "mockup",
+      {
+        mockupId: "m-ui-1",
+        kind: "ui",
+        caption: "Loop switch row",
+        format: "html",
+        markup: "<div>switch</div>",
+      },
+      "",
+    ),
+  ],
 });

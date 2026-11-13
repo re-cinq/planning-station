@@ -119,9 +119,9 @@ function countProblems(
   slot: SectionSlot,
   requirement: BlockRequirement,
 ): Problem[] {
-  const count = blocks.filter(
-    (block) => block.type === requirement.block,
-  ).length;
+  const kinds: readonly string[] =
+    "anyOf" in requirement ? requirement.anyOf : [requirement.block];
+  const count = blocks.filter((block) => kinds.includes(block.type)).length;
   const code = countCode(count, requirement);
 
   return code
@@ -143,9 +143,9 @@ function countCode(
     return "missing-block";
   }
 
-  const tooMany = requirement.max !== undefined && count > requirement.max;
+  const max = "max" in requirement ? requirement.max : undefined;
 
-  return tooMany ? "too-many-blocks" : null;
+  return max !== undefined && count > max ? "too-many-blocks" : null;
 }
 
 function countMessage(
@@ -153,6 +153,10 @@ function countMessage(
   slot: SectionSlot,
   requirement: BlockRequirement,
 ): string {
+  if ("anyOf" in requirement) {
+    return `"${slot.title}" needs ${requirement.wanted}`;
+  }
+
   const { min, max, block } = requirement;
 
   return code === "missing-block"
@@ -193,7 +197,8 @@ function rankOf(
   return rank.get(section?.slot ?? "") ?? -1;
 }
 
-function isMeaningful(block: BlockJson): boolean {
+/** Whether a block is content a section is judged by: a plan block, or prose with text. */
+export function isMeaningful(block: BlockJson): boolean {
   if (NOT_CONTENT.includes(block.type)) {
     return false;
   }

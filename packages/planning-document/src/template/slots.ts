@@ -59,8 +59,15 @@ export const SLOTS = {
     title: "Prototype",
     required: "for-approval",
     allows: [...PROSE, "prototype", "mockup"],
-    requires: [{ block: "prototype", min: 1, max: 1 }],
-    hint: "Agree the maturity first: click-dummy or running-prototype.",
+    requires: [
+      {
+        anyOf: ["prototype", "mockup"],
+        min: 1,
+        wanted: "a prototype or a sketch",
+      },
+      { block: "prototype", min: 0, max: 1 },
+    ],
+    hint: "Sketches the agent draws count. Link a click-dummy or running prototype when there is one.",
   },
   constraints: {
     slot: "constraints",

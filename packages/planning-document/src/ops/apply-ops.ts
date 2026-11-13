@@ -14,6 +14,7 @@ import type {
   AgentOp,
   FindingInput,
   KpiInput,
+  MockupInput,
   PrototypeInput,
   QuestionInput,
 } from "./agent-ops.js";
@@ -79,6 +80,8 @@ const HANDLERS: Handlers = {
   "upsert-kpi": (blocks, op) => upsert(blocks, KPIS_SLOT, kpiBlock(op.kpi)),
   "set-prototype": (blocks, op) =>
     upsert(blocks, PROTOTYPE_SLOT, prototypeBlock(op.prototype)),
+  "add-mockup": (blocks, op) =>
+    upsert(blocks, PROTOTYPE_SLOT, mockupBlock(op.mockup)),
   "replace-block": replaceBlock,
   "insert-blocks": insertBlocks,
   "remove-block": removeBlock,
@@ -153,6 +156,7 @@ const ENTITY_KEYS: Partial<Record<string, (block: BlockJson) => string>> = {
   question: (block) => propOf(block, "questionId"),
   finding: (block) => propOf(block, "findingId"),
   prototype: () => PROTOTYPE_SLOT,
+  mockup: (block) => propOf(block, "mockupId"),
 };
 
 function propOf(block: BlockJson, name: string): string {
@@ -220,6 +224,10 @@ function isResolved(blocks: readonly BlockJson[], findingId: string): boolean {
   );
 
   return existing?.props.resolved === true;
+}
+
+function mockupBlock(mockup: MockupInput): BlockJson {
+  return parseBlock({ id: mockup.mockupId, type: "mockup", props: mockup });
 }
 
 function prototypeBlock(prototype: PrototypeInput): BlockJson {

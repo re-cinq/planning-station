@@ -1,3 +1,21 @@
+.sketch {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.source {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+}
+
 .page {
   padding: var(--space-7);
   color: var(--text);

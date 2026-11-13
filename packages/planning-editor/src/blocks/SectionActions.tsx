@@ -4,6 +4,7 @@ import type { Doc } from "yjs";
 
 import { removeSection } from "../session/remove-section.js";
 import { TemplateContext, useSlot } from "../template/template-context.js";
+import { GeneratePrototype } from "./GeneratePrototype.js";
 import { usePlanActions } from "./plan-actions.js";
 import { RefineControls } from "./RefineControls.js";
 import styles from "./SectionActions.module.scss";
@@ -35,6 +36,7 @@ export function SectionActions({ block, editor }: SectionActionsProps) {
       aria-label={`${title} actions`}
       contentEditable={false}
     >
+      <GeneratePrototype doc={doc} slot={slot} />
       {onRefine && <RefineControls doc={doc} slot={slot} title={title} />}
       <RemoveSection doc={doc} slot={slot} title={title} />
     </div>

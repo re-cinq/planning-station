@@ -1,13 +1,26 @@
 import { useState } from "react";
-import { PlanEditor, type PlanUser } from "@re-cinq/planning-editor";
+import {
+  PlanEditor,
+  type PlanEditorAdapters,
+  type PlanUser,
+} from "@re-cinq/planning-editor";
 import type { PlanDocument } from "@re-cinq/planning-document";
 
 import styles from "./App.module.scss";
-import { PlanActions, refineSection } from "./PlanActions.js";
+import {
+  generatePrototype,
+  PlanActions,
+  refineSection,
+} from "./PlanActions.js";
+import { SketchFrame } from "./SketchFrame.js";
 import { usePlanServer, type PlanServer } from "./plan-server.js";
 import { usePlanTransport } from "./use-plan-transport.js";
 import { VersionDiff } from "./VersionDiff.js";
 import { whoAmI } from "./who.js";
+
+const ADAPTERS: PlanEditorAdapters = {
+  renderMockup: (mockup) => <SketchFrame {...mockup} />,
+};
 
 export function App() {
   const server = usePlanServer();
@@ -45,6 +58,8 @@ function ThePlan({ server, user, onChange }: ThePlanProps) {
         user={user}
         onChange={onChange}
         onRefine={(request) => refineSection(server, request)}
+        onGeneratePrototype={() => generatePrototype(server)}
+        adapters={ADAPTERS}
       />
     )
   );

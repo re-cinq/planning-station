@@ -25,6 +25,12 @@
   font-size: var(--ps-fs-label);
 }
 
+.kind {
+  margin-left: var(--ps-space-inline);
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-hint);
+}
+
 .link {
   color: var(--ps-accent);
   font-size: var(--ps-fs-hint);

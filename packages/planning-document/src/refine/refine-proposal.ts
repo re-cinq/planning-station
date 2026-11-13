@@ -63,5 +63,7 @@ export function slotOf(op: AgentOp): string {
     return KPIS_SLOT;
   }
 
-  return op.op === "set-prototype" ? PROTOTYPE_SLOT : op.slot;
+  return op.op === "set-prototype" || op.op === "add-mockup"
+    ? PROTOTYPE_SLOT
+    : op.slot;
 }
