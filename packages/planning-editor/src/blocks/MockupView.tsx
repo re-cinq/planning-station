@@ -12,14 +12,21 @@ export function MockupView({ block }: MockupViewProps) {
 
   return (
     <figure className={styles.block} data-kind="mockup" contentEditable={false}>
-      <figcaption className={styles.label}>
-        Mockup ({block.props.format})
-      </figcaption>
+      <MockupCaption mockup={block.props} />
       {renderMockup ? (
         renderMockup(block.props)
       ) : (
         <p>The host renders mockups; none is configured.</p>
       )}
     </figure>
+  );
+}
+
+function MockupCaption({ mockup }: { mockup: Mockup }) {
+  return (
+    <figcaption className={styles.label}>
+      {mockup.caption || "Sketch"}
+      {mockup.kind && <span className={styles.kind}>{mockup.kind}</span>}
+    </figcaption>
   );
 }

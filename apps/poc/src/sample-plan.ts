@@ -1,6 +1,7 @@
 import {
   titleBlock,
   type BlockJson,
+  type MockupInput,
   type PlanMeta,
 } from "@re-cinq/planning-document";
 import {
@@ -207,9 +208,99 @@ const CONTENT: SectionContent = {
   ],
 };
 
-const [, ...SECTIONS] = planWith("feature", CONTENT);
+/** One sketch of each format, as the sketch agent would draw them. */
+export const SAMPLE_SKETCHES: MockupInput[] = [
+  {
+    mockupId: "m-architecture-1",
+    kind: "architecture",
+    format: "mermaid",
+    caption: "Quote cache in front of the tax service",
+    markup: [
+      "flowchart LR",
+      '  web["Checkout web"] --> api["Price step API"]',
+      '  api --> cache[("Redis quote cache")]',
+      '  api --> tax["Tax service"]',
+      "  classDef added stroke-dasharray: 4 2",
+      "  class cache added",
+    ].join("\n"),
+    height: 260,
+  },
+  {
+    mockupId: "m-ui-1",
+    kind: "ui",
+    format: "html",
+    caption: "Price step with a placeholder price",
+    markup: [
+      "<style>",
+      "body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: #1f2328; }",
+      ".row { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #d0d7de; }",
+      ".pending { color: #656d76; font-style: italic; }",
+      ".pay { margin: 16px; padding: 12px; border: 0; border-radius: 6px; background: #1f6feb; color: #fff; width: calc(100% - 32px); }",
+      "</style>",
+      '<div class="row"><span>Subtotal</span><span>€ 84.00</span></div>',
+      '<div class="row"><span>Shipping</span><span class="pending">about € 4.90</span></div>',
+      '<div class="row"><span>Tax</span><span class="pending">calculating…</span></div>',
+      '<button class="pay">Pay € 88.90</button>',
+    ].join("\n"),
+    height: 220,
+  },
+  {
+    mockupId: "m-states-1",
+    kind: "states",
+    format: "svg",
+    caption: "A cached quote's life",
+    markup: [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 80" font-family="sans-serif" font-size="13">',
+      '  <rect x="10" y="20" width="100" height="40" rx="6" fill="#ddf4ff" stroke="#0969da"/>',
+      '  <text x="60" y="45" text-anchor="middle">fresh</text>',
+      '  <rect x="160" y="20" width="100" height="40" rx="6" fill="#fff8c5" stroke="#9a6700"/>',
+      '  <text x="210" y="45" text-anchor="middle">stale</text>',
+      '  <rect x="310" y="20" width="100" height="40" rx="6" fill="#ffebe9" stroke="#cf222e"/>',
+      '  <text x="360" y="45" text-anchor="middle">evicted</text>',
+      '  <path d="M110 40 H160 M260 40 H310" stroke="#656d76" marker-end="none"/>',
+      "</svg>",
+    ].join("\n"),
+    height: 120,
+  },
+  {
+    mockupId: "m-api-1",
+    kind: "api",
+    format: "text",
+    caption: "Quote request and answer",
+    markup: [
+      "POST /api/checkout/quote",
+      '{ "basketId": "b-4821", "country": "DE" }',
+      "",
+      "200 OK",
+      '{ "shipping": "4.90", "tax": "16.76", "cachedAt": "2026-11-13T10:02:11Z" }',
+    ].join("\n"),
+    height: 160,
+  },
+];
+
+const sketchBlock = (sketch: MockupInput) =>
+  textBlock("mockup", { ...sketch }, "");
+
+const [, ...SECTIONS] = planWith("feature", {
+  ...CONTENT,
+  prototype: [
+    ...(CONTENT.prototype ?? []),
+    ...SAMPLE_SKETCHES.map(sketchBlock),
+  ],
+});
 
 export const SAMPLE_BLOCKS: BlockJson[] = [
   titleBlock(SAMPLE_TITLE),
   ...SECTIONS,
+];
+
+const [, ...UNDRAWN_SECTIONS] = planWith("feature", {
+  ...CONTENT,
+  prototype: [],
+});
+
+/** The same plan with an empty Prototype section, which offers Generate prototype. */
+export const UNDRAWN_BLOCKS: BlockJson[] = [
+  titleBlock(SAMPLE_TITLE),
+  ...UNDRAWN_SECTIONS,
 ];

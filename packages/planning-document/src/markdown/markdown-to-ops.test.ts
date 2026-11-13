@@ -272,4 +272,21 @@ describe("markdownToOps", () => {
       }).toEqual({ large: true, result: { ops: [], problems: [] } });
     },
   );
+
+  it("proposes nothing for a plan read back with its sketch", () => {
+    const sketched = applyOps(READY, [
+      {
+        op: "add-mockup",
+        mockup: {
+          mockupId: "m-ui-1",
+          kind: "ui",
+          format: "html",
+          caption: "Loop switch row",
+          markup: "<div>\n\n## Not a section\n\n```\ncode\n```\n</div>",
+          height: 320,
+        },
+      },
+    ]);
+    expect(roundTrip(sketched, "feature")).toEqual({ ops: [], problems: [] });
+  });
 });

@@ -208,8 +208,30 @@ const next = applyOps(blocks, [
     },
   },
   { op: "set-prototype", prototype: { maturity: "click-dummy" } },
+  {
+    op: "add-mockup",
+    mockup: {
+      mockupId: "m-flow-1",
+      kind: "flow",
+      format: "mermaid",
+      caption: "Run of the loop",
+      markup: "flowchart LR\n  pick --> build --> review",
+      height: 320,
+    },
+  },
 ]);
 ```
+
+`add-mockup` draws a sketch into the Prototype section. A mockup block's props
+are `mockupId`, `kind` (`architecture`, `flow`, `ui`, `data-model`, `states`,
+`api`, `text-output`), `caption` (1 to 120 characters), `format` (`svg`,
+`mermaid`, `html`, `text`), `markup` (at most `MOCKUP_MARKUP_MAX`, 60,000
+characters) and `height` (80 to 2000, default 320). Sending the same
+`mockupId` again redraws it; `remove-block` on the Prototype section removes it.
+The op refuses markup holding `<script`, and `svg` markup that does not start
+with `<svg`. One sketch is enough to make the Prototype section ready.
+In `plan.md` a sketch is a read-only note followed by a ` ```mockup-<format> `
+fence holding its markup; reading the file back skips both.
 
 `set-section-text` replaces a section's prose with paragraphs and leaves its
 plan blocks, questions and comments alone; `append-to-section` adds to it. Each

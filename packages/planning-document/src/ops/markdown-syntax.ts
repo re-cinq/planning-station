@@ -8,6 +8,8 @@ const FENCE_CLOSING = /^`{3,}\s*$/;
 const QUOTE = ">";
 const CONVERSATION = /^> \*\*(Question|Answer|Comment|Finding)\*\*/;
 const MOCKUP_NOTE = "_(mockup: ";
+const SKETCH_NOTE = "_(sketch ";
+const SKETCH_FENCE_PREFIX = "mockup-";
 const HEADING = /^#{1,6}(?:\s+|$)/;
 const BULLET = /^[-*+](?:\s+|$)/;
 const NUMBERED = /^(\d{1,9})([.)])(?:\s+|$)/;
@@ -99,13 +101,41 @@ export function quoteLine(text: string): string {
   return CONVERSATION.test(line) ? `${QUOTE}  ${text}` : line;
 }
 
-export function mockupNote(format: string): string {
-  return `${MOCKUP_NOTE}${format}, not editable here)_`;
+export interface SketchNote {
+  mockupId: string;
+  kind: string;
+  caption: string;
+  format: string;
+  markup: string;
 }
 
-/** The conversation and the mockup note are shown to the agent, never read back. */
+/** A sketch is its note, then its markup verbatim in a fence longer than any backtick run inside it. */
+export function sketchLines(sketch: SketchNote): string[] {
+  const longestRun = Math.max(
+    0,
+    ...(sketch.markup.match(/`+/g) ?? []).map((run) => run.length),
+  );
+  const marker = "`".repeat(Math.max(FENCE.length, longestRun + 1));
+
+  return [
+    `${SKETCH_NOTE}${sketch.mockupId}, ${sketch.kind}: ${sketch.caption}; read-only here)_`,
+    `${marker}${SKETCH_FENCE_PREFIX}${sketch.format}`,
+    ...sketch.markup.split("\n"),
+    marker,
+  ];
+}
+
+export function isSketchFence(tag: string): boolean {
+  return tag.startsWith(SKETCH_FENCE_PREFIX);
+}
+
+/** The conversation and a sketch's note are shown to the agent, never read back; so is the mockup note plan.md carried before sketches. */
 export function isReadOnly(line: string): boolean {
-  return CONVERSATION.test(line) || line.startsWith(MOCKUP_NOTE);
+  return (
+    CONVERSATION.test(line) ||
+    line.startsWith(SKETCH_NOTE) ||
+    line.startsWith(MOCKUP_NOTE)
+  );
 }
 
 export function isQuote(body: string): boolean {

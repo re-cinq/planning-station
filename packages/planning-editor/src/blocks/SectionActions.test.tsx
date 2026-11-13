@@ -165,3 +165,83 @@ describe("SectionActions remove", () => {
     await expect.element(kept).toBeVisible();
   });
 });
+
+const GENERATE = "Generate prototype";
+
+const SKETCHED = planSeed("feature", {
+  prototype: [
+    textBlock(
+      "mockup",
+      {
+        mockupId: "m-flow-1",
+        kind: "flow",
+        format: "mermaid",
+        caption: "Run of the loop",
+        markup: "flowchart LR\n  a --> b",
+      },
+      "",
+    ),
+  ],
+});
+
+const generateIn = (
+  screen: Awaited<ReturnType<typeof renderPlan>>["screen"],
+  title: string,
+) =>
+  screen
+    .getByLabelText(`${title} actions`)
+    .getByRole("button", { name: GENERATE });
+
+describe("SectionActions generate prototype", () => {
+  const onGeneratePrototype = () => Promise.resolve();
+
+  it("offers Generate prototype on an empty Prototype section", async () => {
+    const { screen } = await renderPlan({ onGeneratePrototype });
+    await expect.element(generateIn(screen, "Prototype")).toBeVisible();
+    await expect
+      .element(
+        screen.getByText(
+          "The agent draws diagrams and screen sketches from this plan.",
+        ),
+      )
+      .toBeVisible();
+  });
+
+  it("offers no Generate prototype once the section holds a sketch", async () => {
+    const { screen } = await renderAsAna(SKETCHED, { onGeneratePrototype });
+    await expect
+      .element(screen.getByLabelText("Prototype actions"))
+      .toBeVisible();
+    expect(generateIn(screen, "Prototype").query()).toBeNull();
+  });
+
+  it("offers no Generate prototype on Scope", async () => {
+    const { screen } = await renderPlan({ onGeneratePrototype });
+    await expect.element(generateIn(screen, "Prototype")).toBeVisible();
+    expect(generateIn(screen, "In and out of scope").query()).toBeNull();
+  });
+
+  it("shows the host's refusal under Generate prototype", async () => {
+    const refused = () => Promise.reject(new Error("the plan is approved"));
+    const { screen } = await renderPlan({ onGeneratePrototype: refused });
+    await userEvent.click(generateIn(screen, "Prototype"));
+    await expect
+      .element(screen.getByRole("alert"))
+      .toHaveTextContent(
+        "The agent cannot draw the prototype now: the plan is approved",
+      );
+  });
+
+  it("disables Generate prototype while the host is asking the agent", async () => {
+    const pending = () => new Promise<void>(() => undefined);
+    const { screen } = await renderPlan({ onGeneratePrototype: pending });
+    await userEvent.click(generateIn(screen, "Prototype"));
+    await expect
+      .element(
+        screen
+          .getByLabelText("Prototype actions")
+          .getByRole("button", { name: "Asking the agent…" }),
+      )
+      .toBeDisabled();
+  });
+});

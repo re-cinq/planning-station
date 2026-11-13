@@ -15,11 +15,20 @@ export const SLOT_REQUIREMENTS = [
 
 export type SlotRequirement = (typeof SLOT_REQUIREMENTS)[number];
 
-export interface BlockRequirement {
+export interface SingleBlockRequirement {
   block: BlockKind;
   min: number;
   max?: number;
 }
+
+/** Any of several kinds counts toward the minimum; `wanted` names them in the problem ("a prototype or a sketch"). */
+export interface AnyBlockRequirement {
+  anyOf: readonly BlockKind[];
+  min: number;
+  wanted: string;
+}
+
+export type BlockRequirement = SingleBlockRequirement | AnyBlockRequirement;
 
 export interface SectionSlot {
   slot: string;

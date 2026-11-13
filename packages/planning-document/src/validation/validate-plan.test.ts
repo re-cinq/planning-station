@@ -265,3 +265,51 @@ describe("validatePlan", () => {
     expect(codes(blocks, "approval", "ui-change")).toEqual([]);
   });
 });
+
+const FLOW_SKETCH = block("mockup", {
+  mockupId: "m-flow-1",
+  kind: "flow",
+  format: "mermaid",
+  caption: "Run of the loop",
+  markup: "flowchart LR\n  a --> b",
+});
+
+describe("validatePlan sketches", () => {
+  it("passes a feature plan whose Prototype section holds one sketch", () => {
+    const sketched = READY_FEATURE.with(UNTIL_PROTOTYPE - 1, FLOW_SKETCH);
+    expect(validatePlan(plan(sketched), "approval")).toEqual({
+      passed: true,
+      phase: "approval",
+      problems: [],
+    });
+  });
+
+  it("still asks a ui-change plan with only a sketch for a click-dummy", () => {
+    const blocks = [
+      heading("intent", "Intent"),
+      paragraph("New header"),
+      heading("kpis", "KPIs"),
+      block("kpi"),
+      heading("prototype", "Prototype"),
+      FLOW_SKETCH,
+    ];
+    expect(codes(blocks, "approval", "ui-change")).toEqual([
+      ["prototype-below-minimum", "prototype"],
+    ]);
+  });
+
+  it("asks an empty Prototype section for a prototype or a sketch", () => {
+    const empty = READY_FEATURE.toSpliced(UNTIL_PROTOTYPE - 1, 1);
+    expect(
+      validatePlan(plan(empty), "approval").problems.filter(
+        ({ code }) => code === "missing-block",
+      ),
+    ).toEqual([
+      {
+        code: "missing-block",
+        slot: "prototype",
+        message: '"Prototype" needs a prototype or a sketch',
+      },
+    ]);
+  });
+});

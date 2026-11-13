@@ -1,0 +1,53 @@
+@use "../styles/button-states";
+
+.generate {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--ps-space-inline);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-inline);
+  margin: 0;
+}
+
+.note {
+  color: var(--ps-fg-muted);
+  font-size: var(--ps-fs-hint);
+}
+
+.button {
+  padding: var(--ps-space-inline) var(--ps-space-list);
+  color: var(--ps-fg);
+  background: transparent;
+  border: 1px solid var(--ps-border);
+  border-radius: var(--ps-radius);
+  font: inherit;
+  font-size: var(--ps-fs-hint);
+  font-weight: var(--ps-fw-label);
+  cursor: pointer;
+  transition:
+    border-color var(--ps-transition),
+    background var(--ps-transition);
+
+  @include button-states.states(
+    var(--ps-fg),
+    var(--ps-bg-hover),
+    var(--ps-border-hover)
+  );
+}
+
+.button:disabled {
+  color: var(--ps-fg-muted);
+  pointer-events: none;
+}
+
+.failed {
+  margin: 0;
+  color: var(--ps-warning);
+  font-size: var(--ps-fs-hint);
+}

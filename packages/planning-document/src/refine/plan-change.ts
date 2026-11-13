@@ -7,6 +7,7 @@ import {
   agentOpSchema,
   type AgentOp,
   type KpiInput,
+  type MockupInput,
   type PrototypeInput,
 } from "../ops/agent-ops.js";
 import type { ProseInput } from "../ops/prose-input.js";
@@ -86,6 +87,7 @@ const WORDS: { [Kind in AgentOp["op"]]: WordsReader<Kind> } = {
   "append-to-section": paragraphWords,
   "upsert-kpi": kpiWords,
   "set-prototype": prototypeWords,
+  "add-mockup": mockupWords,
   "replace-block": rewriteWords,
   "insert-blocks": blockWords,
   "remove-block": noWords,
@@ -133,6 +135,10 @@ function prototypeWords({
   const url = prototype.url ? `: ${prototype.url}` : "";
 
   return [`Prototype (${prototype.maturity})${url}`];
+}
+
+function mockupWords({ mockup }: { mockup: MockupInput }): string[] {
+  return [`Sketch (${mockup.kind}): ${mockup.caption}`];
 }
 
 function noWords(): string[] {

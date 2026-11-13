@@ -22,6 +22,8 @@ export interface PlanActions {
   doc?: Doc;
   /** Answer by posting a proposal for the slot; a rejection withdraws the ask. */
   onRefine?: (request: RefineRequest) => Promise<void>;
+  /** Ask the agent to draw an empty Prototype section; a rejection's message is shown under the button. */
+  onGeneratePrototype?: () => Promise<void>;
 }
 
 const NOBODY: PlanUser = { id: "", name: "Someone" };

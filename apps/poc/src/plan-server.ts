@@ -15,7 +15,9 @@ export function usePlanServer(): PlanServer | null {
   const [server, setServer] = useState<PlanServer | null>(null);
 
   useEffect(() => {
-    fetch(DEV_PLAN, { signal: AbortSignal.timeout(TIMEOUT_MS) })
+    fetch(`${DEV_PLAN}${window.location.search}`, {
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    })
       .then((response) => response.json())
       .then(setServer)
       .catch(() => setServer(null));

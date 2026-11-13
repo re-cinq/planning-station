@@ -151,12 +151,6 @@ describe("planToMarkdown", () => {
     );
   });
 
-  it("notes a mermaid mockup without its markup", () => {
-    expect(linesOf(planToMarkdown(TALKED, FEATURE))).toContain(
-      "_(mockup: mermaid, not editable here)_",
-    );
-  });
-
   it("quotes the question q-market with its answer and Ana's resolved comment", () => {
     const lines = linesOf(planToMarkdown(TALKED, FEATURE));
     expect(lines.filter((line) => line.startsWith(">"))).toEqual([
@@ -205,5 +199,54 @@ describe("planToMarkdown", () => {
     expect(linesOf(planToMarkdown(blocks, FEATURE))).toContain(
       "## Rollout <!-- slot:custom-rollout -->",
     );
+  });
+});
+
+const sketch = (format: string, markup: string) =>
+  textBlock(
+    "mockup",
+    {
+      mockupId: "m-arch-1",
+      kind: "architecture",
+      caption: "Services and stores",
+      format,
+      markup,
+    },
+    "",
+  );
+
+const sketchLines = (blocks: ReturnType<typeof planWith>) => {
+  const lines = linesOf(planToMarkdown(blocks, FEATURE));
+  const note = lines.findIndex((line) => line.startsWith("_(sketch"));
+
+  return lines.slice(note, lines.indexOf("", note));
+};
+
+describe("planToMarkdown sketches", () => {
+  it("writes sketch m-arch-1 as a mockup-mermaid fence under its note", () => {
+    const blocks = planWith("feature", {
+      prototype: [sketch("mermaid", "flowchart LR\n  api --> db")],
+    });
+    expect(sketchLines(blocks)).toEqual([
+      "_(sketch m-arch-1, architecture: Services and stores; read-only here)_",
+      "```mockup-mermaid",
+      "flowchart LR",
+      "  api --> db",
+      "```",
+    ]);
+  });
+
+  it("fences markup that holds three backticks with four", () => {
+    const blocks = planWith("feature", {
+      prototype: [sketch("text", "$ lore run\n```\nok\n```")],
+    });
+    expect(sketchLines(blocks).slice(1)).toEqual([
+      "````mockup-text",
+      "$ lore run",
+      "```",
+      "ok",
+      "```",
+      "````",
+    ]);
   });
 });
