@@ -111,24 +111,25 @@ function landingFor(
   return direction === "down" ? downOver(blocks, index) : upOver(blocks, index);
 }
 
-/** The last block above a section's actions goes to the top of the next section's writing. */
-function downOver(blocks: readonly TopBlock[], index: number): Landing {
-  if (blocks[index + 1]?.type !== SECTION_ACTIONS) {
-    return "one-step";
-  }
+const TAIL: readonly string[] = [...MARGIN_NOTES, SECTION_ACTIONS];
 
+/** The last block of a section's writing, above its notes and actions, goes to the top of the next section's writing. */
+function downOver(blocks: readonly TopBlock[], index: number): Landing {
   const heading = blocks.findIndex(
     (block, at) => at > index && block.type === SECTION_HEADING,
   );
-  const start = blocks.find(
-    (block, at) =>
-      heading >= 0 && at > heading && !MARGIN_NOTES.includes(block.type),
-  );
+  const tail = blocks.slice(index + 1, heading < 0 ? undefined : heading);
 
-  return start?.pos ?? "nowhere";
+  if (tail.length === 0 || !tail.every((block) => TAIL.includes(block.type))) {
+    return "one-step";
+  }
+
+  const next = blocks[heading];
+
+  return next ? next.pos + next.node.nodeSize : "nowhere";
 }
 
-/** The first block of a section's writing, under its heading and margin notes, goes to the end of the previous section's writing: above its actions, or last in a section that has none. */
+/** The first block of a section's writing, under its heading, goes to the end of the previous section's writing: above its notes and actions, or last in a section that has none. */
 function upOver(blocks: readonly TopBlock[], index: number): Landing {
   const above = blocks.slice(0, index).reverse();
   const heading = above.find((block) => !MARGIN_NOTES.includes(block.type));
@@ -137,23 +138,28 @@ function upOver(blocks: readonly TopBlock[], index: number): Landing {
     return "one-step";
   }
 
-  const previous = above.find(
-    (block) =>
-      block.pos < heading.pos &&
-      [SECTION_ACTIONS, SECTION_HEADING].includes(block.type),
+  const previousSection = above.filter((block) => block.pos < heading.pos);
+  const previousHeading = previousSection.find(
+    (block) => block.type === SECTION_HEADING,
   );
 
-  return previous?.type === SECTION_ACTIONS
-    ? previous.pos
-    : previousEnd(previous, heading);
+  if (!previousHeading) {
+    return "nowhere";
+  }
+
+  return tailStart(previousSection, previousHeading) ?? heading.pos;
 }
 
-/** A previous section without actions ends where this section's heading starts; the first section has nothing above it. */
-function previousEnd(
-  previous: TopBlock | undefined,
+/** Where a section's closing notes and actions begin, reading its blocks from the bottom up. */
+function tailStart(
+  bottomUp: readonly TopBlock[],
   heading: TopBlock,
-): Landing {
-  return previous ? heading.pos : "nowhere";
+): number | undefined {
+  const writingEnd = bottomUp.findIndex(
+    (block) => block === heading || !TAIL.includes(block.type),
+  );
+
+  return bottomUp[writingEnd - 1]?.pos;
 }
 
 /** Takes the block out and puts it back before the landing, keeping the cursor where it was inside the block. */

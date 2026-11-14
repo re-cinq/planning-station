@@ -49,15 +49,15 @@ describe("SectionHeading comment composer", () => {
     await expect.element(input).toHaveFocus();
   });
 
-  it("inserts a comment by Ana after the heading and closes the composer", async () => {
+  it("inserts a comment by Ana under the section's paragraph and closes the composer", async () => {
     const { screen, lastPlan } = await renderPlan();
     await userEvent.fill(await openComposer(screen), "Is this still true?");
     await userEvent.keyboard("{Enter}");
 
     expect(intentBlockTypes(lastPlan())).toEqual([
-      "comment",
-      "section-panel",
       "paragraph",
+      "section-panel",
+      "comment",
       "section-actions",
     ]);
     await expect

@@ -3,11 +3,14 @@ import { describe, it, expect } from "vitest";
 import { planMeta, planWith, seededHeadings, textBlock } from "./plans.js";
 
 describe("planWith", () => {
-  it("places a KPI after the Success criteria heading and its panel", () => {
+  it("places a KPI right under the Success criteria heading", () => {
     const kpi = textBlock("kpi", { kpiId: "k1" }, "Slow");
     const blocks = planWith("feature", { kpis: [kpi] });
-    const panelAt = blocks.findIndex((block) => block.id === "panel-kpis");
-    expect(blocks[panelAt + 1]).toEqual(kpi);
+    const headingAt = blocks.findIndex(
+      (block) =>
+        block.type === "section-heading" && block.props["slot"] === "kpis",
+    );
+    expect(blocks[headingAt + 1]).toEqual(kpi);
   });
 
   it("returns only the section headings when no content is given", () => {

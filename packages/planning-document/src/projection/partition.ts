@@ -48,7 +48,7 @@ export function partitionSections(blocks: readonly BlockJson[]): Section[] {
     }, []);
 }
 
-/** A section's blocks in place: its margin notes, what people wrote, its actions. */
+/** A section's blocks in place: what people wrote, its notes, its actions. */
 export function sectionOrder(blocks: readonly BlockJson[]): BlockJson[] {
   const ofKind = (kind: string) =>
     blocks.filter((block) => block.type === kind);
@@ -57,8 +57,8 @@ export function sectionOrder(blocks: readonly BlockJson[]): BlockJson[] {
   const placed = [...notes, ...actions];
 
   return [
-    ...notes,
     ...blocks.filter((block) => !placed.includes(block)),
+    ...notes,
     ...actions,
   ];
 }

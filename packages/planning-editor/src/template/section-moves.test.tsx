@@ -28,12 +28,11 @@ const MOVE_UP = "{ControlOrMeta>}{Shift>}{ArrowUp}{/Shift}{/ControlOrMeta}";
 const LAST_WRITTEN = planSeed("performance", {
   questions: [textBlock("paragraph", {}, "Who signs off?")],
 });
-const COMMENTED_KPIS = planSeed("performance", {
-  intent: [textBlock("paragraph", {}, "Checkout")],
-  kpis: [
+const COMMENTED_INTENT = planSeed("performance", {
+  intent: [
+    textBlock("paragraph", {}, "Checkout"),
     textBlock("comment", { commentId: "c1", author: "Ben" }, "Is it?"),
     textBlock("comment", { commentId: "c2", author: "Ana" }, "Yes."),
-    textBlock("paragraph", {}, "Targets"),
   ],
 });
 const NESTED_INTENT = planSeed("performance", {
@@ -118,7 +117,7 @@ describe("sectionMoves", () => {
       sectionNamed(lastPlan(), "kpis"),
     ]).toEqual([
       ["section-panel", "section-actions"],
-      ["section-panel", "Checkout", "Targets", "section-actions"],
+      ["Checkout", "Targets", "section-panel", "section-actions"],
     ]);
   });
 
@@ -127,30 +126,29 @@ describe("sectionMoves", () => {
     await userEvent.keyboard(MOVE_DOWN);
     await userEvent.keyboard("!");
     expect(sectionNamed(lastPlan(), "kpis")).toEqual([
-      "section-panel",
       "Checkout!",
       "Targets",
+      "section-panel",
       "section-actions",
     ]);
   });
 
-  it("moves the success criteria's 'Targets' up over its panel and the intent's actions in one press, under 'Checkout'", async () => {
+  it("moves the success criteria's 'Targets' up over the intent's panel and actions in one press, under 'Checkout'", async () => {
     const { lastPlan } = await startIn("Targets");
     await userEvent.keyboard(MOVE_UP);
     expect(sectionNamed(lastPlan(), "intent")).toEqual([
-      "section-panel",
       "Checkout",
       "Targets",
+      "section-panel",
       "section-actions",
     ]);
   });
 
-  it("moves 'Targets' up over the two comments leading the success criteria in one press", async () => {
-    const { lastPlan } = await startIn("Targets", COMMENTED_KPIS);
-    await userEvent.keyboard(MOVE_UP);
+  it("moves 'Checkout' down over the two comments under the intent in one press", async () => {
+    const { lastPlan } = await startIn("Checkout", COMMENTED_INTENT);
+    await userEvent.keyboard(MOVE_DOWN);
     expect(sectionNamed(lastPlan(), "kpis")).toEqual([
-      "comment",
-      "comment",
+      "Checkout",
       "section-panel",
       "section-actions",
     ]);
@@ -160,30 +158,30 @@ describe("sectionMoves", () => {
     const { lastPlan } = await startIn("Targets", INTENT_WITHOUT_ACTIONS);
     await userEvent.keyboard(MOVE_UP);
     expect(sectionNamed(lastPlan(), "intent")).toEqual([
-      "section-panel",
       "Checkout",
       "Targets",
+      "section-panel",
     ]);
   });
 
-  it("leaves 'Checkout' under the intent's panel when it is moved up out of the first section", async () => {
+  it("leaves 'Checkout' first in the intent when it is moved up out of the first section", async () => {
     const { lastPlan } = await startIn("Checkout");
     await userEvent.keyboard(MOVE_UP);
     await userEvent.keyboard("!");
     expect(sectionNamed(lastPlan(), "intent")).toEqual([
-      "section-panel",
       "Checkout!",
+      "section-panel",
       "section-actions",
     ]);
   });
 
-  it("leaves 'Who signs off?' above the last section's actions when it is moved down", async () => {
+  it("leaves 'Who signs off?' above the last section's panel and actions when it is moved down", async () => {
     const { lastPlan } = await startIn("Who signs off?", LAST_WRITTEN);
     await userEvent.keyboard(MOVE_DOWN);
     await userEvent.keyboard("!");
     expect(sectionNamed(lastPlan(), "questions")).toEqual([
-      "section-panel",
       "Who signs off?!",
+      "section-panel",
       "section-actions",
     ]);
   });
@@ -192,9 +190,9 @@ describe("sectionMoves", () => {
     const { lastPlan } = await startIn("Faster", NESTED_INTENT);
     await userEvent.keyboard(MOVE_DOWN);
     expect(sectionNamed(lastPlan(), "intent")).toEqual([
-      "section-panel",
       "Fast",
       "Faster",
+      "section-panel",
       "section-actions",
     ]);
   });
@@ -213,7 +211,7 @@ describe("sectionMoves", () => {
       sectionNamed(lastPlan(), "kpis"),
     ]).toEqual([
       ["section-panel", "Checkout", "Payment", "section-actions"],
-      ["section-panel", "Targets!", "section-actions"],
+      ["Targets!", "section-panel", "section-actions"],
     ]);
   });
 

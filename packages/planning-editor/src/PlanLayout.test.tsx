@@ -176,19 +176,24 @@ describe("the plan's layout, themed, on a wide page", () => {
     expect(right).toBe(left);
   });
 
-  it("opens a margin on the right of the text once the plan holds a comment", async () => {
+  it("gives the plan the same padding on both sides when it holds a comment", async () => {
     const { screen } = await renderEmpty(COMMENTED_INTENT);
     const { left, right } = paddingsOf(editorOf(screen.container));
-    expect(parseFloat(right)).toBeGreaterThan(parseFloat(left));
+    expect(right).toBe(left);
   });
 
-  it("floats the comment into the margin beside its section", async () => {
+  it("draws Ben's comment under the intent's 'Checkout'", async () => {
     const { screen } = await renderEmpty(COMMENTED_INTENT);
-    const heading = screen.getByRole("heading", { name: FIRST_TITLE });
+    const checkout = screen.getByText("Checkout");
     const comment = screen.getByLabelText("Comment by Ben");
-    expect(boxOf(comment.element()).left).toBeGreaterThanOrEqual(
-      boxOf(heading.element()).right,
+    expect(boxOf(comment.element()).top).toBeGreaterThanOrEqual(
+      boxOf(checkout.element()).bottom,
     );
+  });
+
+  it("draws the plan without a shadow", async () => {
+    const { screen } = await renderEmpty();
+    expect(getComputedStyle(editorOf(screen.container)).boxShadow).toBe("none");
   });
 
   it("takes nothing when the space between 'Targets' and the success criteria's actions, which is the actions' own, is pressed", async () => {

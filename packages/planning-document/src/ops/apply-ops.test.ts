@@ -270,15 +270,15 @@ describe("applyOps add-finding", () => {
     ]);
   });
 
-  it("places the finding before the section's existing paragraph", () => {
+  it("places the finding under the section's existing paragraph", () => {
     const withProse = planWith("feature", {
       intent: [textBlock("paragraph", {}, "Checkout is slow.")],
     });
     const intent = blocksIn(applied([DANISH_LABELS], withProse), "intent");
     expect(intent.map((block) => block.type)).toEqual([
+      "paragraph",
       "section-panel",
       "finding",
-      "paragraph",
       "section-actions",
     ]);
   });
@@ -307,7 +307,7 @@ describe("applyOps add-question", () => {
         options: ["beta", "canary"],
       },
     ]);
-    expect(blocksIn(blocks, "scope").slice(-2)).toMatchObject([
+    expect(blocksIn(blocks, "scope").slice(-3)).toMatchObject([
       {
         id: "q-flag",
         type: "question",
@@ -319,6 +319,7 @@ describe("applyOps add-question", () => {
         },
         content: [{ text: "Which flag?" }],
       },
+      { type: "section-panel" },
       { type: "section-actions" },
     ]);
   });

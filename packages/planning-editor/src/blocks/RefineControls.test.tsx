@@ -203,7 +203,7 @@ describe("RefineControls", () => {
     await userEvent.click(actions.getByRole("button", { name: "Accept" }));
     await expect
       .poll(() => questionsOf(lastPlan()).filter(isUsed))
-      .toMatchObject([{ type: "comment" }, { type: "question" }]);
+      .toMatchObject([{ type: "question" }, { type: "comment" }]);
   });
 
   it("writes a stale proposal into the plan when Ana applies it anyway", async () => {
