@@ -154,9 +154,9 @@ describe("planToMarkdown", () => {
   it("quotes the question q-market with its answer and Ana's resolved comment", () => {
     const lines = linesOf(planToMarkdown(TALKED, FEATURE));
     expect(lines.filter((line) => line.startsWith(">"))).toEqual([
-      "> **Comment** by ana (resolved): Why now?",
       "> **Question** (q-market): Which market first?",
       "> **Answer**: Germany",
+      "> **Comment** by ana (resolved): Why now?",
     ]);
   });
 

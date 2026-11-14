@@ -13,10 +13,10 @@ export const ALWAYS_ALLOWED = [
   "finding",
 ] as const;
 
-/** Margin notes: they lead a section in this order. */
+/** Section notes: they follow what people wrote, in this order. */
 export const MARGIN_NOTES: readonly string[] = [
-  "comment",
   "section-panel",
+  "comment",
   "finding",
 ];
 

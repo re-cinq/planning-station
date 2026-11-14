@@ -65,9 +65,9 @@ describe("QuestionView", () => {
       (section) => section.slot === "questions",
     );
     expect(questions?.blocks).toMatchObject([
-      { type: "section-panel" },
       { type: "question" },
       { type: "answer", props: { questionId: "q1" } },
+      { type: "section-panel" },
       { type: "section-actions" },
     ]);
   });
@@ -136,7 +136,7 @@ describe("QuestionView with a written answer", () => {
     const questions = lastPlan()?.sections.find(
       (section) => section.slot === "questions",
     );
-    expect(questions?.blocks[2]).toMatchObject({
+    expect(questions?.blocks[1]).toMatchObject({
       type: "answer",
       props: { questionId: "q2" },
     });

@@ -91,7 +91,7 @@ describe("markUsed", () => {
       .filter((block) => block.type === "question" || block.type === "comment")
       .filter((block) => block.props.used)
       .map((block) => block.id);
-    expect(used).toEqual([CACHE.id, TARGET.id]);
+    expect(used).toEqual([TARGET.id, CACHE.id]);
   });
 });
 

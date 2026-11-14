@@ -220,7 +220,7 @@ function isBesideBlocks(view: EditorView, target: EventTarget | null) {
   );
 }
 
-/** Reads the rows the blocks are drawn on, not ProseMirror's nearest position: a margin note floats beside the writing, so the nearest position can be anywhere on the page. */
+/** Reads the rows the blocks are drawn on, not ProseMirror's nearest position. */
 function onlySkeletonLevel(view: EditorView, event: MouseEvent): boolean {
   const level = topBlocks(view.state.doc).filter((block) =>
     isLevelWith(view, block, event.clientY),

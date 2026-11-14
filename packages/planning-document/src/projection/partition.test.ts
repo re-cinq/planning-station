@@ -86,7 +86,7 @@ describe("partitionSections", () => {
 });
 
 describe("sectionOrder", () => {
-  it("orders actions, p1, panel, c1 as c1, panel, p1, actions", () => {
+  it("orders actions, p1, panel, c1 as p1, panel, c1, actions", () => {
     const blocks = sectionOrder([
       block("section-actions", { slot: "intent" }, { id: "actions" }),
       paragraph("Checkout is slow.", "p1"),
@@ -94,9 +94,9 @@ describe("sectionOrder", () => {
       block("comment", { author: "Ana" }, { id: "c1" }),
     ]);
     expect(blocks.map((member) => member.id)).toEqual([
-      "c1",
-      "panel",
       "p1",
+      "panel",
+      "c1",
       "actions",
     ]);
   });

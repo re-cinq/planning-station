@@ -164,8 +164,8 @@ describe("planningRoutes", () => {
     expect(sectionsOf(written.body)[0]).toMatchObject({
       slot: "intent",
       blocks: [
-        { type: "section-panel" },
         { type: "paragraph" },
+        { type: "section-panel" },
         { type: "section-actions" },
       ],
     });

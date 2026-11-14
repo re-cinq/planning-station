@@ -46,7 +46,7 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 ## Projection
 
 - A section heading opens a section and every block up to the next heading belongs to it; a block before the first heading is an error ([validated by](../../packages/planning-document/src/projection/partition.test.ts#L43), [validated by](../../packages/planning-document/src/projection/partition.test.ts#L59), [validated by](../../packages/planning-document/src/projection/partition.test.ts#L72), [validated by](../../packages/planning-document/src/projection/partition.test.ts#L76)).
-- A section's comments and then its panel lead the section, ahead of what people write, so an editor can set them in the margin beside it; its actions close it ([validated by](../../packages/planning-document/src/projection/partition.test.ts#L89)).
+- What people write leads a section; its panel, its comments and its findings follow it, so they are read under the writing they are about; its actions close it; an insert that follows nothing goes to the top of the writing ([validated by](../../packages/planning-document/src/projection/partition.test.ts#L89), [validated by](../../packages/planning-document/src/ops/block-ops.test.ts#L81)).
 - The feature's name is the plan's title, written above the first section and belonging to no section ([validated by](../../packages/planning-document/src/projection/partition.test.ts#L20), [validated by](../../packages/planning-document/src/projection/partition.test.ts#L28), [validated by](../../packages/planning-document/src/projection/partition.test.ts#L32)).
 - The KPIs and the first prototype declaration are read out of the blocks wherever they sit ([validated by](../../packages/planning-document/src/projection/derive-views.test.ts#L7), [validated by](../../packages/planning-document/src/projection/derive-views.test.ts#L48), [validated by](../../packages/planning-document/src/projection/derive-views.test.ts#L66)).
 - Projecting the blocks gives a plan document the schema accepts, with its sections and derived views ([validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L40), [validated by](../../packages/planning-document/src/projection/round-trip.test.ts#L49)).
@@ -156,7 +156,7 @@ The plan document is the JSON every consumer of a plan reads: the host applicati
 
 ## Testing surface
 
-- The `./testing` entry builds draft plan meta and seeded plans with content placed under the named sections, for tests in this repo and in hosts ([validated by](../../packages/planning-document/src/testing/plans.test.ts#L6), [validated by](../../packages/planning-document/src/testing/plans.test.ts#L13), [validated by](../../packages/planning-document/src/testing/plans.test.ts#L19)).
+- The `./testing` entry builds draft plan meta and seeded plans with content placed under the named sections, for tests in this repo and in hosts ([validated by](../../packages/planning-document/src/testing/plans.test.ts#L6), [validated by](../../packages/planning-document/src/testing/plans.test.ts#L16), [validated by](../../packages/planning-document/src/testing/plans.test.ts#L22)).
 
 ## Findings
 

@@ -1,12 +1,12 @@
 import { useState, type FormEvent, type KeyboardEvent } from "react";
-import { newId } from "@re-cinq/planning-document";
+import { actionsBlockId, newId } from "@re-cinq/planning-document";
 
 import styles from "./CommentComposer.module.scss";
 import { usePlanActions } from "./plan-actions.js";
 import type { BlockInserter } from "./QuestionView.js";
 
 export interface CommentComposerProps {
-  block: { id: string; props: { title: string } };
+  block: { id: string; props: { slot: string; title: string } };
   editor: BlockInserter;
   onDone: () => void;
 }
@@ -41,7 +41,11 @@ function useComposer({ block, editor, onDone }: CommentComposerProps) {
     event.preventDefault();
 
     if (said) {
-      editor.insertBlocks([commentBlock(said, user.name)], block, "after");
+      editor.insertBlocks(
+        [commentBlock(said, user.name)],
+        { id: actionsBlockId(block.props.slot) },
+        "before",
+      );
       onDone();
     }
   };

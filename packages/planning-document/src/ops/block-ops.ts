@@ -22,24 +22,17 @@ export const replaceBlock: Handler<"replace-block"> = (blocks, op) =>
 
 export const insertBlocks: Handler<"insert-blocks"> = (blocks, op) =>
   inSection(blocks, op.slot, (section) =>
-    section.blocks.flatMap((block, index) =>
-      placedAfter(block, index, op) ? [block, ...inserted(op)] : [block],
-    ),
+    op.after === null
+      ? [...inserted(op), ...section.blocks]
+      : section.blocks.flatMap((block) =>
+          block.id === op.after ? [block, ...inserted(op)] : [block],
+        ),
   );
 
 export const removeBlock: Handler<"remove-block"> = (blocks, op) =>
   inSection(blocks, op.slot, (section) =>
     section.blocks.filter((block) => block.id !== op.blockId),
   );
-
-/** True for the block the insert follows — the named one, or the first block when it follows nothing. */
-function placedAfter(
-  block: BlockJson,
-  index: number,
-  op: { after: string | null },
-): boolean {
-  return op.after === null ? index === 0 : block.id === op.after;
-}
 
 function inserted(op: {
   slot: string;

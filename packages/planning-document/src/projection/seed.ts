@@ -53,9 +53,14 @@ export function panelBlock(slot: string): BlockJson {
   });
 }
 
+/** Each section's closing actions block is found by its slot. */
+export function actionsBlockId(slot: string): string {
+  return `actions-${slot}`;
+}
+
 export function actionsBlock(slot: string): BlockJson {
   return parseBlock({
-    id: `actions-${slot}`,
+    id: actionsBlockId(slot),
     type: SECTION_ACTIONS,
     props: { slot },
   });
