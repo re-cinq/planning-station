@@ -24,7 +24,7 @@
     "@eslint/css": "^2.0.0",
     "@eslint/js": "^10.0.1",
     "@eslint/markdown": "^8.0.3",
-    "@re-cinq/eslint-plugin-re-lint": "^1.14.0",
+    "@re-cinq/eslint-plugin-re-lint": "^1.15.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^22.20.1",
     "eslint": "^10.11.0",
